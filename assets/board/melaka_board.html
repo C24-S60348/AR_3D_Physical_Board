@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>i.-GB — Papan Permainan Melaka</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: #1a0a00;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 100vh;
+    padding: 20px;
+  }
+
+  /* ─── Header ─── */
+  .header {
+    text-align: center;
+    margin-bottom: 24px;
+  }
+  .header h1 {
+    font-size: 3rem;
+    font-weight: 900;
+    color: #fff;
+    letter-spacing: 6px;
+    text-shadow: 0 0 20px rgba(184,134,11,0.8);
+  }
+  .header p {
+    color: #B8860B;
+    font-size: 1rem;
+    letter-spacing: 2px;
+    margin-top: 4px;
+  }
+  .header .subtitle {
+    color: #ffffff88;
+    font-size: 0.8rem;
+    margin-top: 2px;
+  }
+
+  /* ─── Board wrapper ─── */
+  .board-wrap {
+    background: linear-gradient(135deg, #4a1500, #2a0800, #4a1500);
+    border: 4px solid #B8860B;
+    border-radius: 20px;
+    padding: 12px;
+    box-shadow: 0 0 40px rgba(184,134,11,0.4), inset 0 0 60px rgba(0,0,0,0.4);
+    max-width: 780px;
+    width: 100%;
+  }
+
+  /* ─── Grid ─── */
+  .board {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    grid-template-rows: repeat(5, 1fr);
+    gap: 4px;
+  }
+
+  /* ─── Square ─── */
+  .sq {
+    background: #2a1500;
+    border: 1.5px solid #5a3000;
+    border-radius: 8px;
+    padding: 6px 4px;
+    text-align: center;
+    cursor: default;
+    min-height: 100px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    transition: transform 0.15s, box-shadow 0.15s;
+    position: relative;
+    overflow: hidden;
+  }
+  .sq:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 16px rgba(184,134,11,0.5);
+    z-index: 10;
+  }
+
+  /* Square variants */
+  .sq.start  { background: linear-gradient(135deg, #1a5a1a, #0d3d0d); border-color: #4caf50; }
+  .sq.finish { background: linear-gradient(135deg, #8B6914, #4a3a00); border-color: #FFD700; }
+  .sq.question { background: linear-gradient(135deg, #1a2a6a, #0d1a4a); border-color: #4a6aff; }
+  .sq.snake  { background: linear-gradient(135deg, #6a1a1a, #3d0d0d); border-color: #ff4444; }
+  .sq.ladder { background: linear-gradient(135deg, #1a5a2a, #0d3d1a); border-color: #44ff88; }
+
+  /* Number badge */
+  .sq-num {
+    position: absolute;
+    top: 4px;
+    left: 5px;
+    font-size: 0.6rem;
+    font-weight: 800;
+    color: #ffffff55;
+  }
+
+  .sq-emoji { font-size: 1.7rem; line-height: 1; }
+  .sq-name  { font-size: 0.55rem; color: #ffffff99; font-weight: 600; line-height: 1.2; text-align: center; }
+  .sq-tag   { font-size: 0.5rem; border-radius: 4px; padding: 1px 5px; font-weight: 700; }
+
+  .tag-q   { background: #4a6aff33; color: #88aaff; border: 1px solid #4a6aff66; }
+  .tag-s   { background: #ff444433; color: #ff8888; border: 1px solid #ff444466; }
+  .tag-l   { background: #44ff8833; color: #88ffaa; border: 1px solid #44ff8866; }
+  .tag-start  { background: #4caf5033; color: #88ff88; border: 1px solid #4caf5066; }
+  .tag-finish { background: #FFD70033; color: #FFD700; border: 1px solid #FFD70066; }
+
+  /* ─── Legend ─── */
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 16px;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: #2a1500;
+    border: 1px solid #5a3000;
+    border-radius: 20px;
+    padding: 5px 12px;
+    font-size: 0.75rem;
+    color: #ffffff99;
+  }
+  .legend-dot {
+    width: 12px; height: 12px;
+    border-radius: 3px;
+  }
+
+  /* ─── Topic pills ─── */
+  .topics {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    margin-top: 16px;
+  }
+  .topic-pill {
+    background: #2a1500;
+    border: 1.5px solid #8B1A1A;
+    border-radius: 20px;
+    padding: 6px 14px;
+    color: #ffcc66;
+    font-size: 0.78rem;
+    font-weight: 600;
+  }
+
+  /* ─── How to play ─── */
+  .how-to {
+    max-width: 780px;
+    width: 100%;
+    margin-top: 24px;
+    background: #2a1500;
+    border: 1.5px solid #5a3000;
+    border-radius: 16px;
+    padding: 20px 24px;
+    color: #ffffff99;
+    font-size: 0.82rem;
+    line-height: 1.7;
+  }
+  .how-to h2 { color: #B8860B; margin-bottom: 10px; font-size: 1rem; letter-spacing: 1px; }
+  .how-to li { margin-bottom: 4px; }
+
+  footer {
+    margin-top: 24px;
+    color: #ffffff33;
+    font-size: 0.7rem;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <h1>i.-GB</h1>
+  <p>Interactive Game Board</p>
+  <p class="subtitle">Melaka — Bandar Warisan Dunia UNESCO 2008</p>
+</div>
+
+<!-- Board -->
+<div class="board-wrap">
+  <div class="board" id="board"></div>
+</div>
+
+<!-- Legend -->
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot" style="background:#4caf50"></div>Mula / Tamat</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#4a6aff"></div>Petak Soalan ❓</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#ff4444"></div>Ular 🐍 — turun</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#44ff88"></div>Tangga 🪜 — naik</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#5a3000"></div>Petak biasa</div>
+</div>
+
+<!-- Topics -->
+<div class="topics">
+  <div class="topic-pill">📜 Sejarah Melaka</div>
+  <div class="topic-pill">🏛️ Seni Bina</div>
+  <div class="topic-pill">🎎 Budaya</div>
+  <div class="topic-pill">🗺️ Pelancongan</div>
+</div>
+
+<!-- How to play -->
+<div class="how-to">
+  <h2>🎲 Cara Bermain i.-GB</h2>
+  <ol>
+    <li>Masukkan nama anda dan pilih topik soalan dalam aplikasi i.-GB.</li>
+    <li>Tekan dadu untuk bergerak pada papan permainan digital.</li>
+    <li>Apabila tiba di petak biru ❓, soalan AR akan muncul — imbas dengan kamera!</li>
+    <li>Jawab soalan dengan betul untuk mendapat <strong>+10 mata</strong>.</li>
+    <li>🐍 Tiba di petak ular → turun ke petak yang lebih rendah.</li>
+    <li>🪜 Tiba di petak tangga → naik ke petak yang lebih tinggi!</li>
+    <li>Pemain pertama yang tiba di petak <strong>30 — TAMAT</strong> menang!</li>
+  </ol>
+</div>
+
+<footer>i.-GB © 2025 · Dicipta dengan Flutter AR · Tema: Melaka, Malaysia</footer>
+
+<script>
+// Board data matching game_model.dart
+const squares = [
+  { id:1,  name:'MULA',            emoji:'🚩', type:'start',    tag:'MULA'    },
+  { id:2,  name:'Stadthuys',        emoji:'🏛️', type:'normal',   note:'Bangunan Merah Belanda' },
+  { id:3,  name:'Gereja Christ',    emoji:'⛪', type:'normal',   note:'Christ Church Melaka' },
+  { id:4,  name:'SOALAN',           emoji:'❓', type:'question', tag:'Sejarah' },
+  { id:5,  name:'Jalan Jonker',     emoji:'🛍️', type:'snake',    tag:'→ Sq 1', to:1  },
+  { id:6,  name:'Muzium Baba Nyonya',emoji:'🎎',type:'normal',   note:'Peranakan Museum' },
+  { id:7,  name:'Sungai Melaka',    emoji:'🚤', type:'normal',   note:'River Cruise' },
+  { id:8,  name:'SOALAN',           emoji:'❓', type:'question', tag:'Budaya'  },
+  { id:9,  name:'Kota A-Famosa',    emoji:'🏰', type:'normal',   note:'Fortress Gate' },
+  { id:10, name:'Bukit St. Paul',   emoji:'⛰️', type:'normal',   note:"St. Paul's Hill" },
+  { id:11, name:'Tangga Warisan',   emoji:'🪜', type:'ladder',   tag:'→ Sq 20', to:20 },
+  { id:12, name:'SOALAN',           emoji:'❓', type:'question', tag:'Seni Bina' },
+  { id:13, name:'Menara Taming Sari',emoji:'🗼',type:'normal',   note:'Gyrotower' },
+  { id:14, name:'Melaka Eye',       emoji:'🎡', type:'normal',   note:'Giant Wheel' },
+  { id:15, name:'Cheng Hoon Teng',  emoji:'🛕', type:'normal',   note:'Tokong Cina Tertua' },
+  { id:16, name:'SOALAN',           emoji:'❓', type:'question', tag:'Pelancongan' },
+  { id:17, name:'Masjid Kpg. Kling',emoji:'🕌', type:'normal',   note:'Masjid Bersejarah' },
+  { id:18, name:'ULAR BESAR!',      emoji:'🐍', type:'snake',    tag:'→ Sq 7', to:7  },
+  { id:19, name:'Masjid Selat',     emoji:'🕌', type:'normal',   note:'Floating Mosque' },
+  { id:20, name:'Proklamasi',        emoji:'🏛️', type:'normal',   note:'Independence Memorial' },
+  { id:21, name:'SOALAN',           emoji:'❓', type:'question', tag:'Sejarah' },
+  { id:22, name:'Istana Lama',      emoji:'🏯', type:'snake',    tag:'→ Sq 14', to:14 },
+  { id:23, name:'Taman Bunga',      emoji:'🌺', type:'normal',   note:'Botanical Garden' },
+  { id:24, name:'SOALAN',           emoji:'❓', type:'question', tag:'Budaya'  },
+  { id:25, name:'Tangga Emas!',     emoji:'🪜', type:'ladder',   tag:'→ Sq 29', to:29 },
+  { id:26, name:'Zoo Melaka',       emoji:'🦁', type:'normal',   note:'Zoological Park' },
+  { id:27, name:'SOALAN',           emoji:'❓', type:'question', tag:'Seni Bina' },
+  { id:28, name:'Pantai Klebang',   emoji:'🏖️', type:'normal',   note:'Klebang Beach' },
+  { id:29, name:'Muzium Negeri',    emoji:'🏛️', type:'normal',   note:'State Museum' },
+  { id:30, name:'TAMAT! 🏆',        emoji:'🏆', type:'finish',   tag:'MENANG!' },
+];
+
+// Convert square id → grid position (row 0=top, col 0=left)
+// Board is 5 rows x 6 cols, zigzag like classic snake & ladder
+function idToGridPos(id) {
+  const idx  = id - 1; // 0-based
+  const row  = Math.floor(idx / 6); // 0 = bottom row in real board, 4 = top row
+  const col  = idx % 6;
+  const gridRow = 4 - row; // flip: real row 0 → grid row 4 (bottom)
+  const gridCol = (row % 2 === 0) ? col : (5 - col); // zigzag
+  return { r: gridRow, c: gridCol };
+}
+
+const grid = Array.from({ length: 5 }, () => Array(6).fill(null));
+squares.forEach(sq => {
+  const { r, c } = idToGridPos(sq.id);
+  grid[r][c] = sq;
+});
+
+const board = document.getElementById('board');
+
+for (let r = 0; r < 5; r++) {
+  for (let c = 0; c < 6; c++) {
+    const sq = grid[r][c];
+    if (!sq) { board.appendChild(document.createElement('div')); continue; }
+
+    const div = document.createElement('div');
+    div.className = `sq ${sq.type}`;
+
+    // Number
+    const num = document.createElement('span');
+    num.className = 'sq-num';
+    num.textContent = sq.id;
+    div.appendChild(num);
+
+    // Emoji
+    const em = document.createElement('span');
+    em.className = 'sq-emoji';
+    em.textContent = sq.emoji;
+    div.appendChild(em);
+
+    // Name
+    const nm = document.createElement('span');
+    nm.className = 'sq-name';
+    nm.textContent = sq.name;
+    div.appendChild(nm);
+
+    // Tag
+    if (sq.tag) {
+      const tg = document.createElement('span');
+      const cls = sq.type === 'question' ? 'tag-q'
+                : sq.type === 'snake'    ? 'tag-s'
+                : sq.type === 'ladder'   ? 'tag-l'
+                : sq.type === 'start'    ? 'tag-start'
+                : 'tag-finish';
+      tg.className = `sq-tag ${cls}`;
+      tg.textContent = sq.tag;
+      div.appendChild(tg);
+    } else if (sq.note) {
+      const nt = document.createElement('span');
+      nt.className = 'sq-name';
+      nt.style.color = '#ffffff44';
+      nt.style.fontSize = '0.45rem';
+      nt.textContent = sq.note;
+      div.appendChild(nt);
+    }
+
+    board.appendChild(div);
+  }
+}
+</script>
+</body>
+</html>

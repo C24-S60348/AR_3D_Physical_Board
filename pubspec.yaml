@@ -1,0 +1,38 @@
+name: my_ar_app
+description: "i.-GB — Interactive Game Board with AR (Melaka Theme)"
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.11.5
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+  ar_flutter_plugin: ^0.7.3
+  vector_math: ^2.1.4
+  permission_handler: ^10.4.5
+  device_info_plus: ^10.1.0
+
+dependency_overrides:
+  # permission_handler_android 10.x uses removed Flutter v1 embedding (PluginRegistry.Registrar).
+  # Use local patched copy that removes the v1 embedding references.
+  permission_handler_android:
+    path: patches/permission_handler_android
+  # ar_flutter_plugin 0.7.3 uses compileSdkVersion 30 which is missing android:attr/lStar.
+  # Use local patched copy with compileSdkVersion 35 and mavenCentral repos.
+  ar_flutter_plugin:
+    path: patches/ar_flutter_plugin
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/board/
+    - assets/imagesscan/
+    - assets/models/
