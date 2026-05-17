@@ -49,11 +49,10 @@ class _ARDemoScreenState extends State<ARDemoScreen> {
   static const _modelFiles = [
     'duck.glb',
     'box.glb',
-    'avocado.glb',
     'cesiumtruck.glb',
     'lantern.glb',
   ];
-  static const _modelNames = ['🦆 Duck', '📦 Box', '🥑 Avocado', '🚛 Truck', '🏮 Lantern'];
+  static const _modelNames = ['🦆 Duck', '📦 Box', '🚛 Truck', '🏮 Lantern'];
   int _modelIndex = 0;
 
   @override
