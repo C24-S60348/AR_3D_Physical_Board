@@ -29,6 +29,15 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^6.0.0
+  flutter_launcher_icons: ^0.14.3
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/logo_igb.png"
+  min_sdk_android: 21
+  web:
+    generate: false
 
 flutter:
   uses-material-design: true
@@ -36,3 +45,4 @@ flutter:
     - assets/board/
     - assets/imagesscan/
     - assets/models/
+    - assets/images/

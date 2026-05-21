@@ -73,15 +73,17 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFF3a0a0a),
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [_red, Color(0xFF3a0a0a)],
-          ),
-        ),
-        child: SafeArea(
+      body: Stack(
+        children: [
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [_red, Color(0xFF3a0a0a)],
+              ),
+            ),
+            child: SafeArea(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(24),
             child: Form(
@@ -91,23 +93,29 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                   const SizedBox(height: 16),
                   // Header
-                  const Text(
-                    'i.-GB',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 44,
-                      fontWeight: FontWeight.w900,
-                      color: Colors.white,
-                      letterSpacing: 4,
-                    ),
-                  ),
-                  const Text(
-                    'Interactive Game Board',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.amber,
-                      letterSpacing: 2,
+                  Center(
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        // White outline that follows logo shape
+                        ColorFiltered(
+                          colorFilter: const ColorFilter.mode(
+                            Colors.white,
+                            BlendMode.srcIn,
+                          ),
+                          child: Image.asset(
+                            'assets/images/logo_igb.png',
+                            width: 212,
+                            height: 212,
+                          ),
+                        ),
+                        // Original logo on top
+                        Image.asset(
+                          'assets/images/logo_igb.png',
+                          width: 200,
+                          height: 200,
+                        ),
+                      ],
                     ),
                   ),
                   const SizedBox(height: 32),
@@ -141,7 +149,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         TextFormField(
                           controller: _nameController,
                           decoration: InputDecoration(
-                            hintText: 'Nama anda (pilihan)',
+                            hintText: 'Nama',
                             prefixIcon: const Icon(Icons.person, color: _red),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
@@ -231,18 +239,37 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 12),
 
-                  // Info chips
-                  Wrap(
-                    alignment: WrapAlignment.center,
-                    spacing: 8,
-                    runSpacing: 6,
-                    children: const [
-                      _InfoChip(icon: '🏰', label: 'Melaka Theme'),
-                      _InfoChip(icon: '📱', label: 'AR Camera'),
-                      _InfoChip(icon: '❓', label: 'Quiz Questions'),
-                      _InfoChip(icon: '🎲', label: 'Roll Dice'),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () => Navigator.pushNamed(context, '/tutorial'),
+                          icon: const Icon(Icons.menu_book, size: 20),
+                          label: const Text('Tutorial', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.white,
+                            side: const BorderSide(color: Colors.white54, width: 1.5),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: () => Navigator.pushNamed(context, '/nota'),
+                          icon: const Icon(Icons.notes, size: 20),
+                          label: const Text('Nota', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: Colors.white,
+                            side: const BorderSide(color: Colors.white54, width: 1.5),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                   const SizedBox(height: 16),
@@ -251,6 +278,37 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
         ),
+      ),
+          // ? button top right
+          Positioned(
+            top: 12,
+            right: 16,
+            child: SafeArea(
+              child: GestureDetector(
+                onTap: () => Navigator.pushNamed(context, '/about'),
+                child: Container(
+                  width: 34,
+                  height: 34,
+                  decoration: BoxDecoration(
+                    color: Colors.white24,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white38, width: 1.5),
+                  ),
+                  child: const Center(
+                    child: Text(
+                      '?',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 16,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -311,32 +369,3 @@ class _TopicCard extends StatelessWidget {
   }
 }
 
-class _InfoChip extends StatelessWidget {
-  final String icon;
-  final String label;
-
-  const _InfoChip({required this.icon, required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white30),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(icon, style: const TextStyle(fontSize: 14)),
-          const SizedBox(width: 4),
-          Text(
-            label,
-            style: const TextStyle(color: Colors.white70, fontSize: 12),
-          ),
-        ],
-      ),
-    );
-  }
-}

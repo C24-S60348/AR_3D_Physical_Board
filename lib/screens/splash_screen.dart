@@ -18,20 +18,21 @@ class _SplashScreenState extends State<SplashScreen>
     super.initState();
     _controller = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1500),
+      duration: const Duration(milliseconds: 1200),
     );
     _fade = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(parent: _controller, curve: const Interval(0, 0.6, curve: Curves.easeIn)),
+      CurvedAnimation(parent: _controller, curve: const Interval(0, 0.7, curve: Curves.easeIn)),
     );
-    _scale = Tween<double>(begin: 0.7, end: 1).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.elasticOut),
+    _scale = Tween<double>(begin: 0.75, end: 1).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
     );
     _controller.forward();
-    Future.delayed(const Duration(seconds: 3), _navigate);
+    Future.delayed(const Duration(milliseconds: 2800), _navigate);
   }
 
   void _navigate() {
-    if (mounted) Navigator.pushReplacementNamed(context, '/home');
+    if (!mounted) return;
+    Navigator.pushReplacementNamed(context, '/home');
   }
 
   @override
@@ -43,74 +44,21 @@ class _SplashScreenState extends State<SplashScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFF8B1A1A), Color(0xFFB8860B), Color(0xFF8B1A1A)],
-          ),
-        ),
-        child: Center(
-          child: FadeTransition(
-            opacity: _fade,
-            child: ScaleTransition(
-              scale: _scale,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 120,
-                    height: 120,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.15),
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.amber, width: 3),
-                    ),
-                    child: const Center(
-                      child: Text('🏰', style: TextStyle(fontSize: 60)),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  const Text(
-                    'i.-GB',
-                    style: TextStyle(
-                      fontSize: 52,
-                      fontWeight: FontWeight.w900,
-                      color: Colors.white,
-                      letterSpacing: 4,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Interactive Game Board',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.amber,
-                      letterSpacing: 2,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Melaka — Bandar Warisan Dunia',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.white70,
-                      letterSpacing: 1,
-                    ),
-                  ),
-                  const SizedBox(height: 48),
-                  const SizedBox(
-                    width: 32,
-                    height: 32,
-                    child: CircularProgressIndicator(
-                      color: Colors.amber,
-                      strokeWidth: 2,
-                    ),
-                  ),
-                ],
-              ),
+      backgroundColor: const Color(0xFF8B1A1A),
+      body: Center(
+        child: FadeTransition(
+          opacity: _fade,
+          child: ScaleTransition(
+            scale: _scale,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                ColorFiltered(
+                  colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+                  child: Image.asset('assets/images/logo_igb.png', width: 275, height: 275),
+                ),
+                Image.asset('assets/images/logo_igb.png', width: 260, height: 260),
+              ],
             ),
           ),
         ),

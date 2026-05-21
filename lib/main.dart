@@ -5,6 +5,9 @@ import 'screens/home_screen.dart';
 import 'screens/ar_demo_screen.dart';
 import 'screens/game_board_screen.dart';
 import 'screens/scanner_screen.dart';
+import 'screens/about_screen.dart';
+import 'screens/tutorial_screen.dart';
+import 'screens/nota_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -37,6 +40,9 @@ class IGBApp extends StatelessWidget {
         '/ar-demo': (_) => const ARDemoScreen(),
         '/game': (_) => const GameBoardScreen(),
         '/scanner': (_) => const ScannerScreen(),
+        '/about': (_) => const AboutScreen(),
+        '/tutorial': (_) => const TutorialScreen(),
+        '/nota': (_) => const NotaScreen(),
       },
     );
   }
