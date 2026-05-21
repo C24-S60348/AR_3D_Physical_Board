@@ -100,7 +100,7 @@ class AboutScreen extends StatelessWidget {
                         _TeamMember(name: 'Pn. Faiizah', role: 'Penyelia'),
                         _TeamMember(name: 'En. Nik', role: 'Penyelia'),
                         const SizedBox(height: 8),
-                        _TeamMember(name: 'AF1 Productions', role: 'Pembangunan Aplikasi', highlight: true),
+                        _TeamMember(name: 'AF1 Productions', role: 'Pembangun Aplikasi', highlight: true),
 
                         const SizedBox(height: 28),
                         Center(

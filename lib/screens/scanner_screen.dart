@@ -453,7 +453,7 @@ class _FlipPlaceCard extends StatelessWidget {
           ClipRRect(
             borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
             child: asset.isNotEmpty
-                ? Image.asset(asset, width: 300, height: 200, fit: BoxFit.cover)
+                ? Image.asset(asset, width: 300, height: 200, fit: BoxFit.fitHeight)
                 : Container(
                     width: 300,
                     height: 200,

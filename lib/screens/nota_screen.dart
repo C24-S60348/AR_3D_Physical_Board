@@ -205,7 +205,7 @@ class _PlaceCard extends StatelessWidget {
             aspectRatio: 16 / 9,
             child: Image.asset(
               place.asset,
-              fit: BoxFit.cover,
+              fit: BoxFit.fitHeight,
               errorBuilder: (_, __, ___) => Container(
                 color: Colors.grey.shade200,
                 child: const Icon(Icons.image_not_supported, color: Colors.grey, size: 48),
