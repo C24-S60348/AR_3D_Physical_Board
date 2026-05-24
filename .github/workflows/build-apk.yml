@@ -1,0 +1,64 @@
+name: Build Release APK
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - claude/new-session-tK4oC
+  pull_request:
+    branches:
+      - main
+      - master
+  workflow_dispatch:  # allows manual trigger from GitHub UI
+
+jobs:
+  build:
+    name: Build Flutter APK
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout code (with all submodules/patches)
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # 2. Setup Java 17 (required by this project)
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      # 3. Setup Flutter (matching pubspec.yaml sdk: ^3.11.5)
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.32.1'
+          channel: stable
+          cache: true
+
+      # 4. Verify Flutter is ready
+      - name: Flutter version
+        run: flutter --version
+
+      # 5. Get dependencies
+      - name: Install Flutter dependencies
+        run: flutter pub get
+
+      # 6. Build release APK (uses debug signing — good for testing)
+      - name: Build release APK
+        run: flutter build apk --release --no-tree-shake-icons
+
+      # 7. Upload APK as downloadable artifact (available for 30 days)
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
+          retention-days: 30
+
+      # 8. Show APK file size
+      - name: APK info
+        run: |
+          echo "✅ Build successful!"
+          ls -lh build/app/outputs/flutter-apk/app-release.apk
