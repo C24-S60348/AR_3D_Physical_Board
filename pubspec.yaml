@@ -47,4 +47,5 @@ flutter:
     - assets/imagesscan/
     - assets/models/
     - assets/images/
+    - assets/images/topics/
     - assets/sounds/

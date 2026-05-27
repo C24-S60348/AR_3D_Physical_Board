@@ -153,6 +153,7 @@ class _HomeScreenState extends State<HomeScreen>
     }
     Navigator.pushNamed(context, '/loading', arguments: {
       'destination': '/scanner',
+      'topic': _selectedTopic,
       'arguments': {
         'playerName': name,
         'topic': _selectedTopic,
@@ -436,50 +437,48 @@ class _TopicCard extends StatelessWidget {
 
   const _TopicCard({required this.topic, required this.selected});
 
-  static const _topicEmojis = {
-    'Sejarah Melaka': '📜',
-    'Seni Bina': '🏛️',
-    'Budaya': '🎎',
-    'Pelancongan': '🗺️',
+  static const _topicImages = {
+    'Sejarah Melaka': 'assets/images/topics/topic_sejarah_melaka.png',
+    'Seni Bina':      'assets/images/topics/topic_seni_bina.png',
+    'Budaya':         'assets/images/topics/topic_budaya.png',
+    'Pelancongan':    'assets/images/topics/topic_pelancongan.png',
+    'Matematik':      'assets/images/topics/topic_matematik.png',
   };
 
   @override
   Widget build(BuildContext context) {
+    final imgPath = _topicImages[topic];
     return AnimatedContainer(
       duration: const Duration(milliseconds: 250),
       margin: const EdgeInsets.symmetric(horizontal: 6, vertical: 8),
       decoration: BoxDecoration(
-        color: selected ? const Color(0xFF8B1A1A) : Colors.grey.shade100,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: selected ? const Color(0xFF8B1A1A) : Colors.grey.shade300,
-          width: selected ? 2 : 1,
+          color: selected ? const Color(0xFF8B1A1A) : Colors.transparent,
+          width: selected ? 3 : 0,
         ),
         boxShadow: selected
-            ? [BoxShadow(color: const Color(0xFF8B1A1A).withOpacity(0.35), blurRadius: 12, offset: const Offset(0, 4))]
-            : [BoxShadow(color: Colors.black.withOpacity(0.07), blurRadius: 6, offset: const Offset(0, 2))],
+            ? [BoxShadow(color: const Color(0xFF8B1A1A).withOpacity(0.5), blurRadius: 14, offset: const Offset(0, 4))]
+            : [BoxShadow(color: Colors.black.withOpacity(0.15), blurRadius: 6, offset: const Offset(0, 2))],
       ),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            _topicEmojis[topic] ?? '📚',
-            style: const TextStyle(fontSize: 44),
-          ),
-          const SizedBox(height: 10),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            child: Text(
-              topic,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontWeight: FontWeight.w700,
-                fontSize: 13,
-                color: selected ? Colors.white : Colors.black87,
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(14),
+        child: imgPath != null
+            ? Image.asset(
+                imgPath,
+                fit: BoxFit.cover,
+                width: double.infinity,
+                height: double.infinity,
+              )
+            : Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text('📚', style: TextStyle(fontSize: 44)),
+                  Text(topic,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+                ],
               ),
-            ),
-          ),
-        ],
       ),
     );
   }

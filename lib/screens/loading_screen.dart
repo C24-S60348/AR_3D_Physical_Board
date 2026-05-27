@@ -2,8 +2,17 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'splash_screen.dart';
 
+/// Topic image → asset path mapping (shared with home screen)
+const Map<String, String> topicImageAssets = {
+  'Sejarah Melaka': 'assets/images/topics/topic_sejarah_melaka.png',
+  'Seni Bina':      'assets/images/topics/topic_seni_bina.png',
+  'Budaya':         'assets/images/topics/topic_budaya.png',
+  'Pelancongan':    'assets/images/topics/topic_pelancongan.png',
+  'Matematik':      'assets/images/topics/topic_matematik.png',
+};
+
 /// Generic loading screen with coin-flip logo.
-/// Pass arguments as: { 'destination': '/route', 'arguments': <anything> }
+/// Pass arguments as: { 'destination': '/route', 'topic': 'TopicName' (optional), 'arguments': <anything> }
 class LoadingScreen extends StatefulWidget {
   const LoadingScreen({super.key});
 
@@ -17,6 +26,7 @@ class _LoadingScreenState extends State<LoadingScreen>
   late Animation<double> _fade;
   late AnimationController _flipController;
   late Animation<double> _flipAngle;
+  String? _topic;
 
   @override
   void initState() {
@@ -50,6 +60,8 @@ class _LoadingScreenState extends State<LoadingScreen>
           ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
       final destination = args?['destination'] as String? ?? '/home';
       final destArgs = args?['arguments'];
+      // Read topic for flipping image
+      setState(() => _topic = args?['topic'] as String?);
 
       Future.delayed(const Duration(milliseconds: 1800), () {
         if (!mounted) return;
@@ -87,7 +99,17 @@ class _LoadingScreenState extends State<LoadingScreen>
                     child: child,
                   );
                 },
-                child: const CoinLogoWidget(size: 200),
+                child: _topic != null && topicImageAssets.containsKey(_topic)
+                    ? ClipRRect(
+                        borderRadius: BorderRadius.circular(20),
+                        child: Image.asset(
+                          topicImageAssets[_topic!]!,
+                          width: 200,
+                          height: 200,
+                          fit: BoxFit.cover,
+                        ),
+                      )
+                    : const CoinLogoWidget(size: 200),
               ),
               const SizedBox(height: 28),
               const _PulsingDots(),
