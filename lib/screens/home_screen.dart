@@ -39,12 +39,12 @@ class _HomeScreenState extends State<HomeScreen>
     );
     _logoScale = TweenSequence<double>([
       TweenSequenceItem(
-        tween: Tween(begin: 1.0, end: 1.22)
+        tween: Tween(begin: 1.0, end: 1.10)
             .chain(CurveTween(curve: Curves.easeOut)),
         weight: 40,
       ),
       TweenSequenceItem(
-        tween: Tween(begin: 1.22, end: 1.0)
+        tween: Tween(begin: 1.10, end: 1.0)
             .chain(CurveTween(curve: Curves.easeInOut)),
         weight: 60,
       ),
@@ -79,13 +79,12 @@ class _HomeScreenState extends State<HomeScreen>
 
   /// 5 stars flying out in different directions from the logo centre.
   List<Widget> _buildStars() {
-    // Directions: top, top-right, right, bottom-left, top-left
     const directions = [
-      Offset(0, -1),       // top
-      Offset(0.85, -0.85), // top-right
-      Offset(1, 0.2),      // right
-      Offset(-0.8, 0.8),   // bottom-left
-      Offset(-0.9, -0.5),  // top-left
+      Offset(0, -1),        // top
+      Offset(0.85, -0.85),  // top-right
+      Offset(1, 0.3),       // right
+      Offset(-0.8, 0.85),   // bottom-left
+      Offset(-0.9, -0.55),  // top-left
     ];
 
     return directions.map((dir) {
@@ -93,13 +92,13 @@ class _HomeScreenState extends State<HomeScreen>
         animation: _starsCtrl,
         builder: (context, child) {
           final t = _starsCtrl.value;
-          // Fly outward 70px
-          final dx = dir.dx * 70 * t;
-          final dy = dir.dy * 70 * t;
-          // Fade: visible 0→0.6, then fade out 0.6→1
-          final opacity = t < 0.6 ? 1.0 : (1.0 - (t - 0.6) / 0.4).clamp(0.0, 1.0);
-          // Scale: grows then shrinks slightly
-          final scale = t < 0.4 ? (0.5 + t * 1.25) : 1.0;
+          // Fly outward 110px
+          final dx = dir.dx * 110 * t;
+          final dy = dir.dy * 110 * t;
+          // Fully visible from start, fade out in last 35%
+          final opacity = t < 0.65 ? 1.0 : (1.0 - (t - 0.65) / 0.35).clamp(0.0, 1.0);
+          // Pop in: small → full size quickly
+          final scale = (t * 2.5).clamp(0.0, 1.0).toDouble();
 
           return Transform.translate(
             offset: Offset(dx, dy),
@@ -112,7 +111,7 @@ class _HomeScreenState extends State<HomeScreen>
             ),
           );
         },
-        child: const Text('⭐', style: TextStyle(fontSize: 18)),
+        child: const Text('⭐', style: TextStyle(fontSize: 26)),
       );
     }).toList();
   }
@@ -202,9 +201,6 @@ class _HomeScreenState extends State<HomeScreen>
                           alignment: Alignment.center,
                           clipBehavior: Clip.none,
                           children: [
-                            // Star burst overlay
-                            if (_showStars)
-                              ..._buildStars(),
                             // Logo with bounce scale
                             ScaleTransition(
                               scale: _logoScale,
@@ -230,6 +226,9 @@ class _HomeScreenState extends State<HomeScreen>
                                 ],
                               ),
                             ),
+                            // Stars on top of logo
+                            if (_showStars)
+                              ..._buildStars(),
                           ],
                         ),
                       ),
