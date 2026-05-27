@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:audioplayers/audioplayers.dart';
 import '../data/questions_data.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -8,12 +9,20 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends State<HomeScreen>
+    with TickerProviderStateMixin {
   final _nameController = TextEditingController();
   String _selectedTopic = 'Sejarah Melaka';
   final _formKey = GlobalKey<FormState>();
   late final PageController _topicPageController;
   double _currentPage = 0;
+
+  // Logo tap effects
+  late AnimationController _logoScaleCtrl;
+  late Animation<double> _logoScale;
+  late AnimationController _starsCtrl;
+  final AudioPlayer _audioPlayer = AudioPlayer();
+  bool _showStars = false;
 
   @override
   void initState() {
@@ -22,15 +31,99 @@ class _HomeScreenState extends State<HomeScreen> {
     _topicPageController.addListener(() {
       setState(() => _currentPage = _topicPageController.page ?? 0);
     });
+
+    // Logo bounce: normal → big → normal
+    _logoScaleCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 400),
+    );
+    _logoScale = TweenSequence<double>([
+      TweenSequenceItem(
+        tween: Tween(begin: 1.0, end: 1.22)
+            .chain(CurveTween(curve: Curves.easeOut)),
+        weight: 40,
+      ),
+      TweenSequenceItem(
+        tween: Tween(begin: 1.22, end: 1.0)
+            .chain(CurveTween(curve: Curves.easeInOut)),
+        weight: 60,
+      ),
+    ]).animate(_logoScaleCtrl);
+
+    // Stars burst: 0→1 (fly out) then fade
+    _starsCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 700),
+    );
+    _starsCtrl.addStatusListener((status) {
+      if (status == AnimationStatus.completed) {
+        if (mounted) setState(() => _showStars = false);
+      }
+    });
   }
 
   static const _red = Color(0xFF8B1A1A);
   static const _gold = Color(0xFFB8860B);
 
+  void _onLogoTap() async {
+    // Play sparkle sound
+    await _audioPlayer.play(AssetSource('sounds/blinkingstar.mp3'));
+
+    // Bounce logo
+    _logoScaleCtrl.forward(from: 0);
+
+    // Stars burst
+    setState(() => _showStars = true);
+    _starsCtrl.forward(from: 0);
+  }
+
+  /// 5 stars flying out in different directions from the logo centre.
+  List<Widget> _buildStars() {
+    // Directions: top, top-right, right, bottom-left, top-left
+    const directions = [
+      Offset(0, -1),       // top
+      Offset(0.85, -0.85), // top-right
+      Offset(1, 0.2),      // right
+      Offset(-0.8, 0.8),   // bottom-left
+      Offset(-0.9, -0.5),  // top-left
+    ];
+
+    return directions.map((dir) {
+      return AnimatedBuilder(
+        animation: _starsCtrl,
+        builder: (context, child) {
+          final t = _starsCtrl.value;
+          // Fly outward 70px
+          final dx = dir.dx * 70 * t;
+          final dy = dir.dy * 70 * t;
+          // Fade: visible 0→0.6, then fade out 0.6→1
+          final opacity = t < 0.6 ? 1.0 : (1.0 - (t - 0.6) / 0.4).clamp(0.0, 1.0);
+          // Scale: grows then shrinks slightly
+          final scale = t < 0.4 ? (0.5 + t * 1.25) : 1.0;
+
+          return Transform.translate(
+            offset: Offset(dx, dy),
+            child: Opacity(
+              opacity: opacity,
+              child: Transform.scale(
+                scale: scale,
+                child: child,
+              ),
+            ),
+          );
+        },
+        child: const Text('⭐', style: TextStyle(fontSize: 18)),
+      );
+    }).toList();
+  }
+
   @override
   void dispose() {
     _nameController.dispose();
     _topicPageController.dispose();
+    _logoScaleCtrl.dispose();
+    _starsCtrl.dispose();
+    _audioPlayer.dispose();
     super.dispose();
   }
 
@@ -59,14 +152,20 @@ class _HomeScreenState extends State<HomeScreen> {
       );
       return;
     }
-    Navigator.pushNamed(context, '/scanner', arguments: {
-      'playerName': name,
-      'topic': _selectedTopic,
+    Navigator.pushNamed(context, '/loading', arguments: {
+      'destination': '/scanner',
+      'arguments': {
+        'playerName': name,
+        'topic': _selectedTopic,
+      },
     });
   }
 
   void _openARDemo() {
-    Navigator.pushNamed(context, '/ar-demo');
+    Navigator.pushNamed(context, '/loading', arguments: {
+      'destination': '/ar-demo',
+      'arguments': null,
+    });
   }
 
   @override
@@ -92,30 +191,48 @@ class _HomeScreenState extends State<HomeScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   const SizedBox(height: 16),
-                  // Header
+                  // Header — tappable logo with star burst
                   Center(
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        // White outline that follows logo shape
-                        ColorFiltered(
-                          colorFilter: const ColorFilter.mode(
-                            Colors.white,
-                            BlendMode.srcIn,
-                          ),
-                          child: Image.asset(
-                            'assets/images/logo_igb.png',
-                            width: 212,
-                            height: 212,
-                          ),
+                    child: GestureDetector(
+                      onTap: _onLogoTap,
+                      child: SizedBox(
+                        width: 240,
+                        height: 240,
+                        child: Stack(
+                          alignment: Alignment.center,
+                          clipBehavior: Clip.none,
+                          children: [
+                            // Star burst overlay
+                            if (_showStars)
+                              ..._buildStars(),
+                            // Logo with bounce scale
+                            ScaleTransition(
+                              scale: _logoScale,
+                              child: Stack(
+                                alignment: Alignment.center,
+                                children: [
+                                  ColorFiltered(
+                                    colorFilter: const ColorFilter.mode(
+                                      Colors.white,
+                                      BlendMode.srcIn,
+                                    ),
+                                    child: Image.asset(
+                                      'assets/images/logo_igb.png',
+                                      width: 212,
+                                      height: 212,
+                                    ),
+                                  ),
+                                  Image.asset(
+                                    'assets/images/logo_igb.png',
+                                    width: 200,
+                                    height: 200,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ),
-                        // Original logo on top
-                        Image.asset(
-                          'assets/images/logo_igb.png',
-                          width: 200,
-                          height: 200,
-                        ),
-                      ],
+                      ),
                     ),
                   ),
                   const SizedBox(height: 32),

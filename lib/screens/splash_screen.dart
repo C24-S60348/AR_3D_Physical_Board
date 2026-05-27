@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
 
 class SplashScreen extends StatefulWidget {
@@ -8,26 +9,41 @@ class SplashScreen extends StatefulWidget {
 }
 
 class _SplashScreenState extends State<SplashScreen>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
+    with TickerProviderStateMixin {
+  late AnimationController _fadeController;
   late Animation<double> _fade;
-  late Animation<double> _scale;
+  late AnimationController _flipController;
+  late Animation<double> _flipAngle;
 
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
+
+    // Fade in
+    _fadeController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1200),
+      duration: const Duration(milliseconds: 600),
     );
-    _fade = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(parent: _controller, curve: const Interval(0, 0.7, curve: Curves.easeIn)),
-    );
-    _scale = Tween<double>(begin: 0.75, end: 1).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeOutBack),
-    );
-    _controller.forward();
-    Future.delayed(const Duration(milliseconds: 2800), _navigate);
+    _fade = CurvedAnimation(parent: _fadeController, curve: Curves.easeIn);
+    _fadeController.forward();
+
+    // Coin flip: pause → flip → pause → flip back → repeat
+    _flipController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2600),
+    )..repeat();
+
+    // Pause at front, then full spin (0 → 2π) — no stop at mirrored side
+    _flipAngle = TweenSequence<double>([
+      TweenSequenceItem(tween: ConstantTween(0.0), weight: 40),
+      TweenSequenceItem(
+        tween: Tween(begin: 0.0, end: 2 * pi)
+            .chain(CurveTween(curve: Curves.easeInOut)),
+        weight: 60,
+      ),
+    ]).animate(_flipController);
+
+    Future.delayed(const Duration(milliseconds: 3200), _navigate);
   }
 
   void _navigate() {
@@ -37,7 +53,8 @@ class _SplashScreenState extends State<SplashScreen>
 
   @override
   void dispose() {
-    _controller.dispose();
+    _fadeController.dispose();
+    _flipController.dispose();
     super.dispose();
   }
 
@@ -48,21 +65,49 @@ class _SplashScreenState extends State<SplashScreen>
       body: Center(
         child: FadeTransition(
           opacity: _fade,
-          child: ScaleTransition(
-            scale: _scale,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                ColorFiltered(
-                  colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
-                  child: Image.asset('assets/images/logo_igb.png', width: 275, height: 275),
-                ),
-                Image.asset('assets/images/logo_igb.png', width: 260, height: 260),
-              ],
-            ),
+          child: AnimatedBuilder(
+            animation: _flipAngle,
+            builder: (context, child) {
+              return Transform(
+                alignment: Alignment.center,
+                transform: Matrix4.identity()
+                  ..setEntry(3, 2, 0.001)
+                  ..rotateY(_flipAngle.value),
+                child: child,
+              );
+            },
+            child: CoinLogoWidget(size: 200),
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Shared coin logo widget used by both splash and loading screens.
+class CoinLogoWidget extends StatelessWidget {
+  final double size;
+  const CoinLogoWidget({super.key, this.size = 200});
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        ColorFiltered(
+          colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+          child: Image.asset(
+            'assets/images/logo_igb.png',
+            width: size + 14,
+            height: size + 14,
+          ),
+        ),
+        Image.asset(
+          'assets/images/logo_igb.png',
+          width: size,
+          height: size,
+        ),
+      ],
     );
   }
 }

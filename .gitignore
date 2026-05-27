@@ -44,3 +44,7 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 android/.kotlin/sessions/kotlin-compiler-2200703526758052514.salive
+node_modules/
+package.json
+package-lock.json
+invoice_igb.*

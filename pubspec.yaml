@@ -14,6 +14,7 @@ dependencies:
   vector_math: ^2.1.4
   permission_handler: ^10.4.5
   device_info_plus: ^10.1.0
+  audioplayers: ^6.1.0
 
 dependency_overrides:
   # permission_handler_android 10.x uses removed Flutter v1 embedding (PluginRegistry.Registrar).
@@ -46,3 +47,4 @@ flutter:
     - assets/imagesscan/
     - assets/models/
     - assets/images/
+    - assets/sounds/

@@ -8,6 +8,7 @@ import 'screens/scanner_screen.dart';
 import 'screens/about_screen.dart';
 import 'screens/tutorial_screen.dart';
 import 'screens/nota_screen.dart';
+import 'screens/loading_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -43,6 +44,7 @@ class IGBApp extends StatelessWidget {
         '/about': (_) => const AboutScreen(),
         '/tutorial': (_) => const TutorialScreen(),
         '/nota': (_) => const NotaScreen(),
+        '/loading': (_) => const LoadingScreen(),
       },
     );
   }
