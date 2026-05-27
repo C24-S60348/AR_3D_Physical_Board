@@ -77,7 +77,7 @@ class _HomeScreenState extends State<HomeScreen>
     _starsCtrl.forward(from: 0);
   }
 
-  /// 5 stars flying out in different directions from the logo centre.
+  /// 5 stars flying out from the logo edge outward — never over the logo face.
   List<Widget> _buildStars() {
     const directions = [
       Offset(0, -1),        // top
@@ -87,31 +87,31 @@ class _HomeScreenState extends State<HomeScreen>
       Offset(-0.9, -0.55),  // top-left
     ];
 
+    // Logo radius ~100px; stars start just outside the edge and travel further
+    const logoEdge = 100.0;
+    const travel   = 85.0;
+
     return directions.map((dir) {
       return AnimatedBuilder(
         animation: _starsCtrl,
         builder: (context, child) {
           final t = _starsCtrl.value;
-          // Fly outward 110px
-          final dx = dir.dx * 110 * t;
-          final dy = dir.dy * 110 * t;
-          // Fully visible from start, fade out in last 35%
-          final opacity = t < 0.65 ? 1.0 : (1.0 - (t - 0.65) / 0.35).clamp(0.0, 1.0);
-          // Pop in: small → full size quickly
-          final scale = (t * 2.5).clamp(0.0, 1.0).toDouble();
+          // Start at logo edge, move outward
+          final dist = logoEdge + travel * t;
+          final dx = dir.dx * dist;
+          final dy = dir.dy * dist;
+          // Fade out in last 40%
+          final opacity = t < 0.6 ? 1.0 : (1.0 - (t - 0.6) / 0.4).clamp(0.0, 1.0);
 
           return Transform.translate(
             offset: Offset(dx, dy),
             child: Opacity(
               opacity: opacity,
-              child: Transform.scale(
-                scale: scale,
-                child: child,
-              ),
+              child: child,
             ),
           );
         },
-        child: const Text('⭐', style: TextStyle(fontSize: 26)),
+        child: const Text('⭐', style: TextStyle(fontSize: 16)),
       );
     }).toList();
   }
