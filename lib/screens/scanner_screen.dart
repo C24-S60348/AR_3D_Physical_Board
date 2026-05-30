@@ -175,6 +175,15 @@ class _ScannerScreenState extends State<ScannerScreen>
     });
   }
 
+  void _showSoalSelidik(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => const _SoalSelidikSheet(),
+    );
+  }
+
   void _dismissQuestion() {
     _cardAnimController.reverse().then((_) {
       if (mounted) {
@@ -222,12 +231,26 @@ class _ScannerScreenState extends State<ScannerScreen>
               ),
             ),
 
-          // Score badge
+          // Soal Selidik button
           if (!_showingFlipCard && !_showingQuestion)
             Positioned(
               top: 16,
               right: 16,
-              child: _ScoreBadge(score: _score, total: _questionsAnswered),
+              child: GestureDetector(
+                onTap: () => _showSoalSelidik(context),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 6, offset: Offset(0, 2))],
+                  ),
+                  child: const Text(
+                    'Soal Selidik',
+                    style: TextStyle(color: _red, fontWeight: FontWeight.w700, fontSize: 13),
+                  ),
+                ),
+              ),
             ),
 
           // Scan instruction
@@ -757,27 +780,333 @@ class _QuestionOverlay extends StatelessWidget {
   }
 }
 
-// ── Score badge ───────────────────────────────────────────────────────────────
+// ── Soal Selidik Sheet ────────────────────────────────────────────────────────
 
-class _ScoreBadge extends StatelessWidget {
-  final int score;
-  final int total;
+class _SoalSelidikSheet extends StatefulWidget {
+  const _SoalSelidikSheet();
 
-  const _ScoreBadge({required this.score, required this.total});
+  @override
+  State<_SoalSelidikSheet> createState() => _SoalSelidikSheetState();
+}
+
+class _SoalSelidikSheetState extends State<_SoalSelidikSheet> {
+  static const _red = Color(0xFF8B1A1A);
+
+  // Section 1 — Maklumat Responden
+  int? _status;       // 0=Pelajar 1=Guru 2=Pelancong 3=Lain-lain
+  int? _ageGroup;     // 0=7-12  1=13-17  2=18-25  3=26+
+
+  // Section 2 — Pengalaman App
+  int? _easiness;     // 0=Sangat Mudah … 3=Sukar
+  int? _arExperience; // 0=Sangat Menarik … 3=Tidak Menarik
+  int? _questionFit;  // 0=Sangat Sesuai … 3=Tidak Sesuai
+
+  // Section 3 — Penilaian & Cadangan
+  int _starRating = 0;
+  final _commentCtrl = TextEditingController();
+
+  bool _submitted = false;
+
+  @override
+  void dispose() {
+    _commentCtrl.dispose();
+    super.dispose();
+  }
+
+  bool get _canSubmit =>
+      _status != null &&
+      _ageGroup != null &&
+      _easiness != null &&
+      _arExperience != null &&
+      _questionFit != null &&
+      _starRating > 0;
+
+  void _submit() {
+    if (!_canSubmit) return;
+    setState(() => _submitted = true);
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.15),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white30),
+    return DraggableScrollableSheet(
+      initialChildSize: 0.9,
+      maxChildSize: 0.95,
+      minChildSize: 0.5,
+      builder: (_, scrollCtrl) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          children: [
+            // Handle bar
+            Container(
+              margin: const EdgeInsets.only(top: 10, bottom: 4),
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
+            ),
+            // Header
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+              decoration: const BoxDecoration(
+                color: _red,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.assignment_rounded, color: Colors.white, size: 22),
+                  const SizedBox(width: 10),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Soal Selidik i.-GB',
+                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16)),
+                        Text('Maklum balas anda amat kami hargai',
+                            style: TextStyle(color: Colors.white70, fontSize: 11)),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close, color: Colors.white70),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+            ),
+            // Body
+            Expanded(
+              child: _submitted ? _buildThankYou() : _buildForm(scrollCtrl),
+            ),
+          ],
+        ),
       ),
-      child: Text(
-        total == 0 ? '🏆 0' : '🏆 $score/$total',
-        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 13),
+    );
+  }
+
+  Widget _buildForm(ScrollController scrollCtrl) {
+    return ListView(
+      controller: scrollCtrl,
+      padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
+      children: [
+        // ── Section 1: Maklumat Responden ─────────────────────────────────
+        _sectionTitle('📋 Bahagian A — Maklumat Responden'),
+        const SizedBox(height: 12),
+
+        _questionLabel('1. Apakah status anda?', required: true),
+        _radioGroup(
+          options: ['Pelajar', 'Guru / Pendidik', 'Pelancong', 'Lain-lain'],
+          selected: _status,
+          onChanged: (v) => setState(() => _status = v),
+        ),
+
+        _questionLabel('2. Peringkat umur anda?', required: true),
+        _radioGroup(
+          options: ['7 – 12 tahun', '13 – 17 tahun', '18 – 25 tahun', '26 tahun ke atas'],
+          selected: _ageGroup,
+          onChanged: (v) => setState(() => _ageGroup = v),
+        ),
+
+        const Divider(height: 32),
+
+        // ── Section 2: Pengalaman Menggunakan App ─────────────────────────
+        _sectionTitle('📱 Bahagian B — Pengalaman Menggunakan App'),
+        const SizedBox(height: 12),
+
+        _questionLabel('3. Adakah app i.-GB mudah digunakan?', required: true),
+        _radioGroup(
+          options: ['Sangat Mudah', 'Mudah', 'Sederhana', 'Sukar'],
+          selected: _easiness,
+          onChanged: (v) => setState(() => _easiness = v),
+        ),
+
+        _questionLabel('4. Adakah pengalaman AR (Augmented Reality) menarik?', required: true),
+        _radioGroup(
+          options: ['Sangat Menarik', 'Menarik', 'Biasa-biasa Sahaja', 'Tidak Menarik'],
+          selected: _arExperience,
+          onChanged: (v) => setState(() => _arExperience = v),
+        ),
+
+        _questionLabel('5. Adakah soalan dalam app sesuai dengan topik?', required: true),
+        _radioGroup(
+          options: ['Sangat Sesuai', 'Sesuai', 'Kurang Sesuai', 'Tidak Sesuai'],
+          selected: _questionFit,
+          onChanged: (v) => setState(() => _questionFit = v),
+        ),
+
+        const Divider(height: 32),
+
+        // ── Section 3: Penilaian & Cadangan ──────────────────────────────
+        _sectionTitle('⭐ Bahagian C — Penilaian & Cadangan'),
+        const SizedBox(height: 12),
+
+        _questionLabel('6. Penilaian keseluruhan app i.-GB:', required: true),
+        const SizedBox(height: 8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(5, (i) {
+            final filled = i < _starRating;
+            return GestureDetector(
+              onTap: () => setState(() => _starRating = i + 1),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 6),
+                child: Icon(
+                  filled ? Icons.star_rounded : Icons.star_outline_rounded,
+                  color: filled ? Colors.amber : Colors.grey.shade400,
+                  size: 40,
+                ),
+              ),
+            );
+          }),
+        ),
+        if (_starRating > 0)
+          Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: Text(
+              ['', 'Sangat Buruk', 'Buruk', 'Sederhana', 'Baik', 'Sangat Baik'][_starRating],
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                color: _starRating >= 4 ? Colors.green.shade700 : _starRating == 3 ? Colors.orange : Colors.red.shade700,
+                fontWeight: FontWeight.w600,
+                fontSize: 13,
+              ),
+            ),
+          ),
+        const SizedBox(height: 20),
+
+        _questionLabel('7. Cadangan atau komen anda: (Pilihan)'),
+        const SizedBox(height: 8),
+        TextField(
+          controller: _commentCtrl,
+          maxLines: 3,
+          decoration: InputDecoration(
+            hintText: 'Tulis cadangan anda di sini...',
+            hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 13),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
+            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: _red)),
+            contentPadding: const EdgeInsets.all(12),
+          ),
+        ),
+
+        const SizedBox(height: 28),
+
+        // Submit button
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton(
+            onPressed: _canSubmit ? _submit : null,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: _red,
+              disabledBackgroundColor: Colors.grey.shade300,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: Text(
+              _canSubmit ? 'Hantar Maklum Balas' : 'Sila lengkapkan semua soalan (★)',
+              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildThankYou() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('🎉', style: TextStyle(fontSize: 64)),
+            const SizedBox(height: 16),
+            const Text('Terima Kasih!',
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: _red)),
+            const SizedBox(height: 10),
+            Text(
+              'Maklum balas anda telah berjaya dihantar.\nPenilaian anda: ${'⭐' * _starRating}',
+              textAlign: TextAlign.center,
+              style: const TextStyle(fontSize: 14, color: Colors.black54, height: 1.5),
+            ),
+            const SizedBox(height: 32),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _red,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: const Text('Tutup', style: TextStyle(fontWeight: FontWeight.w700)),
+            ),
+          ],
+        ),
       ),
+    );
+  }
+
+  Widget _sectionTitle(String text) {
+    return Text(text,
+        style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: _red));
+  }
+
+  Widget _questionLabel(String text, {bool required = false}) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 16, bottom: 6),
+      child: RichText(
+        text: TextSpan(
+          text: text,
+          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.black87),
+          children: required
+              ? [const TextSpan(text: ' *', style: TextStyle(color: _red))]
+              : [],
+        ),
+      ),
+    );
+  }
+
+  Widget _radioGroup({
+    required List<String> options,
+    required int? selected,
+    required void Function(int) onChanged,
+  }) {
+    return Column(
+      children: List.generate(options.length, (i) {
+        final isSelected = selected == i;
+        return GestureDetector(
+          onTap: () => onChanged(i),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 150),
+            margin: const EdgeInsets.only(bottom: 6),
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: isSelected ? _red.withOpacity(0.08) : Colors.grey.shade50,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: isSelected ? _red : Colors.grey.shade200),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  isSelected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+                  color: isSelected ? _red : Colors.grey.shade400,
+                  size: 20,
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(options[i],
+                      style: TextStyle(
+                          fontSize: 13,
+                          color: isSelected ? _red : Colors.black87,
+                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal)),
+                ),
+              ],
+            ),
+          ),
+        );
+      }),
     );
   }
 }
