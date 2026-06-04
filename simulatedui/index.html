@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>i.-GB — Simulated UI Gallery</title>
+<style>
+* { box-sizing: border-box; margin:0; padding:0; }
+body { background:#1a1a1a; font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+        color:#eee; min-height:100vh; padding:40px 24px; }
+h1 { text-align:center; font-size:28px; font-weight:800; margin-bottom:6px;
+     background: linear-gradient(135deg, #B8860B, #FFD700);
+     -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
+.subtitle { text-align:center; color:#888; font-size:14px; margin-bottom:36px; }
+.grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr));
+         gap:20px; max-width:900px; margin:0 auto; }
+.card { background:#252525; border:1px solid #333; border-radius:16px;
+         padding:20px; display:flex; gap:16px; align-items:flex-start;
+         cursor:pointer; transition:transform 0.15s, border-color 0.15s; }
+.card:hover { transform:translateY(-3px); border-color:#B8860B; }
+.phone-icon { flex-shrink:0; }
+.pi-frame { width:36px; height:64px; border:3px solid #555; border-radius:8px;
+             background:#111; display:flex; flex-direction:column;
+             align-items:center; justify-content:center; padding:4px; }
+.pi-screen { width:100%; flex:1; background:#8B1A1A; border-radius:3px; }
+.card-body { flex:1; }
+.card-name { font-weight:700; font-size:15px; color:#fff; margin-bottom:4px; }
+.card-desc { font-size:12px; color:#999; line-height:1.5; margin-bottom:10px; }
+.open-btn { display:inline-block; background:#8B1A1A; color:#fff; padding:5px 14px;
+             border-radius:6px; font-size:12px; font-weight:700; text-decoration:none; }
+.open-btn:hover { background:#B8860B; }
+</style>
+</head>
+<body>
+<h1>i.-GB — Simulated UI Gallery</h1>
+<p class="subtitle">11 app screens · Standalone HTML · Interactive simulations</p>
+<div class="grid">
+
+      <div class="card" onclick="location.href='01_splash.html'">
+        <div class="phone-icon">
+          <div class="pi-frame"><div class="pi-screen"></div></div>
+        </div>
+        <div class="card-body">
+          <div class="card-name">01 Splash</div>
+          <div class="card-desc">Auto-navigate to Home. Logo coin-flip animation.</div>
+          <a href="01_splash.html" class="open-btn">Open →</a>
+        </div>
+      </div>
+      <div class="card" onclick="location.href='02_loading.html'">
+        <div class="phone-icon">
+          <div class="pi-frame"><div class="pi-screen"></div></div>
+        </div>
+        <div class="card-body">
+          <div class="card-name">02 Loading</div>
+          <div class="card-desc">Topic image flipping while app loads.</div>
+          <a href="02_loading.html" class="open-btn">Open →</a>
+        </div>
+      </div>
+      <div class="card" onclick="location.href='03_home.html'">
+        <div class="phone-icon">
+          <div class="pi-frame"><div class="pi-screen"></div></div>
+        </div>
+        <div class="card-body">
+          <div class="card-name">03 Home</div>
+          <div class="card-desc">Player name, topic picker, start game.</div>
+          <a href="03_home.html" class="open-btn">Open →</a>
+        </div>
+      </div>
+      <div class="card" onclick="location.href='04_tutorial.html'">
+        <div class="phone-icon">
+          <div class="pi-frame"><div class="pi-screen"></div></div>
+        </div>
+        <div class="card-body">
+          <div class="card-name">04 Tutorial</div>
+          <div class="card-desc">4-step walkthrough with illustrations.</div>
+          <a href="04_tutorial.html" class="open-btn">Open →</a>
+        </div>
+      </div>
+      <div class="card" onclick="location.href='05_scanner.html'">
+        <div class="phone-icon">
+          <div class="pi-frame"><div class="pi-screen"></div></div>
+        </div>
+        <div class="card-body">
+          <div class="card-name">05 Scanner</div>
+          <div class="card-desc">Camera view with AR scan viewfinder.</div>
+          <a href="05_scanner.html" class="open-btn">Open →</a>
+        </div>
+      </div>
+      <div class="card" onclick="location.href='06_flipcard.html'">
+        <div class="phone-icon">
+          <div class="pi-frame"><div class="pi-screen"></div></div>
+        </div>
+        <div class="card-body">
+          <div class="card-name">06 Flip Card</div>
+          <div class="card-desc">3D flip card revealing landmark info.</div>
+          <a href="06_flipcard.html" class="open-btn">Open →</a>
+        </div>
+      </div>
+      <div class="card" onclick="location.href='07_question.html'">
+        <div class="phone-icon">
+          <div class="pi-frame"><div class="pi-screen"></div></div>
+        </div>
+        <div class="card-body">
+          <div class="card-name">07 Question MCQ</div>
+          <div class="card-desc">Multiple-choice question with feedback.</div>
+          <a href="07_question.html" class="open-btn">Open →</a>
+        </div>
+      </div>
+      <div class="card" onclick="location.href='08_soalselidik.html'">
+        <div class="phone-icon">
+          <div class="pi-frame"><div class="pi-screen"></div></div>
+        </div>
+        <div class="card-body">
+          <div class="card-name">08 Soal Selidik</div>
+          <div class="card-desc">Survey / questionnaire bottom sheet.</div>
+          <a href="08_soalselidik.html" class="open-btn">Open →</a>
+        </div>
+      </div>
+      <div class="card" onclick="location.href='09_gameboard.html'">
+        <div class="phone-icon">
+          <div class="pi-frame"><div class="pi-screen"></div></div>
+        </div>
+        <div class="card-body">
+          <div class="card-name">09 Game Board</div>
+          <div class="card-desc">5×6 snakes-and-ladders board game.</div>
+          <a href="09_gameboard.html" class="open-btn">Open →</a>
+        </div>
+      </div>
+      <div class="card" onclick="location.href='10_nota.html'">
+        <div class="phone-icon">
+          <div class="pi-frame"><div class="pi-screen"></div></div>
+        </div>
+        <div class="card-body">
+          <div class="card-name">10 Nota</div>
+          <div class="card-desc">Reference notes: Melaka places + game tips.</div>
+          <a href="10_nota.html" class="open-btn">Open →</a>
+        </div>
+      </div>
+      <div class="card" onclick="location.href='11_about.html'">
+        <div class="phone-icon">
+          <div class="pi-frame"><div class="pi-screen"></div></div>
+        </div>
+        <div class="card-body">
+          <div class="card-name">11 About</div>
+          <div class="card-desc">App info and team credits.</div>
+          <a href="11_about.html" class="open-btn">Open →</a>
+        </div>
+      </div>
+</div>
+</body>
+</html>
