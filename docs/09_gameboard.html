@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Game Board — i.-GB Simulated UI</title>
+<style>
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #1a1a1a; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+       display: flex; flex-direction: column; align-items: center; min-height: 100vh;
+       padding: 24px 16px; }
+.phone-wrap { display:flex; justify-content:center; }
+.phone {
+  width: 390px;
+  min-height: 844px;
+  border: 6px solid #222;
+  border-radius: 48px;
+  background: #111;
+  box-shadow: 0 0 0 2px #333, 0 24px 60px rgba(0,0,0,.8), inset 0 0 0 1px #444;
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+.status-bar {
+  background: #8B1A1A;
+  padding: 12px 20px 6px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: white;
+  font-size: 12px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.screen {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  position: relative;
+}
+.home-indicator {
+  height: 20px;
+  background: #1a1a1a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.home-indicator::after {
+  content: '';
+  width: 120px; height: 4px;
+  background: #555;
+  border-radius: 2px;
+}
+
+
+.gb-wrap { display:flex; flex-direction:column; min-height:780px; background:#1a0a00; }
+.gb-appbar { background:#8B1A1A; padding:10px 14px; display:flex;
+             justify-content:space-between; align-items:center; flex-shrink:0; }
+.gb-title { color:white; font-weight:800; font-size:15px; }
+.gb-score-top { color:#FFB300; font-weight:700; font-size:14px; }
+.gb-msg { background:#2a1500; padding:8px 14px; flex-shrink:0; }
+.gb-msg-text { color:#FFB300; font-size:12px; text-align:center; }
+.gb-board { flex:1; padding:8px; display:flex; flex-direction:column; gap:3px; justify-content:center; }
+.gb-row { display:flex; gap:3px; }
+.gb-sq { flex:1; min-height:55px; border-radius:6px; display:flex; flex-direction:column;
+         align-items:center; justify-content:center; cursor:pointer; transition:opacity .2s;
+         border:1.5px solid rgba(255,255,255,.1); position:relative; padding:2px; }
+.gb-sq:hover { opacity:.85; }
+.gb-sq.player { border:2.5px solid #FFB300 !important; box-shadow:0 0 10px #FFB30066; }
+.sq-num  { font-size:8px; color:rgba(255,255,255,.5); position:absolute; top:2px; left:4px; }
+.sq-emoji { font-size:14px; line-height:1; }
+.sq-name  { font-size:7px; color:rgba(255,255,255,.7); text-align:center; word-break:break-all; margin-top:1px; }
+.gb-controls { background:#2a1500; padding:10px 14px; display:flex;
+               justify-content:space-between; align-items:center; flex-shrink:0; }
+.score-info { color:white; font-size:12px; }
+.dice-btn { background:#8B1A1A; border:2px solid #B8860B; border-radius:50%;
+            width:56px; height:56px; font-size:24px; cursor:pointer; color:white;
+            display:flex; align-items:center; justify-content:center;
+            box-shadow:0 4px 14px rgba(0,0,0,.4); transition:transform .15s; }
+.dice-btn:active { transform:scale(.92); }
+/* Popup */
+.popup { position:fixed; inset:0; background:rgba(0,0,0,.75); display:none;
+         align-items:center; justify-content:center; z-index:200; }
+.popup.show { display:flex; }
+.popup-box { background:white; border-radius:16px; padding:20px; max-width:280px; width:90%;
+             box-shadow:0 20px 60px rgba(0,0,0,.5); }
+.popup-title { font-weight:800; font-size:16px; color:#1a1a1a; margin-bottom:10px; }
+.popup-body  { font-size:13px; color:#555; margin-bottom:16px; line-height:1.6; }
+.popt-btn { width:100%; background:#f5f5f5; border:1.5px solid #e0e0e0;
+            border-radius:8px; padding:9px; font-size:12px; text-align:left;
+            cursor:pointer; margin-bottom:6px; font-family:inherit; }
+.popt-btn:hover:not(:disabled) { border-color:#8B1A1A; }
+.popt-btn.pcorrect { background:#E8F5E9; border-color:#4CAF50; font-weight:700; }
+.popt-btn.pwrong   { background:#FFEBEE; border-color:#f44336; }
+.popup-close { background:#8B1A1A; color:white; border:none; border-radius:10px;
+               padding:9px 20px; font-size:13px; font-weight:700; cursor:pointer; float:right; }
+
+</style>
+
+</head>
+<body>
+<div style="text-align:center;margin-bottom:12px">
+  <a href="index.html" style="color:#888;font-size:13px;text-decoration:none">← Back to Index</a>
+</div>
+<div class="phone-wrap">
+  <div class="phone">
+    <div class="status-bar">
+      <span>9:41</span>
+      <span style="display:flex;gap:4px;align-items:center">
+        <svg width="14" height="10" viewBox="0 0 14 10" fill="white">
+          <path d="M7 2C9.2 2 11.2 2.9 12.6 4.4L14 3C12.2 1.1 9.7 0 7 0S1.8 1.1 0 3l1.4 1.4C2.8 2.9 4.8 2 7 2z"/>
+          <path d="M7 6c1.1 0 2.1.5 2.8 1.2L11.2 5.8C10.1 4.7 8.6 4 7 4s-3.1.7-4.2 1.8l1.4 1.4C4.9 6.5 5.9 6 7 6z"/>
+          <circle cx="7" cy="9" r="1"/>
+        </svg>
+        <svg width="22" height="10" viewBox="0 0 22 10" fill="none">
+          <rect x="0.5" y="0.5" width="18" height="9" rx="2" stroke="white" stroke-opacity="0.5"/>
+          <rect x="1.5" y="1.5" width="14" height="7" rx="1.5" fill="white"/>
+          <path d="M20 3.5v3a1.5 1.5 0 000-3z" fill="white" opacity="0.4"/>
+        </svg>
+      </span>
+    </div>
+    <div class="screen">
+<div class="gb-wrap">
+  <div class="gb-appbar">
+    <a href="03_home.html" style="color:white;font-size:18px;text-decoration:none">←</a>
+    <div class="gb-title">i.-GB — Ahmad</div>
+    <div class="gb-score-top" id="scoreTop">🏆 0</div>
+  </div>
+  <div class="gb-msg"><div class="gb-msg-text" id="msgText">Selamat datang, Ahmad! Tekan dadu untuk mula.</div></div>
+  <div class="gb-board">
+<div class="gb-row"><div class="gb-sq" id="sq25" style="background:#1B4A1B" onclick="sqClick(25)" title="TANGGA"><div class="sq-num">25</div><div class="sq-emoji">🪜</div><div class="sq-name">TANGGA</div></div><div class="gb-sq" id="sq26" style="background:#2a1500" onclick="sqClick(26)" title="Zoo Melaka"><div class="sq-num">26</div><div class="sq-emoji">🦁</div><div class="sq-name">Zoo Me</div></div><div class="gb-sq" id="sq27" style="background:#1A237E" onclick="sqClick(27)" title="SOALAN"><div class="sq-num">27</div><div class="sq-emoji">❓</div><div class="sq-name">SOALAN</div></div><div class="gb-sq" id="sq28" style="background:#2a1500" onclick="sqClick(28)" title="Pantai Klebang"><div class="sq-num">28</div><div class="sq-emoji">🏖️</div><div class="sq-name">Pantai</div></div><div class="gb-sq" id="sq29" style="background:#2a1500" onclick="sqClick(29)" title="Muzium Negeri"><div class="sq-num">29</div><div class="sq-emoji">🏛️</div><div class="sq-name">Muzium</div></div><div class="gb-sq" id="sq30" style="background:#B8860B" onclick="sqClick(30)" title="TAMAT!"><div class="sq-num">30</div><div class="sq-emoji">🏆</div><div class="sq-name">TAMAT!</div></div></div><div class="gb-row"><div class="gb-sq" id="sq24" style="background:#1A237E" onclick="sqClick(24)" title="SOALAN"><div class="sq-num">24</div><div class="sq-emoji">❓</div><div class="sq-name">SOALAN</div></div><div class="gb-sq" id="sq23" style="background:#2a1500" onclick="sqClick(23)" title="Taman Bunga"><div class="sq-num">23</div><div class="sq-emoji">🌺</div><div class="sq-name">Taman </div></div><div class="gb-sq" id="sq22" style="background:#7B1818" onclick="sqClick(22)" title="Istana Lama"><div class="sq-num">22</div><div class="sq-emoji">🐍</div><div class="sq-name">Istana</div></div><div class="gb-sq" id="sq21" style="background:#1A237E" onclick="sqClick(21)" title="SOALAN"><div class="sq-num">21</div><div class="sq-emoji">❓</div><div class="sq-name">SOALAN</div></div><div class="gb-sq" id="sq20" style="background:#2a1500" onclick="sqClick(20)" title="Proklamasi"><div class="sq-num">20</div><div class="sq-emoji">🏛️</div><div class="sq-name">Prokla</div></div><div class="gb-sq" id="sq19" style="background:#2a1500" onclick="sqClick(19)" title="Masjid Selat"><div class="sq-num">19</div><div class="sq-emoji">🕌</div><div class="sq-name">Masjid</div></div></div><div class="gb-row"><div class="gb-sq" id="sq13" style="background:#2a1500" onclick="sqClick(13)" title="Taming Sari"><div class="sq-num">13</div><div class="sq-emoji">🗼</div><div class="sq-name">Taming</div></div><div class="gb-sq" id="sq14" style="background:#2a1500" onclick="sqClick(14)" title="Melaka Eye"><div class="sq-num">14</div><div class="sq-emoji">🎡</div><div class="sq-name">Melaka</div></div><div class="gb-sq" id="sq15" style="background:#2a1500" onclick="sqClick(15)" title="Cheng Hoon"><div class="sq-num">15</div><div class="sq-emoji">🛕</div><div class="sq-name">Cheng </div></div><div class="gb-sq" id="sq16" style="background:#1A237E" onclick="sqClick(16)" title="SOALAN"><div class="sq-num">16</div><div class="sq-emoji">❓</div><div class="sq-name">SOALAN</div></div><div class="gb-sq" id="sq17" style="background:#2a1500" onclick="sqClick(17)" title="Masjid Kling"><div class="sq-num">17</div><div class="sq-emoji">🕌</div><div class="sq-name">Masjid</div></div><div class="gb-sq" id="sq18" style="background:#7B1818" onclick="sqClick(18)" title="ULAR!"><div class="sq-num">18</div><div class="sq-emoji">🐍</div><div class="sq-name">ULAR!</div></div></div><div class="gb-row"><div class="gb-sq" id="sq12" style="background:#1A237E" onclick="sqClick(12)" title="SOALAN"><div class="sq-num">12</div><div class="sq-emoji">❓</div><div class="sq-name">SOALAN</div></div><div class="gb-sq" id="sq11" style="background:#1B4A1B" onclick="sqClick(11)" title="TANGGA"><div class="sq-num">11</div><div class="sq-emoji">🪜</div><div class="sq-name">TANGGA</div></div><div class="gb-sq" id="sq10" style="background:#2a1500" onclick="sqClick(10)" title="Bukit St.Paul"><div class="sq-num">10</div><div class="sq-emoji">⛰️</div><div class="sq-name">Bukit </div></div><div class="gb-sq" id="sq9" style="background:#2a1500" onclick="sqClick(9)" title="A-Famosa"><div class="sq-num">9</div><div class="sq-emoji">🏰</div><div class="sq-name">A-Famo</div></div><div class="gb-sq" id="sq8" style="background:#1A237E" onclick="sqClick(8)" title="SOALAN"><div class="sq-num">8</div><div class="sq-emoji">❓</div><div class="sq-name">SOALAN</div></div><div class="gb-sq" id="sq7" style="background:#2a1500" onclick="sqClick(7)" title="Sungai Melaka"><div class="sq-num">7</div><div class="sq-emoji">🚤</div><div class="sq-name">Sungai</div></div></div><div class="gb-row"><div class="gb-sq" id="sq1" style="background:#1B5E20" onclick="sqClick(1)" title="MULA"><div class="sq-num">1</div><div class="sq-emoji">🚩</div><div class="sq-name">MULA</div></div><div class="gb-sq" id="sq2" style="background:#2a1500" onclick="sqClick(2)" title="Stadthuys"><div class="sq-num">2</div><div class="sq-emoji">🏛️</div><div class="sq-name">Stadth</div></div><div class="gb-sq" id="sq3" style="background:#2a1500" onclick="sqClick(3)" title="Gereja Christ"><div class="sq-num">3</div><div class="sq-emoji">⛪</div><div class="sq-name">Gereja</div></div><div class="gb-sq" id="sq4" style="background:#1A237E" onclick="sqClick(4)" title="SOALAN"><div class="sq-num">4</div><div class="sq-emoji">❓</div><div class="sq-name">SOALAN</div></div><div class="gb-sq" id="sq5" style="background:#7B1818" onclick="sqClick(5)" title="Jalan Jonker"><div class="sq-num">5</div><div class="sq-emoji">🐍</div><div class="sq-name">Jalan </div></div><div class="gb-sq" id="sq6" style="background:#2a1500" onclick="sqClick(6)" title="Baba Nyonya"><div class="sq-num">6</div><div class="sq-emoji">🎎</div><div class="sq-name">Baba N</div></div></div>
+  </div>
+  <div class="gb-controls">
+    <div class="score-info">
+      <div id="posInfo" style="color:#FFB300;font-weight:700">Petak: 1</div>
+      <div id="rollInfo" style="color:rgba(255,255,255,.6)">Dadu: -</div>
+      <div id="correctInfo" style="color:#4CAF50">Betul: 0</div>
+    </div>
+    <button class="dice-btn" id="diceBtn" onclick="rollDice()">🎲</button>
+  </div>
+</div>
+<!-- Question popup -->
+<div class="popup" id="qPopup">
+  <div class="popup-box">
+    <div class="popup-title" id="pTitle">Soalan</div>
+    <div class="popup-body" id="pBody"></div>
+    <div id="pOpts"></div>
+    <div id="pFeedback" style="display:none;margin-bottom:10px;font-size:12px;font-weight:600"></div>
+    <button class="popup-close" id="pCloseBtn" style="display:none" onclick="closeQPopup()">Teruskan</button>
+  </div>
+</div>
+<!-- Game over popup -->
+<div class="popup" id="goPopup">
+  <div class="popup-box" style="text-align:center">
+    <div style="font-size:40px;margin-bottom:10px">🏆</div>
+    <div class="popup-title" style="font-size:20px;color:#B8860B">Permainan Tamat!</div>
+    <div class="popup-body" id="goBody"></div>
+    <a href="03_home.html"><button style="background:#8B1A1A;color:white;border:none;border-radius:10px;padding:10px 24px;font-size:14px;font-weight:700;cursor:pointer;margin-right:8px">Menu</button></a>
+    <button onclick="restartGame()" style="background:#B8860B;color:white;border:none;border-radius:10px;padding:10px 24px;font-size:14px;font-weight:700;cursor:pointer">Main Semula</button>
+  </div>
+</div>
+<script>
+var snakes = {"5": 1, "18": 7, "22": 14};
+var ladders = {"11": 20, "25": 29};
+var qs = [{"q": "Siapakah pengasas Kesultanan Melaka?", "opts": ["Parameswara", "Sultan Mahmud", "Hang Tuah", "Tun Perak"], "correct": 0}, {"q": "Pada tahun berapa Portugis menakluki Melaka?", "opts": ["1511", "1641", "1824", "1957"], "correct": 0}, {"q": "Apakah warna Stadthuys yang terkenal?", "opts": ["Merah", "Putih", "Kuning", "Biru"], "correct": 0}, {"q": "Apakah kenderaan ikonik Melaka?", "opts": ["Beca", "Kereta lembu", "Bot nelayan", "Monorail"], "correct": 0}];
+var pos = 1;
+var score = 0;
+var correct = 0;
+var pAnswered = false;
+var pCorrectIdx = 0;
+
+function markPlayer() {
+  document.querySelectorAll('.gb-sq').forEach(function(el){ el.classList.remove('player'); });
+  var el = document.getElementById('sq'+pos);
+  if (el) {
+    el.classList.add('player');
+    el.innerHTML = el.innerHTML.replace(/<.*>.*<\/.*>/s, '');
+    el.innerHTML = '<div class="sq-num">'+pos+'</div><div class="sq-emoji">🧑</div><div class="sq-name">Kamu</div>';
+  }
+  document.getElementById('posInfo').textContent = 'Petak: '+pos;
+  document.getElementById('scoreTop').textContent = '🏆 ' + score;
+  document.getElementById('correctInfo').textContent = 'Betul: ' + correct;
+}
+
+function rollDice() {
+  var btn = document.getElementById('diceBtn');
+  btn.disabled = true;
+  var roll = Math.floor(Math.random()*6)+1;
+  document.getElementById('rollInfo').textContent = 'Dadu: ' + roll;
+  btn.textContent = roll;
+  var newPos = pos + roll;
+  if (newPos > 30) newPos = 30 - (newPos - 30);
+  pos = newPos;
+  markPlayer();
+  setTimeout(function() {
+    handleSquare();
+    btn.disabled = false;
+    btn.textContent = '🎲';
+  }, 600);
+}
+
+function handleSquare() {
+  if (pos === 30) {
+    document.getElementById('goBody').innerHTML = '<b>Ahmad</b><br>Markah: <b>'+score+'</b><br>Betul: '+correct;
+    document.getElementById('goPopup').classList.add('show');
+    return;
+  }
+  if (snakes[pos]) {
+    var to = snakes[pos];
+    document.getElementById('msgText').textContent = '🐍 ULAR! Turun ke petak ' + to + '!';
+    setTimeout(function(){ pos = to; markPlayer(); }, 500);
+    return;
+  }
+  if (ladders[pos]) {
+    var to2 = ladders[pos];
+    document.getElementById('msgText').textContent = '🪜 TANGGA! Naik ke petak ' + to2 + '!';
+    setTimeout(function(){ pos = to2; markPlayer(); }, 500);
+    return;
+  }
+  // Check if question square
+  var qSqs = [4,8,12,16,21,24,27];
+  if (qSqs.indexOf(pos) >= 0) {
+    showQuestion();
+    return;
+  }
+  document.getElementById('msgText').textContent = 'Petak ' + pos + ' — teruskan permainan!';
+}
+
+function showQuestion() {
+  var q = qs[Math.floor(Math.random()*qs.length)];
+  pAnswered = false;
+  pCorrectIdx = q.correct;
+  document.getElementById('pTitle').textContent = '❓ Soalan — Petak ' + pos;
+  document.getElementById('pBody').textContent = q.q;
+  var labels = ['A','B','C','D'];
+  var html = '';
+  q.opts.forEach(function(o,i) {
+    html += '<button class="popt-btn" id="popt'+i+'" onclick="answerQ('+i+','+q.correct+')">' + labels[i] + '. ' + o + '</button>';
+  });
+  document.getElementById('pOpts').innerHTML = html;
+  document.getElementById('pFeedback').style.display = 'none';
+  document.getElementById('pCloseBtn').style.display = 'none';
+  document.getElementById('qPopup').classList.add('show');
+}
+
+function answerQ(idx, correctIdx) {
+  if (pAnswered) return;
+  pAnswered = true;
+  var btns = document.querySelectorAll('.popt-btn');
+  btns.forEach(function(b){ b.disabled = true; });
+  var fb = document.getElementById('pFeedback');
+  if (idx === correctIdx) {
+    btns[idx].classList.add('pcorrect');
+    score += 10; correct++;
+    fb.textContent = '✅ Betul! +10 Markah!';
+    fb.style.color = '#2E7D32';
+    document.getElementById('msgText').textContent = '✅ Betul! +10 mata!';
+  } else {
+    btns[idx].classList.add('pwrong');
+    btns[correctIdx].classList.add('pcorrect');
+    fb.textContent = '❌ Salah.';
+    fb.style.color = '#C62828';
+    document.getElementById('msgText').textContent = '❌ Salah. Cuba lagi!';
+  }
+  fb.style.display = 'block';
+  document.getElementById('pCloseBtn').style.display = 'block';
+  document.getElementById('scoreTop').textContent = '🏆 ' + score;
+  document.getElementById('correctInfo').textContent = 'Betul: ' + correct;
+}
+
+function closeQPopup() {
+  document.getElementById('qPopup').classList.remove('show');
+}
+
+function sqClick(id) {
+  document.getElementById('msgText').textContent = 'Petak ' + id + ' — ' + (id===pos?'Kamu berada di sini!':'Bukan petak kamu');
+}
+
+function restartGame() {
+  pos=1; score=0; correct=0;
+  document.getElementById('goPopup').classList.remove('show');
+  document.getElementById('rollInfo').textContent = 'Dadu: -';
+  markPlayer();
+  document.getElementById('msgText').textContent = 'Main semula! Tekan dadu untuk mula.';
+}
+
+markPlayer();
+</script>
+    </div>
+    <div class="home-indicator"></div>
+  </div>
+</div>
+<div style="max-width:390px;margin:20px auto;color:#aaa;font-size:13px;line-height:1.7;padding:0 8px">
+  <strong style="color:#B8860B">Skrin 09 — Game Board</strong><br>
+  5×6 boustrophedon grid (30 squares). Color-coded: Start=dark green, Finish=gold, Question=dark blue, Snake=dark red, Ladder=dark green. Player token 🧑 highlighted with amber border. Tap 🎲 to roll dice (1-6), move player, handle snakes/ladders, show MCQ popup on question squares. "Permainan Tamat!" dialog at square 30.
+</div>
+</body>
+</html>

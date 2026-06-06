@@ -1,0 +1,52 @@
+name: Deploy Simulated UI to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'simulatedui/**'       # redeploy when screens change
+      - 'docs/**'
+      - '.github/workflows/deploy-pages.yml'
+  workflow_dispatch:           # manual trigger from Actions tab
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Deploy to GitHub Pages
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # Sync simulatedui/ → docs/ so Pages always stays up to date
+      - name: Sync simulatedui to docs
+        run: |
+          rm -rf docs/
+          cp -r simulatedui/ docs/
+          echo "Files in docs/:"
+          ls -lh docs/
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: docs/
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
