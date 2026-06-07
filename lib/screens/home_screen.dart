@@ -259,7 +259,7 @@ class _HomeScreenState extends State<HomeScreen>
                         TextFormField(
                           controller: _nameController,
                           decoration: InputDecoration(
-                            hintText: 'Nama',
+                            hintText: 'Taip nama disini',
                             prefixIcon: const Icon(Icons.person, color: _red),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
