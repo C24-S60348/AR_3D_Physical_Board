@@ -88,8 +88,8 @@ class _HomeScreenState extends State<HomeScreen>
     ];
 
     // Logo radius ~100px; stars start just outside the edge and travel further
-    const logoEdge = 95.0;
-    const travel   = 80.0;
+    const logoEdge = 65.0;
+    const travel   = 65.0;
 
     return directions.map((dir) {
       return AnimatedBuilder(
@@ -183,14 +183,14 @@ class _HomeScreenState extends State<HomeScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 8),
                   // Header — tappable logo with star burst
                   Center(
                     child: GestureDetector(
                       onTap: _onLogoTap,
                       child: SizedBox(
-                        width: 220,
-                        height: 220,
+                        width: 150,
+                        height: 150,
                         child: Stack(
                           alignment: Alignment.center,
                           clipBehavior: Clip.none,
@@ -208,14 +208,14 @@ class _HomeScreenState extends State<HomeScreen>
                                     ),
                                     child: Image.asset(
                                       'assets/images/logo_igb.png',
-                                      width: 202,
-                                      height: 202,
+                                      width: 138,
+                                      height: 138,
                                     ),
                                   ),
                                   Image.asset(
                                     'assets/images/logo_igb.png',
-                                    width: 190,
-                                    height: 190,
+                                    width: 128,
+                                    height: 128,
                                   ),
                                 ],
                               ),
@@ -228,7 +228,7 @@ class _HomeScreenState extends State<HomeScreen>
                       ),
                     ),
                   ),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 12),
 
                   // Card
                   Container(
