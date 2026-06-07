@@ -4,11 +4,10 @@ import 'splash_screen.dart';
 
 /// Topic image → asset path mapping (shared with home screen)
 const Map<String, String> topicImageAssets = {
-  'Sejarah Melaka': 'assets/images/topics/topic_sejarah_melaka.png',
-  'Seni Bina':      'assets/images/topics/topic_seni_bina.png',
-  'Budaya':         'assets/images/topics/topic_budaya.png',
-  'Pelancongan':    'assets/images/topics/topic_pelancongan.png',
-  'Matematik':      'assets/images/topics/topic_matematik.png',
+  'Maths for Primary Students':   'assets/images/topics/topic_maths_primary.png',
+  'Maths for Secondary Students': 'assets/images/topics/topic_maths_secondary.png',
+  'Maths for Higher Education':   'assets/images/topics/topic_maths_higher.png',
+  'Tourism Melaka':               'assets/images/topics/topic_tourism_melaka.png',
 };
 
 /// Generic loading screen with coin-flip logo.

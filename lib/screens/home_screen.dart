@@ -12,7 +12,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen>
     with TickerProviderStateMixin {
   final _nameController = TextEditingController();
-  String _selectedTopic = 'Sejarah Melaka';
+  String _selectedTopic = 'Maths for Primary Students';
   final _formKey = GlobalKey<FormState>();
   late final PageController _topicPageController;
   double _currentPage = 0;
@@ -412,11 +412,10 @@ class _TopicCard extends StatelessWidget {
   const _TopicCard({required this.topic, required this.selected});
 
   static const _topicImages = {
-    'Sejarah Melaka': 'assets/images/topics/topic_sejarah_melaka.png',
-    'Seni Bina':      'assets/images/topics/topic_seni_bina.png',
-    'Budaya':         'assets/images/topics/topic_budaya.png',
-    'Pelancongan':    'assets/images/topics/topic_pelancongan.png',
-    'Matematik':      'assets/images/topics/topic_matematik.png',
+    'Maths for Primary Students':   'assets/images/topics/topic_maths_primary.png',
+    'Maths for Secondary Students': 'assets/images/topics/topic_maths_secondary.png',
+    'Maths for Higher Education':   'assets/images/topics/topic_maths_higher.png',
+    'Tourism Melaka':               'assets/images/topics/topic_tourism_melaka.png',
   };
 
   @override
