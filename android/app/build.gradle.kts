@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.example.my_ar_app"
+    namespace = "com.af1productions.igb"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 
@@ -20,7 +20,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.my_ar_app"
+        applicationId = "com.af1productions.igb"
         minSdk = 24  // ARCore requires API 24+
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
