@@ -100,7 +100,12 @@ class AboutScreen extends StatelessWidget {
                         _TeamMember(name: 'Pn. Faiizah', role: 'Penyelia'),
                         _TeamMember(name: 'En. Nik', role: 'Penyelia'),
                         const SizedBox(height: 8),
-                        _TeamMember(name: 'AF1 Productions', role: 'Pembangun Aplikasi', highlight: true),
+                        _TeamMember(
+                          name: 'AF1 Productions',
+                          role: 'Pembangun Aplikasi',
+                          highlight: true,
+                          onTap: () => Navigator.pushNamed(context, '/ar-demo'),
+                        ),
 
                         const SizedBox(height: 28),
                         Center(
@@ -129,12 +134,15 @@ class _TeamMember extends StatelessWidget {
   final String name;
   final String role;
   final bool highlight;
+  final VoidCallback? onTap;
 
-  const _TeamMember({required this.name, required this.role, this.highlight = false});
+  const _TeamMember({required this.name, required this.role, this.highlight = false, this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    return Container(
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
@@ -176,6 +184,7 @@ class _TeamMember extends StatelessWidget {
           ),
         ],
       ),
-    );
+    ),   // Container
+    );   // GestureDetector
   }
 }

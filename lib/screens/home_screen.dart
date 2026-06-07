@@ -161,13 +161,6 @@ class _HomeScreenState extends State<HomeScreen>
     });
   }
 
-  void _openARDemo() {
-    Navigator.pushNamed(context, '/loading', arguments: {
-      'destination': '/ar-demo',
-      'arguments': null,
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -335,25 +328,6 @@ class _HomeScreenState extends State<HomeScreen>
                         borderRadius: BorderRadius.circular(14),
                       ),
                       elevation: 6,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-
-                  // AR Demo button
-                  OutlinedButton.icon(
-                    onPressed: _openARDemo,
-                    icon: const Icon(Icons.view_in_ar, size: 22),
-                    label: const Text(
-                      'Demo AR Flutter',
-                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                    ),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      side: const BorderSide(color: Colors.white54, width: 1.5),
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
                     ),
                   ),
                   const SizedBox(height: 12),
