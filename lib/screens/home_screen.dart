@@ -88,8 +88,8 @@ class _HomeScreenState extends State<HomeScreen>
     ];
 
     // Logo radius ~100px; stars start just outside the edge and travel further
-    const logoEdge = 100.0;
-    const travel   = 85.0;
+    const logoEdge = 65.0;
+    const travel   = 70.0;
 
     return directions.map((dir) {
       return AnimatedBuilder(
@@ -189,8 +189,8 @@ class _HomeScreenState extends State<HomeScreen>
                     child: GestureDetector(
                       onTap: _onLogoTap,
                       child: SizedBox(
-                        width: 240,
-                        height: 240,
+                        width: 160,
+                        height: 160,
                         child: Stack(
                           alignment: Alignment.center,
                           clipBehavior: Clip.none,
@@ -208,14 +208,14 @@ class _HomeScreenState extends State<HomeScreen>
                                     ),
                                     child: Image.asset(
                                       'assets/images/logo_igb.png',
-                                      width: 212,
-                                      height: 212,
+                                      width: 142,
+                                      height: 142,
                                     ),
                                   ),
                                   Image.asset(
                                     'assets/images/logo_igb.png',
-                                    width: 200,
-                                    height: 200,
+                                    width: 130,
+                                    height: 130,
                                   ),
                                 ],
                               ),
