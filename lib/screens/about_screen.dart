@@ -103,7 +103,6 @@ class AboutScreen extends StatelessWidget {
                         _TeamMember(
                           name: 'AF1 Productions',
                           role: 'Pembangun Aplikasi',
-                          highlight: true,
                           onTap: () => Navigator.pushNamed(context, '/ar-demo'),
                         ),
 
