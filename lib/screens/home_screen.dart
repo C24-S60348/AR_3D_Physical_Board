@@ -436,22 +436,26 @@ class _TopicCard extends StatelessWidget {
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(14),
-        child: imgPath != null
-            ? Image.asset(
-                imgPath,
-                fit: BoxFit.cover,
-                width: double.infinity,
-                height: double.infinity,
-              )
-            : Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Text('📚', style: TextStyle(fontSize: 44)),
-                  Text(topic,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
-                ],
-              ),
+        child: Container(
+          color: Colors.white,
+          width: double.infinity,
+          height: double.infinity,
+          padding: const EdgeInsets.all(8),
+          child: imgPath != null
+              ? Image.asset(
+                  imgPath,
+                  fit: BoxFit.contain,
+                )
+              : Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text('📚', style: TextStyle(fontSize: 44)),
+                    Text(topic,
+                        textAlign: TextAlign.center,
+                        style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+                  ],
+                ),
+        ),
       ),
     );
   }
