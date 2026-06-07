@@ -19,6 +19,15 @@ android {
         jvmTarget = JavaVersion.VERSION_17.toString()
     }
 
+    signingConfigs {
+        create("release") {
+            storeFile = file("/Users/afwanhaziq/documents/keystore.jks")
+            storePassword = "123456"
+            keyAlias = "af1"
+            keyPassword = "123456"
+        }
+    }
+
     defaultConfig {
         applicationId = "com.af1productions.igb"
         minSdk = 24  // ARCore requires API 24+
@@ -29,7 +38,7 @@ android {
 
     buildTypes {
         release {
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("release")
             // R8 keep rules for ar_flutter_plugin / ARCore / Sceneform
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
