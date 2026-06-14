@@ -50,6 +50,13 @@ Filter by exact topic name:
 
 `GET /api/ar3d/questions?topic=Maths%20for%20Primary%20Students`
 
+### List active game notes
+
+`GET /api/ar3d/notes`
+
+Each note contains an emoji, title, bullet points, optional external URL, and
+display order.
+
 ### Submit an answer
 
 `POST /api/ar3d/answers`
@@ -80,11 +87,16 @@ screen session. Server integrations may instead use the configured
 `X-Admin-Key`.
 
 - `GET /api/ar3d/admin/questions`
+- `GET /api/ar3d/admin/notes`
 - `GET /api/ar3d/admin/responses`
 - `POST /api/ar3d/admin/questions`
+- `POST /api/ar3d/admin/notes`
 - `PUT /api/ar3d/admin/questions/<id>`
+- `PUT /api/ar3d/admin/notes/<id>`
 - `PATCH /api/ar3d/admin/questions/<id>`
+- `PATCH /api/ar3d/admin/notes/<id>`
 - `DELETE /api/ar3d/admin/questions/<id>` (archives the question)
+- `DELETE /api/ar3d/admin/notes/<id>` (archives the note)
 
 Create and update requests accept `multipart/form-data`:
 

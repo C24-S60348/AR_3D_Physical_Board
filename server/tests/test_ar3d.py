@@ -99,6 +99,53 @@ class Ar3dApiTestCase(unittest.TestCase):
             self.client.get("/api/ar3d/questions").get_json()["questions"], []
         )
 
+    def test_note_crud_and_seeded_drive_link(self):
+        public_notes = self.client.get("/api/ar3d/notes")
+        self.assertEqual(public_notes.status_code, 200)
+        seeded = public_notes.get_json()["notes"][0]
+        self.assertIn("drive.google.com", seeded["external_url"])
+
+        created = self.client.post(
+            "/api/ar3d/admin/notes",
+            headers=self.headers,
+            json={
+                "emoji": "🧮",
+                "title": "Fractions",
+                "points": ["One half equals 0.5.", "Two quarters equal one half."],
+                "external_url": "https://example.com/fractions",
+                "sort_order": 2,
+                "is_active": True,
+            },
+        )
+        self.assertEqual(created.status_code, 201)
+        note = created.get_json()["note"]
+        self.assertEqual(note["points"][0], "One half equals 0.5.")
+
+        updated = self.client.put(
+            f"/api/ar3d/admin/notes/{note['id']}",
+            headers=self.headers,
+            json={
+                "emoji": "🔢",
+                "title": "Updated fractions",
+                "points": ["1/2 = 0.5"],
+                "external_url": "",
+                "sort_order": 1,
+                "is_active": True,
+            },
+        )
+        self.assertEqual(updated.status_code, 200)
+        self.assertEqual(updated.get_json()["note"]["title"], "Updated fractions")
+
+        archived = self.client.delete(
+            f"/api/ar3d/admin/notes/{note['id']}", headers=self.headers
+        )
+        self.assertEqual(archived.status_code, 204)
+        titles = [
+            item["title"]
+            for item in self.client.get("/api/ar3d/notes").get_json()["notes"]
+        ]
+        self.assertNotIn("Updated fractions", titles)
+
     def test_answer_submission_accepts_case_insensitive_text(self):
         question = self.client.post(
             "/api/ar3d/admin/questions",

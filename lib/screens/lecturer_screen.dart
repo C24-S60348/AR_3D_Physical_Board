@@ -20,6 +20,7 @@ class _LecturerScreenState extends State<LecturerScreen> {
   String? _error;
   List<ApiTopic> _topics = const [];
   List<Question> _questions = const [];
+  List<GameNote> _notes = const [];
   List<AdminResponse> _responses = const [];
 
   @override
@@ -54,12 +55,22 @@ class _LecturerScreenState extends State<LecturerScreen> {
       Ar3dApi.getAdminQuestions(password),
       Ar3dApi.getAdminResponses(password),
     ]);
+    List<GameNote> notes = const [];
+    String? notesError;
+    try {
+      notes = await Ar3dApi.getAdminNotes(password);
+    } catch (error) {
+      notesError =
+          'Questions and responses loaded, but notes are unavailable. '
+          '${_message(error)}';
+    }
     if (!mounted) return;
     setState(() {
       _topics = results[0] as List<ApiTopic>;
       _questions = results[1] as List<Question>;
       _responses = results[2] as List<AdminResponse>;
-      _error = null;
+      _notes = notes;
+      _error = notesError;
     });
   }
 
@@ -100,6 +111,40 @@ class _LecturerScreenState extends State<LecturerScreen> {
     await _runRefresh();
   }
 
+  Future<void> _openNoteEditor([GameNote? note]) async {
+    final saved = await showDialog<bool>(
+      context: context,
+      builder: (_) => _NoteEditor(
+        note: note,
+        onSave:
+            ({
+              required emoji,
+              required title,
+              required points,
+              required externalUrl,
+              required sortOrder,
+              required isActive,
+            }) => Ar3dApi.saveAdminNote(
+              password: _password!,
+              noteId: note?.id,
+              emoji: emoji,
+              title: title,
+              points: points,
+              externalUrl: externalUrl,
+              sortOrder: sortOrder,
+              isActive: isActive,
+            ),
+      ),
+    );
+    if (saved == true) await _runRefresh();
+  }
+
+  Future<void> _archiveNote(GameNote note) async {
+    if (note.id == null) return;
+    await Ar3dApi.archiveAdminNote(password: _password!, noteId: note.id!);
+    await _runRefresh();
+  }
+
   Future<void> _runRefresh() async {
     setState(() => _busy = true);
     try {
@@ -120,7 +165,7 @@ class _LecturerScreenState extends State<LecturerScreen> {
   Widget build(BuildContext context) {
     if (_password == null) return _buildLogin();
     return DefaultTabController(
-      length: 2,
+      length: 3,
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Lecturer Admin'),
@@ -137,6 +182,7 @@ class _LecturerScreenState extends State<LecturerScreen> {
                 _password = null;
                 _passwordController.clear();
                 _questions = const [];
+                _notes = const [];
                 _responses = const [];
               }),
               icon: const Icon(Icons.logout),
@@ -149,16 +195,28 @@ class _LecturerScreenState extends State<LecturerScreen> {
             indicatorColor: Colors.amber,
             tabs: [
               Tab(icon: Icon(Icons.quiz_outlined), text: 'Questions'),
+              Tab(icon: Icon(Icons.notes_outlined), text: 'Notes'),
               Tab(icon: Icon(Icons.assessment_outlined), text: 'Responses'),
             ],
           ),
         ),
-        floatingActionButton: FloatingActionButton.extended(
-          onPressed: _busy ? null : () => _openEditor(),
-          backgroundColor: _red,
-          foregroundColor: Colors.white,
-          icon: const Icon(Icons.add),
-          label: const Text('Question'),
+        floatingActionButton: Builder(
+          builder: (tabContext) => FloatingActionButton.extended(
+            onPressed: _busy
+                ? null
+                : () {
+                    final tab = DefaultTabController.of(tabContext).index;
+                    if (tab == 1) {
+                      _openNoteEditor();
+                    } else {
+                      _openEditor();
+                    }
+                  },
+            backgroundColor: _red,
+            foregroundColor: Colors.white,
+            icon: const Icon(Icons.add),
+            label: const Text('Add'),
+          ),
         ),
         body: Column(
           children: [
@@ -175,7 +233,7 @@ class _LecturerScreenState extends State<LecturerScreen> {
               ),
             Expanded(
               child: TabBarView(
-                children: [_buildQuestions(), _buildResponses()],
+                children: [_buildQuestions(), _buildNotes(), _buildResponses()],
               ),
             ),
           ],
@@ -325,6 +383,227 @@ class _LecturerScreenState extends State<LecturerScreen> {
           );
         },
       ),
+    );
+  }
+
+  Widget _buildNotes() {
+    if (_notes.isEmpty) {
+      return const Center(child: Text('No notes yet.'));
+    }
+    return RefreshIndicator(
+      onRefresh: _runRefresh,
+      child: ListView.builder(
+        padding: const EdgeInsets.fromLTRB(12, 12, 12, 90),
+        itemCount: _notes.length,
+        itemBuilder: (_, index) {
+          final note = _notes[index];
+          return Card(
+            child: ListTile(
+              leading: CircleAvatar(child: Text(note.emoji)),
+              title: Text(note.title),
+              subtitle: Text(
+                '${note.points.length} point(s)'
+                '${note.externalUrl == null ? '' : '\nExternal link added'}',
+              ),
+              isThreeLine: note.externalUrl != null,
+              onTap: () => _openNoteEditor(note),
+              trailing: note.isActive
+                  ? IconButton(
+                      onPressed: () => _archiveNote(note),
+                      icon: const Icon(Icons.archive_outlined),
+                      tooltip: 'Archive',
+                    )
+                  : const Icon(Icons.archive_outlined, color: Colors.grey),
+            ),
+          );
+        },
+      ),
+    );
+  }
+}
+
+class _NoteEditor extends StatefulWidget {
+  final GameNote? note;
+  final Future<void> Function({
+    required String emoji,
+    required String title,
+    required List<String> points,
+    required String externalUrl,
+    required int sortOrder,
+    required bool isActive,
+  })
+  onSave;
+
+  const _NoteEditor({required this.note, required this.onSave});
+
+  @override
+  State<_NoteEditor> createState() => _NoteEditorState();
+}
+
+class _NoteEditorState extends State<_NoteEditor> {
+  late final TextEditingController _emojiController;
+  late final TextEditingController _titleController;
+  late final TextEditingController _pointsController;
+  late final TextEditingController _urlController;
+  late final TextEditingController _orderController;
+  late bool _isActive;
+  bool _saving = false;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    final note = widget.note;
+    _emojiController = TextEditingController(text: note?.emoji ?? '📚');
+    _titleController = TextEditingController(text: note?.title ?? '');
+    _pointsController = TextEditingController(
+      text: note?.points.join('\n') ?? '',
+    );
+    _urlController = TextEditingController(text: note?.externalUrl ?? '');
+    _orderController = TextEditingController(
+      text: (note?.sortOrder ?? 0).toString(),
+    );
+    _isActive = note?.isActive ?? true;
+  }
+
+  @override
+  void dispose() {
+    _emojiController.dispose();
+    _titleController.dispose();
+    _pointsController.dispose();
+    _urlController.dispose();
+    _orderController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    final title = _titleController.text.trim();
+    final points = _pointsController.text
+        .split('\n')
+        .map((point) => point.trim())
+        .where((point) => point.isNotEmpty)
+        .toList();
+    final url = _urlController.text.trim();
+    final order = int.tryParse(_orderController.text.trim());
+    if (title.isEmpty || (points.isEmpty && url.isEmpty)) {
+      setState(() {
+        _error = 'Add a title and at least one point or external link.';
+      });
+      return;
+    }
+    if (order == null) {
+      setState(() => _error = 'Display order must be a number.');
+      return;
+    }
+    setState(() {
+      _saving = true;
+      _error = null;
+    });
+    try {
+      await widget.onSave(
+        emoji: _emojiController.text.trim().isEmpty
+            ? '📚'
+            : _emojiController.text.trim(),
+        title: title,
+        points: points,
+        externalUrl: url,
+        sortOrder: order,
+        isActive: _isActive,
+      );
+      if (mounted) Navigator.pop(context, true);
+    } catch (error) {
+      if (mounted) {
+        setState(() {
+          _saving = false;
+          _error = error.toString().replaceFirst('HttpException: ', '');
+        });
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    const border = OutlineInputBorder();
+    return AlertDialog(
+      title: Text(widget.note == null ? 'New Note' : 'Edit Note'),
+      content: SizedBox(
+        width: 520,
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: _emojiController,
+                enabled: !_saving,
+                decoration: const InputDecoration(
+                  labelText: 'Emoji',
+                  border: border,
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _titleController,
+                enabled: !_saving,
+                decoration: const InputDecoration(
+                  labelText: 'Title',
+                  border: border,
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _pointsController,
+                enabled: !_saving,
+                minLines: 4,
+                maxLines: 10,
+                decoration: const InputDecoration(
+                  labelText: 'Note points, one per line',
+                  border: border,
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _urlController,
+                enabled: !_saving,
+                keyboardType: TextInputType.url,
+                decoration: const InputDecoration(
+                  labelText: 'Google Drive or website link (optional)',
+                  border: border,
+                ),
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: _orderController,
+                enabled: !_saving,
+                keyboardType: TextInputType.number,
+                decoration: const InputDecoration(
+                  labelText: 'Display order',
+                  border: border,
+                ),
+              ),
+              SwitchListTile(
+                contentPadding: EdgeInsets.zero,
+                title: const Text('Active'),
+                value: _isActive,
+                onChanged: _saving
+                    ? null
+                    : (value) => setState(() => _isActive = value),
+              ),
+              if (_error != null)
+                Text(_error!, style: const TextStyle(color: Colors.red)),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: _saving ? null : () => Navigator.pop(context),
+          child: const Text('Cancel'),
+        ),
+        ElevatedButton(
+          onPressed: _saving ? null : _save,
+          child: Text(_saving ? 'Saving...' : 'Save'),
+        ),
+      ],
     );
   }
 }

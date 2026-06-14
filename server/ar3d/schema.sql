@@ -34,12 +34,34 @@ CREATE TABLE IF NOT EXISTS answer_attempts (
     FOREIGN KEY (question_id) REFERENCES questions (id) ON DELETE SET NULL
 );
 
+CREATE TABLE IF NOT EXISTS notes (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    emoji TEXT NOT NULL DEFAULT '📚',
+    title TEXT NOT NULL,
+    points_json TEXT NOT NULL DEFAULT '[]',
+    external_url TEXT,
+    sort_order INTEGER NOT NULL DEFAULT 0,
+    is_active INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE INDEX IF NOT EXISTS idx_questions_topic ON questions (topic_id);
 CREATE INDEX IF NOT EXISTS idx_attempts_question ON answer_attempts (question_id);
 CREATE INDEX IF NOT EXISTS idx_attempts_answered_at ON answer_attempts (answered_at);
+CREATE INDEX IF NOT EXISTS idx_notes_order ON notes (sort_order, id);
 
 INSERT OR IGNORE INTO topics (name, description) VALUES
     ('Maths for Primary Students', 'Primary-level learning questions'),
     ('Maths for Secondary Students', 'Secondary-level learning questions'),
     ('Maths for Higher Education', 'Higher education learning questions'),
     ('Tourism Melaka', 'Questions about Melaka tourism and heritage');
+
+INSERT INTO notes (emoji, title, points_json, external_url, sort_order)
+SELECT
+    '📚',
+    'Nota Permainan',
+    '["Open the learning notes using the link below."]',
+    'https://drive.google.com/file/d/1sy4XubeiHPjBC1fboPRl7OMrdg7TDrDB/view?usp=sharing',
+    0
+WHERE NOT EXISTS (SELECT 1 FROM notes);

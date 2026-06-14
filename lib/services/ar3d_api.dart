@@ -78,6 +78,14 @@ class Ar3dApi {
     }
   }
 
+  static Future<List<GameNote>> getNotes() async {
+    if (!isConfigured) return const [];
+    final payload = await _jsonRequest('GET', '/api/ar3d/notes');
+    return (payload['notes'] as List<dynamic>? ?? const [])
+        .map((item) => GameNote.fromJson(item as Map<String, dynamic>))
+        .toList();
+  }
+
   static Future<AnswerSubmissionResult?> submitAnswer({
     required String playerName,
     required Question question,
@@ -155,6 +163,56 @@ class Ar3dApi {
     return (payload['responses'] as List<dynamic>? ?? const [])
         .map((item) => AdminResponse.fromJson(item as Map<String, dynamic>))
         .toList();
+  }
+
+  static Future<List<GameNote>> getAdminNotes(String password) async {
+    final payload = await _jsonRequest(
+      'GET',
+      '/api/ar3d/admin/notes',
+      adminPassword: password,
+    );
+    return (payload['notes'] as List<dynamic>? ?? const [])
+        .map((item) => GameNote.fromJson(item as Map<String, dynamic>))
+        .toList();
+  }
+
+  static Future<void> saveAdminNote({
+    required String password,
+    int? noteId,
+    required String emoji,
+    required String title,
+    required List<String> points,
+    required String externalUrl,
+    required int sortOrder,
+    required bool isActive,
+  }) async {
+    await _jsonRequest(
+      noteId == null ? 'POST' : 'PUT',
+      noteId == null
+          ? '/api/ar3d/admin/notes'
+          : '/api/ar3d/admin/notes/$noteId',
+      adminPassword: password,
+      body: {
+        'emoji': emoji,
+        'title': title,
+        'points': points,
+        'external_url': externalUrl,
+        'sort_order': sortOrder,
+        'is_active': isActive,
+      },
+    );
+  }
+
+  static Future<void> archiveAdminNote({
+    required String password,
+    required int noteId,
+  }) async {
+    await _jsonRequest(
+      'DELETE',
+      '/api/ar3d/admin/notes/$noteId',
+      adminPassword: password,
+      allowEmpty: true,
+    );
   }
 
   static Future<void> saveAdminQuestion({
@@ -309,18 +367,42 @@ class Ar3dApi {
       );
       final responseBody = await utf8.decoder.bind(response).join();
       if (response.statusCode < 200 || response.statusCode >= 300) {
-        var message = 'API returned ${response.statusCode}';
-        if (responseBody.isNotEmpty) {
-          final error = jsonDecode(responseBody) as Map<String, dynamic>;
-          message = error['error'] as String? ?? message;
-        }
-        throw HttpException(message);
+        throw HttpException(
+          _responseErrorMessage(response.statusCode, path, responseBody),
+        );
       }
       if (allowEmpty && responseBody.isEmpty) return const {};
-      return jsonDecode(responseBody) as Map<String, dynamic>;
+      try {
+        return jsonDecode(responseBody) as Map<String, dynamic>;
+      } on FormatException {
+        throw HttpException(
+          'The server returned an invalid response for $path. '
+          'Check that the AR3D Flask server is running and up to date.',
+        );
+      }
     } finally {
       client.close(force: true);
     }
+  }
+
+  static String _responseErrorMessage(
+    int statusCode,
+    String path,
+    String responseBody,
+  ) {
+    if (responseBody.isNotEmpty) {
+      try {
+        final error = jsonDecode(responseBody) as Map<String, dynamic>;
+        final message = error['error'] as String?;
+        if (message != null && message.isNotEmpty) return message;
+      } on FormatException {
+        // Flask returns an HTML error page when an endpoint is unavailable.
+      }
+    }
+    if (statusCode == HttpStatus.notFound) {
+      return 'Endpoint $path was not found. Restart or update the AR3D server.';
+    }
+    return 'API request to $path returned status $statusCode.';
   }
 }
 
@@ -339,6 +421,38 @@ class AdminQuestionImage {
       _ => 'image/jpeg',
     };
   }
+}
+
+class GameNote {
+  final int? id;
+  final String emoji;
+  final String title;
+  final List<String> points;
+  final String? externalUrl;
+  final int sortOrder;
+  final bool isActive;
+
+  const GameNote({
+    this.id,
+    required this.emoji,
+    required this.title,
+    required this.points,
+    this.externalUrl,
+    this.sortOrder = 0,
+    this.isActive = true,
+  });
+
+  factory GameNote.fromJson(Map<String, dynamic> json) => GameNote(
+    id: json['id'] as int?,
+    emoji: json['emoji'] as String? ?? '📚',
+    title: json['title'] as String? ?? '',
+    points: (json['points'] as List<dynamic>? ?? const [])
+        .map((point) => point.toString())
+        .toList(),
+    externalUrl: json['external_url'] as String?,
+    sortOrder: json['sort_order'] as int? ?? 0,
+    isActive: json['is_active'] as bool? ?? true,
+  );
 }
 
 class AnswerSubmissionResult {

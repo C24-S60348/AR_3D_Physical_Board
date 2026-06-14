@@ -40,6 +40,7 @@ def create_app(test_config=None):
                 "name": "i.-GB AR3D API",
                 "health": "/api/ar3d/health",
                 "questions": "/api/ar3d/questions",
+                "notes": "/api/ar3d/notes",
                 "admin": "/admin/ar3d",
             }
         )
