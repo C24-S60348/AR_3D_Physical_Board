@@ -73,6 +73,9 @@ class _ScannerScreenState extends State<ScannerScreen>
   // Flip card state
   bool _showingFlipCard = false;
   bool _isHandlingDetection = false;
+  bool _openingSurvey = false;
+  bool _cameraActive = true;
+  int _cameraGeneration = 0;
   int _detectionGeneration = 0;
   String? _detectedImageName;
   late AnimationController _flipController;
@@ -154,6 +157,10 @@ class _ScannerScreenState extends State<ScannerScreen>
     ARAnchorManager anchorManager,
     ARLocationManager locationManager,
   ) {
+    if (!_cameraActive) {
+      sessionManager.dispose();
+      return;
+    }
     _sessionManager = sessionManager;
     sessionManager.onInitialize(
       showAnimatedGuide: false,
@@ -180,6 +187,18 @@ class _ScannerScreenState extends State<ScannerScreen>
       frozen = await _sessionManager?.snapshot();
     } catch (_) {}
 
+    if (!mounted || generation != _detectionGeneration) {
+      _isHandlingDetection = false;
+      return;
+    }
+
+    // Removing ARView releases ARCore and the camera while the result is shown.
+    setState(() {
+      _frozenFrame = frozen;
+      _cameraActive = false;
+      _sessionManager = null;
+    });
+
     List<Question> questions = const [];
     try {
       questions = await Ar3dApi.getQuestions(_topic);
@@ -190,7 +209,14 @@ class _ScannerScreenState extends State<ScannerScreen>
       questions = getQuestionsForTopic(_topic);
     }
     if (questions.isEmpty) {
-      _isHandlingDetection = false;
+      if (mounted && generation == _detectionGeneration) {
+        setState(() {
+          _isHandlingDetection = false;
+          _frozenFrame = null;
+          _cameraActive = true;
+          _cameraGeneration++;
+        });
+      }
       return;
     }
     final q = questions[Random().nextInt(questions.length)];
@@ -204,7 +230,6 @@ class _ScannerScreenState extends State<ScannerScreen>
         RegExp(r'\.(png|jpg|jpeg)$'),
         '',
       );
-      _frozenFrame = frozen;
       _showingFlipCard = true;
       _currentQuestion = q;
       _answerController.clear();
@@ -238,6 +263,7 @@ class _ScannerScreenState extends State<ScannerScreen>
     _flipController.reset();
     setState(() {
       _showingFlipCard = false;
+      _showingQuestion = false;
       _frozenFrame = null;
       _detectedImageName = null;
       _currentQuestion = null;
@@ -246,6 +272,8 @@ class _ScannerScreenState extends State<ScannerScreen>
       _answerCorrect = null;
       _answered = false;
       _submittingAnswer = false;
+      _cameraActive = true;
+      _cameraGeneration++;
     });
   }
 
@@ -279,13 +307,27 @@ class _ScannerScreenState extends State<ScannerScreen>
     });
   }
 
-  void _showSoalSelidik(BuildContext context) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (_) => const _SoalSelidikSheet(),
-    );
+  Future<void> _openSurvey() async {
+    if (_openingSurvey) return;
+    _openingSurvey = true;
+
+    setState(() {
+      _cameraActive = false;
+      _sessionManager = null;
+    });
+
+    // Let Flutter remove the native AR view before opening the form page.
+    await WidgetsBinding.instance.endOfFrame;
+    if (!mounted) return;
+
+    await Navigator.pushNamed(context, '/survey');
+    if (!mounted) return;
+
+    setState(() {
+      _cameraActive = true;
+      _cameraGeneration++;
+      _openingSurvey = false;
+    });
   }
 
   void _dismissQuestion() {
@@ -295,6 +337,8 @@ class _ScannerScreenState extends State<ScannerScreen>
           _showingQuestion = false;
           _frozenFrame = null;
           _detectedImageName = null;
+          _cameraActive = true;
+          _cameraGeneration++;
         });
       }
     });
@@ -312,13 +356,15 @@ class _ScannerScreenState extends State<ScannerScreen>
       body: Stack(
         children: [
           // AR camera
-          ARView(
-            onARViewCreated: _onARViewCreated,
-            planeDetectionConfig: PlaneDetectionConfig.none,
-          ),
+          if (_cameraActive)
+            ARView(
+              key: ValueKey(_cameraGeneration),
+              onARViewCreated: _onARViewCreated,
+              planeDetectionConfig: PlaneDetectionConfig.none,
+            ),
 
           // Back button
-          if (!_showingFlipCard && !_showingQuestion)
+          if (_cameraActive && !_showingFlipCard && !_showingQuestion)
             Positioned(
               top: 16,
               left: 16,
@@ -340,12 +386,12 @@ class _ScannerScreenState extends State<ScannerScreen>
             ),
 
           // Soal Selidik button
-          if (!_showingFlipCard && !_showingQuestion)
+          if (_cameraActive && !_showingFlipCard && !_showingQuestion)
             Positioned(
               top: 16,
               right: 16,
               child: GestureDetector(
-                onTap: () => _showSoalSelidik(context),
+                onTap: _openSurvey,
                 child: Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 14,
@@ -375,7 +421,7 @@ class _ScannerScreenState extends State<ScannerScreen>
             ),
 
           // Scan instruction
-          if (!_showingFlipCard && !_showingQuestion)
+          if (_cameraActive && !_showingFlipCard && !_showingQuestion)
             Positioned(
               bottom: 40,
               left: 24,
@@ -433,11 +479,11 @@ class _ScannerScreenState extends State<ScannerScreen>
               ),
             ),
 
-          if (!_showingFlipCard && !_showingQuestion)
+          if (_cameraActive && !_showingFlipCard && !_showingQuestion)
             const _ViewfinderOverlay(),
 
           // Frozen frame blur (behind both flip card and question)
-          if ((_showingFlipCard || _showingQuestion) && _frozenFrame != null)
+          if (!_cameraActive && _frozenFrame != null)
             Positioned.fill(
               child: ImageFiltered(
                 imageFilter: ui.ImageFilter.blur(sigmaX: 18, sigmaY: 18),
@@ -445,10 +491,13 @@ class _ScannerScreenState extends State<ScannerScreen>
               ),
             ),
 
-          if ((_showingFlipCard || _showingQuestion) && _frozenFrame == null)
+          if (!_cameraActive && _frozenFrame == null)
             Positioned.fill(
               child: Container(color: Colors.black.withOpacity(0.7)),
             ),
+
+          if (_isHandlingDetection && !_showingFlipCard)
+            const Center(child: CircularProgressIndicator(color: Colors.white)),
 
           // 3D Flip card
           if (_showingFlipCard)
@@ -1122,16 +1171,16 @@ class _QuestionOverlay extends StatelessWidget {
   }
 }
 
-// ── Soal Selidik Sheet ────────────────────────────────────────────────────────
+// ── Soal Selidik Screen ───────────────────────────────────────────────────────
 
-class _SoalSelidikSheet extends StatefulWidget {
-  const _SoalSelidikSheet();
+class SurveyScreen extends StatefulWidget {
+  const SurveyScreen({super.key});
 
   @override
-  State<_SoalSelidikSheet> createState() => _SoalSelidikSheetState();
+  State<SurveyScreen> createState() => _SurveyScreenState();
 }
 
-class _SoalSelidikSheetState extends State<_SoalSelidikSheet> {
+class _SurveyScreenState extends State<SurveyScreen> {
   static const _red = Color(0xFF8B1A1A);
 
   // Section 1 — Maklumat Responden
@@ -1170,37 +1219,21 @@ class _SoalSelidikSheetState extends State<_SoalSelidikSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return DraggableScrollableSheet(
-      initialChildSize: 0.9,
-      maxChildSize: 0.95,
-      minChildSize: 0.5,
-      builder: (_, scrollCtrl) => Container(
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        ),
+    return Scaffold(
+      backgroundColor: Colors.white,
+      body: SafeArea(
         child: Column(
           children: [
-            // Handle bar
-            Container(
-              margin: const EdgeInsets.only(top: 10, bottom: 4),
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey.shade300,
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            // Header
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-              decoration: const BoxDecoration(
-                color: _red,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+              color: _red,
               child: Row(
                 children: [
+                  IconButton(
+                    icon: const Icon(Icons.arrow_back, color: Colors.white),
+                    onPressed: () => Navigator.pop(context),
+                  ),
                   const Icon(
                     Icons.assignment_rounded,
                     color: Colors.white,
@@ -1226,26 +1259,18 @@ class _SoalSelidikSheetState extends State<_SoalSelidikSheet> {
                       ],
                     ),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.close, color: Colors.white70),
-                    onPressed: () => Navigator.pop(context),
-                  ),
                 ],
               ),
             ),
-            // Body
-            Expanded(
-              child: _submitted ? _buildThankYou() : _buildForm(scrollCtrl),
-            ),
+            Expanded(child: _submitted ? _buildThankYou() : _buildForm()),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildForm(ScrollController scrollCtrl) {
+  Widget _buildForm() {
     return ListView(
-      controller: scrollCtrl,
       padding: const EdgeInsets.fromLTRB(20, 16, 20, 32),
       children: [
         // ── Section 1: Maklumat Responden ─────────────────────────────────

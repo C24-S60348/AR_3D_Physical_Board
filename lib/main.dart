@@ -40,6 +40,7 @@ class IGBApp extends StatelessWidget {
         '/ar-demo': (_) => const ARDemoScreen(),
         '/game': (_) => const GameBoardScreen(),
         '/scanner': (_) => const ScannerScreen(),
+        '/survey': (_) => const SurveyScreen(),
         '/about': (_) => const AboutScreen(),
         '/tutorial': (_) => const TutorialScreen(),
         '/nota': (_) => const NotaScreen(),
