@@ -31,7 +31,8 @@ class _GameBoardScreenState extends State<GameBoardScreen>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final args = ModalRoute.of(context)!.settings.arguments as Map<String, String>;
+    final args =
+        ModalRoute.of(context)!.settings.arguments as Map<String, String>;
     _playerName = args['playerName']!;
     _topic = args['topic']!;
     _result = PlayerResult(playerName: _playerName, topic: _topic);
@@ -142,7 +143,9 @@ class _GameBoardScreenState extends State<GameBoardScreen>
       setState(() => _message = '✅ Betul! +10 mata — ${square.landmark}');
     } else {
       _result.wrongAnswers++;
-      setState(() => _message = '❌ Salah — ${q.options[q.correctIndex]} adalah jawapan betul');
+      setState(
+        () => _message = 'Salah - ${q.correctAnswer} ialah jawapan betul',
+      );
     }
   }
 
@@ -160,12 +163,13 @@ class _GameBoardScreenState extends State<GameBoardScreen>
               style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 8),
-            Text(
-              'Topik: $_topic',
-              style: const TextStyle(color: Colors.grey),
-            ),
+            Text('Topik: $_topic', style: const TextStyle(color: Colors.grey)),
             const Divider(height: 24),
-            _ResultRow('Jawapan Betul', '${_result.correctAnswers}', Colors.green),
+            _ResultRow(
+              'Jawapan Betul',
+              '${_result.correctAnswers}',
+              Colors.green,
+            ),
             _ResultRow('Jawapan Salah', '${_result.wrongAnswers}', Colors.red),
             _ResultRow('Mata', '${_result.score}', Colors.amber),
             _ResultRow(
@@ -236,7 +240,11 @@ class _GameBoardScreenState extends State<GameBoardScreen>
             child: Text(
               _message,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.amber, fontSize: 13, fontWeight: FontWeight.w600),
+              style: const TextStyle(
+                color: Colors.amber,
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
 
@@ -279,7 +287,8 @@ class _GameBoardScreenState extends State<GameBoardScreen>
   int _gridIndexToSquareId(int gridIndex) {
     final row = gridIndex ~/ 6; // 0 = top row, 4 = bottom row
     final col = gridIndex % 6;
-    final boardRow = 4 - row; // row 4 = row 0 of board (1-6), row 0 = row 4 (25-30)
+    final boardRow =
+        4 - row; // row 4 = row 0 of board (1-6), row 0 = row 4 (25-30)
     final squareInRow = boardRow.isEven ? col : (5 - col);
     return boardRow * 6 + squareInRow + 1;
   }
@@ -343,13 +352,13 @@ class _GameBoardScreenState extends State<GameBoardScreen>
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           Text(
-                            _lastRoll == 0
-                                ? '🎲'
-                                : _diceEmoji(_lastRoll),
+                            _lastRoll == 0 ? '🎲' : _diceEmoji(_lastRoll),
                             style: const TextStyle(fontSize: 26),
                           ),
                           Text(
-                            _rolling ? '...' : (_lastRoll == 0 ? 'ROLL' : '$_lastRoll'),
+                            _rolling
+                                ? '...'
+                                : (_lastRoll == 0 ? 'ROLL' : '$_lastRoll'),
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 11,
@@ -411,10 +420,7 @@ class _SquareTile extends StatelessWidget {
           if (isPlayer)
             const Text('🧑', style: TextStyle(fontSize: 16))
           else
-            Text(
-              square.emoji,
-              style: const TextStyle(fontSize: 14),
-            ),
+            Text(square.emoji, style: const TextStyle(fontSize: 14)),
           Text(
             '${square.id}',
             style: TextStyle(

@@ -9,6 +9,7 @@ import 'screens/about_screen.dart';
 import 'screens/tutorial_screen.dart';
 import 'screens/nota_screen.dart';
 import 'screens/loading_screen.dart';
+import 'screens/lecturer_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -29,9 +30,7 @@ class IGBApp extends StatelessWidget {
       title: 'i.-GB',
       debugShowCheckedModeBanner: false,
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color(0xFF8B1A1A),
-        ),
+        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF8B1A1A)),
         useMaterial3: true,
       ),
       initialRoute: '/',
@@ -45,6 +44,7 @@ class IGBApp extends StatelessWidget {
         '/tutorial': (_) => const TutorialScreen(),
         '/nota': (_) => const NotaScreen(),
         '/loading': (_) => const LoadingScreen(),
+        '/lecturer': (_) => const LecturerScreen(),
       },
     );
   }

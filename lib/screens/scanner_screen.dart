@@ -8,21 +8,49 @@ import 'package:ar_flutter_plugin/managers/ar_anchor_manager.dart';
 import 'package:ar_flutter_plugin/managers/ar_location_manager.dart';
 import 'package:ar_flutter_plugin/datatypes/config_planedetection.dart';
 import '../data/questions_data.dart';
+import '../services/ar3d_api.dart';
 import '../utils/emulator_check.dart';
 
 // Map from ARCore image name → (display name, asset path)
 const _placeInfo = <String, Map<String, String>>{
-  'afamosa':              {'name': "A'Famosa",                   'asset': 'assets/imagesscan/afamosa.png'},
-  'chenghoontengtemple': {'name': 'Cheng Hoon Teng Temple',      'asset': 'assets/imagesscan/chenghoontengtemple.png'},
-  'christchurchmelaka':  {'name': 'Christ Church Melaka',        'asset': 'assets/imagesscan/christchurchmelaka.png'},
-  'junkerstreetmelaka':  {'name': 'Jonker Street Melaka',        'asset': 'assets/imagesscan/junkerstreetmelaka.png'},
-  'masjidselatmelaka':   {'name': 'Masjid Selat Melaka',         'asset': 'assets/imagesscan/masjidselatmelaka.png'},
-  'menaratamingsari':    {'name': 'Menara Taming Sari',          'asset': 'assets/imagesscan/menaratamingsari.png'},
-  'muziumkapalselammelaka': {'name': 'Muzium Kapal Selam Melaka','asset': 'assets/imagesscan/muziumkapalselammelaka.png'},
-  'stadhuysmelaka':      {'name': 'Stadthuys Melaka',            'asset': 'assets/imagesscan/stadhuysmelaka.png'},
-  'stpaulhillchurch':    {'name': "St. Paul's Hill Church",      'asset': 'assets/imagesscan/stpaulhillchurch.png'},
-  'trishaw':             {'name': 'Beca Melaka',                 'asset': 'assets/imagesscan/trishaw.png'},
-  'sampleimagetoscan':   {'name': 'Tempat Melaka',               'asset': 'assets/imagesscan/sampleimagetoscan.png'},
+  'afamosa': {'name': "A'Famosa", 'asset': 'assets/imagesscan/afamosa.png'},
+  'chenghoontengtemple': {
+    'name': 'Cheng Hoon Teng Temple',
+    'asset': 'assets/imagesscan/chenghoontengtemple.png',
+  },
+  'christchurchmelaka': {
+    'name': 'Christ Church Melaka',
+    'asset': 'assets/imagesscan/christchurchmelaka.png',
+  },
+  'junkerstreetmelaka': {
+    'name': 'Jonker Street Melaka',
+    'asset': 'assets/imagesscan/junkerstreetmelaka.png',
+  },
+  'masjidselatmelaka': {
+    'name': 'Masjid Selat Melaka',
+    'asset': 'assets/imagesscan/masjidselatmelaka.png',
+  },
+  'menaratamingsari': {
+    'name': 'Menara Taming Sari',
+    'asset': 'assets/imagesscan/menaratamingsari.png',
+  },
+  'muziumkapalselammelaka': {
+    'name': 'Muzium Kapal Selam Melaka',
+    'asset': 'assets/imagesscan/muziumkapalselammelaka.png',
+  },
+  'stadhuysmelaka': {
+    'name': 'Stadthuys Melaka',
+    'asset': 'assets/imagesscan/stadhuysmelaka.png',
+  },
+  'stpaulhillchurch': {
+    'name': "St. Paul's Hill Church",
+    'asset': 'assets/imagesscan/stpaulhillchurch.png',
+  },
+  'trishaw': {'name': 'Beca Melaka', 'asset': 'assets/imagesscan/trishaw.png'},
+  'sampleimagetoscan': {
+    'name': 'Tempat Melaka',
+    'asset': 'assets/imagesscan/sampleimagetoscan.png',
+  },
 };
 
 class ScannerScreen extends StatefulWidget {
@@ -44,6 +72,8 @@ class _ScannerScreenState extends State<ScannerScreen>
 
   // Flip card state
   bool _showingFlipCard = false;
+  bool _isHandlingDetection = false;
+  int _detectionGeneration = 0;
   String? _detectedImageName;
   late AnimationController _flipController;
   late Animation<double> _flipAnim;
@@ -53,8 +83,11 @@ class _ScannerScreenState extends State<ScannerScreen>
   int _score = 0;
   int _questionsAnswered = 0;
   Question? _currentQuestion;
-  int? _selectedAnswer;
+  final TextEditingController _answerController = TextEditingController();
+  String? _submittedAnswer;
+  bool? _answerCorrect;
   bool _answered = false;
+  bool _submittingAnswer = false;
   ImageProvider? _frozenFrame;
 
   late AnimationController _cardAnimController;
@@ -88,7 +121,12 @@ class _ScannerScreenState extends State<ScannerScreen>
 
   Future<void> _checkIfEmulator() async {
     final emulator = await isRunningOnEmulator();
-    if (mounted) setState(() { _isEmulator = emulator; _deviceChecked = true; });
+    if (mounted) {
+      setState(() {
+        _isEmulator = emulator;
+        _deviceChecked = true;
+      });
+    }
   }
 
   @override
@@ -104,6 +142,7 @@ class _ScannerScreenState extends State<ScannerScreen>
   @override
   void dispose() {
     _sessionManager?.dispose();
+    _answerController.dispose();
     _flipController.dispose();
     _cardAnimController.dispose();
     super.dispose();
@@ -123,36 +162,65 @@ class _ScannerScreenState extends State<ScannerScreen>
       handleTaps: false,
     );
     sessionManager.onImageDetected = (String imageName) {
-      if (!_showingFlipCard && !_showingQuestion && mounted) {
+      if (!_isHandlingDetection &&
+          !_showingFlipCard &&
+          !_showingQuestion &&
+          mounted) {
         _triggerFlipCard(imageName);
       }
     };
   }
 
   Future<void> _triggerFlipCard(String imageName) async {
+    _isHandlingDetection = true;
+    final generation = ++_detectionGeneration;
+
     ImageProvider? frozen;
     try {
       frozen = await _sessionManager?.snapshot();
     } catch (_) {}
 
-    final questions = getQuestionsForTopic(_topic);
-    if (questions.isEmpty) return;
+    List<Question> questions = const [];
+    try {
+      questions = await Ar3dApi.getQuestions(_topic);
+    } catch (_) {
+      // Keep scanning available when the configured server cannot be reached.
+    }
+    if (questions.isEmpty) {
+      questions = getQuestionsForTopic(_topic);
+    }
+    if (questions.isEmpty) {
+      _isHandlingDetection = false;
+      return;
+    }
     final q = questions[Random().nextInt(questions.length)];
 
-    if (!mounted) return;
+    if (!mounted || generation != _detectionGeneration) {
+      _isHandlingDetection = false;
+      return;
+    }
     setState(() {
-      _detectedImageName = imageName.toLowerCase().replaceAll(RegExp(r'\.(png|jpg|jpeg)$'), '');
+      _detectedImageName = imageName.toLowerCase().replaceAll(
+        RegExp(r'\.(png|jpg|jpeg)$'),
+        '',
+      );
       _frozenFrame = frozen;
       _showingFlipCard = true;
       _currentQuestion = q;
-      _selectedAnswer = null;
+      _answerController.clear();
+      _submittedAnswer = null;
+      _answerCorrect = null;
       _answered = false;
+      _submittingAnswer = false;
     });
+    _isHandlingDetection = false;
 
     _flipController.reset();
     // Auto-flip to back after 1.8 seconds
     Future.delayed(const Duration(milliseconds: 1800), () {
-      if (mounted && _showingFlipCard) _flipController.forward();
+      if (mounted && _showingFlipCard && generation == _detectionGeneration) {
+        _flipController.forward();
+      }
     });
   }
 
@@ -164,12 +232,48 @@ class _ScannerScreenState extends State<ScannerScreen>
     _cardAnimController.forward(from: 0);
   }
 
-  void _selectAnswer(int index) {
-    if (_answered) return;
-    final isCorrect = index == _currentQuestion!.correctIndex;
+  void _scanAgain() {
+    _detectionGeneration++;
+    _isHandlingDetection = false;
+    _flipController.reset();
     setState(() {
-      _selectedAnswer = index;
+      _showingFlipCard = false;
+      _frozenFrame = null;
+      _detectedImageName = null;
+      _currentQuestion = null;
+      _answerController.clear();
+      _submittedAnswer = null;
+      _answerCorrect = null;
+      _answered = false;
+      _submittingAnswer = false;
+    });
+  }
+
+  Future<void> _submitAnswer(String answer) async {
+    final submitted = answer.trim();
+    if (_answered || _submittingAnswer || submitted.isEmpty) return;
+    final question = _currentQuestion!;
+    setState(() => _submittingAnswer = true);
+
+    var isCorrect = question.matchesAnswer(submitted);
+    try {
+      final result = await Ar3dApi.submitAnswer(
+        playerName: _playerName,
+        question: question,
+        answer: submitted,
+        detectedImageName: _detectedImageName,
+      );
+      if (result != null) isCorrect = result.isCorrect;
+    } catch (_) {
+      // Use local grading if the server becomes unavailable mid-session.
+    }
+
+    if (!mounted) return;
+    setState(() {
+      _submittedAnswer = submitted;
+      _answerCorrect = isCorrect;
       _answered = true;
+      _submittingAnswer = false;
       if (isCorrect) _score++;
       _questionsAnswered++;
     });
@@ -226,7 +330,11 @@ class _ScannerScreenState extends State<ScannerScreen>
                     color: Colors.black.withOpacity(0.5),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
+                  child: const Icon(
+                    Icons.arrow_back,
+                    color: Colors.white,
+                    size: 20,
+                  ),
                 ),
               ),
             ),
@@ -239,15 +347,28 @@ class _ScannerScreenState extends State<ScannerScreen>
               child: GestureDetector(
                 onTap: () => _showSoalSelidik(context),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 8,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(20),
-                    boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 6, offset: Offset(0, 2))],
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black26,
+                        blurRadius: 6,
+                        offset: Offset(0, 2),
+                      ),
+                    ],
                   ),
                   child: const Text(
                     'Soal Selidik',
-                    style: TextStyle(color: _red, fontWeight: FontWeight.w700, fontSize: 13),
+                    style: TextStyle(
+                      color: _red,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 13,
+                    ),
                   ),
                 ),
               ),
@@ -260,7 +381,10 @@ class _ScannerScreenState extends State<ScannerScreen>
               left: 24,
               right: 24,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 14,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.black.withOpacity(0.75),
                   borderRadius: BorderRadius.circular(16),
@@ -269,24 +393,39 @@ class _ScannerScreenState extends State<ScannerScreen>
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(Icons.qr_code_scanner, color: Colors.white, size: 32),
+                    const Icon(
+                      Icons.qr_code_scanner,
+                      color: Colors.white,
+                      size: 32,
+                    ),
                     const SizedBox(height: 8),
                     const Text(
                       'Hala kamera ke papan permainan',
                       textAlign: TextAlign.center,
-                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 15),
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 15,
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       'Imbas kotak papan untuk dapatkan soalan',
                       textAlign: TextAlign.center,
-                      style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 12),
+                      style: TextStyle(
+                        color: Colors.white.withOpacity(0.7),
+                        fontSize: 12,
+                      ),
                     ),
                     if (_questionsAnswered > 0) ...[
                       const SizedBox(height: 8),
                       Text(
                         'Skor: $_score / $_questionsAnswered',
-                        style: const TextStyle(color: Colors.amber, fontWeight: FontWeight.w700, fontSize: 14),
+                        style: const TextStyle(
+                          color: Colors.amber,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14,
+                        ),
                       ),
                     ],
                   ],
@@ -307,7 +446,9 @@ class _ScannerScreenState extends State<ScannerScreen>
             ),
 
           if ((_showingFlipCard || _showingQuestion) && _frozenFrame == null)
-            Positioned.fill(child: Container(color: Colors.black.withOpacity(0.7))),
+            Positioned.fill(
+              child: Container(color: Colors.black.withOpacity(0.7)),
+            ),
 
           // 3D Flip card
           if (_showingFlipCard)
@@ -315,13 +456,16 @@ class _ScannerScreenState extends State<ScannerScreen>
               child: _FlipPlaceCard(
                 flipAnim: _flipAnim,
                 imageName: _detectedImageName ?? '',
-                placeInfo: _placeInfo[_detectedImageName] ?? {'name': 'Tempat Melaka', 'asset': ''},
+                placeInfo:
+                    _placeInfo[_detectedImageName] ??
+                    {'name': 'Tempat Melaka', 'asset': ''},
                 onFlipManual: () {
                   if (_flipController.status == AnimationStatus.dismissed) {
                     _flipController.forward();
                   }
                 },
                 onGoToQuestion: _goToQuestion,
+                onScanAgain: _scanAgain,
               ),
             ),
 
@@ -331,11 +475,14 @@ class _ScannerScreenState extends State<ScannerScreen>
               scale: _cardScale,
               child: _QuestionOverlay(
                 question: _currentQuestion!,
-                selectedAnswer: _selectedAnswer,
+                answerController: _answerController,
+                submittedAnswer: _submittedAnswer,
+                answerCorrect: _answerCorrect,
                 answered: _answered,
+                submitting: _submittingAnswer,
                 score: _score,
                 total: _questionsAnswered,
-                onSelect: _selectAnswer,
+                onSubmit: _submitAnswer,
                 onDismiss: _dismissQuestion,
               ),
             ),
@@ -358,8 +505,15 @@ class _ScannerScreenState extends State<ScannerScreen>
                   onTap: () => Navigator.pop(context),
                   child: Container(
                     padding: const EdgeInsets.all(8),
-                    decoration: const BoxDecoration(color: Colors.white12, shape: BoxShape.circle),
-                    child: const Icon(Icons.arrow_back, color: Colors.white, size: 20),
+                    decoration: const BoxDecoration(
+                      color: Colors.white12,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.arrow_back,
+                      color: Colors.white,
+                      size: 20,
+                    ),
                   ),
                 ),
               ),
@@ -371,27 +525,49 @@ class _ScannerScreenState extends State<ScannerScreen>
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.qr_code_scanner, size: 80, color: Colors.white30),
+                      const Icon(
+                        Icons.qr_code_scanner,
+                        size: 80,
+                        color: Colors.white30,
+                      ),
                       const SizedBox(height: 24),
-                      const Text('Pengimbas AR Tidak Disokong',
-                          style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
-                          textAlign: TextAlign.center),
+                      const Text(
+                        'Pengimbas AR Tidak Disokong',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
                       const SizedBox(height: 12),
                       const Text(
                         'Ciri pengimbas memerlukan kamera peranti fizikal.\n\nSila gunakan telefon sebenar untuk mengimbas papan permainan.',
                         textAlign: TextAlign.center,
-                        style: TextStyle(color: Colors.white60, fontSize: 14, height: 1.5),
+                        style: TextStyle(
+                          color: Colors.white60,
+                          fontSize: 14,
+                          height: 1.5,
+                        ),
                       ),
                       const SizedBox(height: 32),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 10,
+                        ),
                         decoration: BoxDecoration(
                           color: Colors.white10,
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(color: Colors.white24),
                         ),
-                        child: const Text('🖥️ Emulator dikesan — Kamera tidak tersedia',
-                            style: TextStyle(color: Colors.yellowAccent, fontSize: 12)),
+                        child: const Text(
+                          '🖥️ Emulator dikesan — Kamera tidak tersedia',
+                          style: TextStyle(
+                            color: Colors.yellowAccent,
+                            fontSize: 12,
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -413,6 +589,7 @@ class _FlipPlaceCard extends StatelessWidget {
   final Map<String, String> placeInfo;
   final VoidCallback onFlipManual;
   final VoidCallback onGoToQuestion;
+  final VoidCallback onScanAgain;
 
   const _FlipPlaceCard({
     required this.flipAnim,
@@ -420,6 +597,7 @@ class _FlipPlaceCard extends StatelessWidget {
     required this.placeInfo,
     required this.onFlipManual,
     required this.onGoToQuestion,
+    required this.onScanAgain,
   });
 
   static const _red = Color(0xFF8B1A1A);
@@ -440,8 +618,8 @@ class _FlipPlaceCard extends StatelessWidget {
         final displayTransform = isFront
             ? transform
             : (Matrix4.identity()
-              ..setEntry(3, 2, 0.001)
-              ..rotateY(angle - pi));
+                ..setEntry(3, 2, 0.001)
+                ..rotateY(angle - pi));
 
         return GestureDetector(
           onTap: isFront ? onFlipManual : null,
@@ -466,7 +644,11 @@ class _FlipPlaceCard extends StatelessWidget {
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.45), blurRadius: 30, offset: const Offset(0, 10)),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.45),
+            blurRadius: 30,
+            offset: const Offset(0, 10),
+          ),
         ],
       ),
       child: Column(
@@ -476,12 +658,21 @@ class _FlipPlaceCard extends StatelessWidget {
           ClipRRect(
             borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
             child: asset.isNotEmpty
-                ? Image.asset(asset, width: 300, height: 200, fit: BoxFit.fitHeight)
+                ? Image.asset(
+                    asset,
+                    width: 300,
+                    height: 200,
+                    fit: BoxFit.fitHeight,
+                  )
                 : Container(
                     width: 300,
                     height: 200,
                     color: Colors.grey.shade200,
-                    child: const Icon(Icons.image, size: 60, color: Colors.grey),
+                    child: const Icon(
+                      Icons.image,
+                      size: 60,
+                      color: Colors.grey,
+                    ),
                   ),
           ),
           // Place name
@@ -531,7 +722,11 @@ class _FlipPlaceCard extends StatelessWidget {
         ),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
-          BoxShadow(color: Colors.black.withOpacity(0.45), blurRadius: 30, offset: const Offset(0, 10)),
+          BoxShadow(
+            color: Colors.black.withOpacity(0.45),
+            blurRadius: 30,
+            offset: const Offset(0, 10),
+          ),
         ],
       ),
       padding: const EdgeInsets.all(28),
@@ -543,13 +738,28 @@ class _FlipPlaceCard extends StatelessWidget {
           Text(
             name,
             textAlign: TextAlign.center,
-            style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 18),
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w800,
+              fontSize: 18,
+            ),
           ),
           const SizedBox(height: 8),
           const Text(
-            'Adakah anda bersedia untuk menjawab soalan?',
+            'Adakah ini gambar yang betul?',
             textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.white70, fontSize: 13, height: 1.4),
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+              height: 1.4,
+            ),
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'Sahkan sebelum memulakan soalan.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Colors.white70, fontSize: 12),
           ),
           const SizedBox(height: 24),
           SizedBox(
@@ -558,15 +768,37 @@ class _FlipPlaceCard extends StatelessWidget {
               onPressed: onGoToQuestion,
               icon: const Icon(Icons.arrow_forward_rounded),
               label: const Text(
-                'Teruskan ke Soalan',
+                'Ya, Mulakan Soalan',
                 style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
               ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.amber,
                 foregroundColor: Colors.black87,
                 padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 elevation: 4,
+              ),
+            ),
+          ),
+          const SizedBox(height: 10),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: onScanAgain,
+              icon: const Icon(Icons.qr_code_scanner_rounded),
+              label: const Text(
+                'Bukan, Imbas Semula',
+                style: TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
+              ),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.white,
+                side: const BorderSide(color: Colors.white70),
+                padding: const EdgeInsets.symmetric(vertical: 13),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
             ),
           ),
@@ -603,9 +835,21 @@ class _BracketPainter extends CustomPainter {
     const len = 28.0;
     final corners = [
       [Offset(0, len), Offset.zero, Offset(len, 0)],
-      [Offset(size.width - len, 0), Offset(size.width, 0), Offset(size.width, len)],
-      [Offset(size.width, size.height - len), Offset(size.width, size.height), Offset(size.width - len, size.height)],
-      [Offset(len, size.height), Offset(0, size.height), Offset(0, size.height - len)],
+      [
+        Offset(size.width - len, 0),
+        Offset(size.width, 0),
+        Offset(size.width, len),
+      ],
+      [
+        Offset(size.width, size.height - len),
+        Offset(size.width, size.height),
+        Offset(size.width - len, size.height),
+      ],
+      [
+        Offset(len, size.height),
+        Offset(0, size.height),
+        Offset(0, size.height - len),
+      ],
     ];
     for (final pts in corners) {
       final path = Path()
@@ -624,20 +868,26 @@ class _BracketPainter extends CustomPainter {
 
 class _QuestionOverlay extends StatelessWidget {
   final Question question;
-  final int? selectedAnswer;
+  final TextEditingController answerController;
+  final String? submittedAnswer;
+  final bool? answerCorrect;
   final bool answered;
+  final bool submitting;
   final int score;
   final int total;
-  final void Function(int) onSelect;
+  final Future<void> Function(String) onSubmit;
   final VoidCallback onDismiss;
 
   const _QuestionOverlay({
     required this.question,
-    required this.selectedAnswer,
+    required this.answerController,
+    required this.submittedAnswer,
+    required this.answerCorrect,
     required this.answered,
+    required this.submitting,
     required this.score,
     required this.total,
-    required this.onSelect,
+    required this.onSubmit,
     required this.onDismiss,
   });
 
@@ -649,131 +899,223 @@ class _QuestionOverlay extends StatelessWidget {
       color: Colors.black.withOpacity(0.6),
       alignment: Alignment.center,
       child: Container(
-        margin: const EdgeInsets.symmetric(horizontal: 20),
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.sizeOf(context).height - 40,
+        ),
+        margin: EdgeInsets.fromLTRB(
+          20,
+          20,
+          20,
+          20 + MediaQuery.viewInsetsOf(context).bottom,
+        ),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.4), blurRadius: 24, offset: const Offset(0, 8))],
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.4),
+              blurRadius: 24,
+              offset: const Offset(0, 8),
+            ),
+          ],
         ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            // Header
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 20),
-              decoration: const BoxDecoration(
-                color: _red,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-              ),
-              child: Row(
-                children: [
-                  Text(question.emoji, style: const TextStyle(fontSize: 22)),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(question.landmark,
-                        style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 14)),
-                  ),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(color: Colors.white24, borderRadius: BorderRadius.circular(8)),
-                    child: Text(question.topic,
-                        style: const TextStyle(color: Colors.white70, fontSize: 10)),
-                  ),
-                ],
-              ),
-            ),
-
-            // Question
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 18, 20, 12),
-              child: Text(question.question,
-                  style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700, color: Colors.black87, height: 1.4),
-                  textAlign: TextAlign.center),
-            ),
-
-            // Answers
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-              child: Column(
-                children: List.generate(question.options.length, (i) {
-                  Color bg = Colors.grey.shade100;
-                  Color border = Colors.grey.shade300;
-                  Color textColor = Colors.black87;
-                  if (answered) {
-                    if (i == question.correctIndex) { bg = Colors.green.shade100; border = Colors.green; textColor = Colors.green.shade800; }
-                    else if (i == selectedAnswer) { bg = Colors.red.shade100; border = Colors.red; textColor = Colors.red.shade800; }
-                  } else if (i == selectedAnswer) {
-                    bg = const Color(0xFF8B1A1A).withOpacity(0.08);
-                    border = _red;
-                  }
-                  return GestureDetector(
-                    onTap: () => onSelect(i),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      margin: const EdgeInsets.only(bottom: 8),
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-                      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(10), border: Border.all(color: border)),
-                      child: Row(
-                        children: [
-                          Text('${String.fromCharCode(65 + i)}.', style: TextStyle(fontWeight: FontWeight.w700, color: textColor)),
-                          const SizedBox(width: 8),
-                          Expanded(child: Text(question.options[i], style: TextStyle(color: textColor, fontSize: 13))),
-                          if (answered && i == question.correctIndex) const Icon(Icons.check_circle, color: Colors.green, size: 18),
-                          if (answered && i == selectedAnswer && i != question.correctIndex) const Icon(Icons.cancel, color: Colors.red, size: 18),
-                        ],
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Header
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                  vertical: 14,
+                  horizontal: 20,
+                ),
+                decoration: const BoxDecoration(
+                  color: _red,
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                ),
+                child: Row(
+                  children: [
+                    Text(question.emoji, style: const TextStyle(fontSize: 22)),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        question.landmark,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14,
+                        ),
                       ),
                     ),
-                  );
-                }),
-              ),
-            ),
-
-            if (answered)
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                child: Column(
-                  children: [
                     Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(10),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
-                        color: selectedAnswer == question.correctIndex ? Colors.green.shade50 : Colors.red.shade50,
-                        borderRadius: BorderRadius.circular(10),
+                        color: Colors.white24,
+                        borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        selectedAnswer == question.correctIndex ? '✅ Betul! Markah ditambah!' : '❌ Salah. Cuba lagi kali seterusnya.',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontWeight: FontWeight.w700,
-                          color: selectedAnswer == question.correctIndex ? Colors.green.shade700 : Colors.red.shade700,
-                          fontSize: 13,
+                        question.topic,
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 10,
                         ),
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: onDismiss,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: _red,
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                        ),
-                        child: const Text('Imbas Seterusnya', style: TextStyle(fontWeight: FontWeight.w700)),
                       ),
                     ),
                   ],
                 ),
-              )
-            else
-              const Padding(
-                padding: EdgeInsets.only(bottom: 16),
-                child: Text('Pilih jawapan anda', style: TextStyle(color: Colors.grey, fontSize: 12)),
               ),
-          ],
+
+              // Question
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 18, 20, 12),
+                child: Column(
+                  children: [
+                    if (question.imageUrl != null) ...[
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.network(
+                          question.imageUrl!,
+                          height: 150,
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                          errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                    Text(
+                      question.question,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.black87,
+                        height: 1.4,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+
+              // Typed answer
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                child: Column(
+                  children: [
+                    TextField(
+                      controller: answerController,
+                      enabled: !answered && !submitting,
+                      textInputAction: TextInputAction.done,
+                      onSubmitted: onSubmit,
+                      decoration: InputDecoration(
+                        labelText: 'Taip jawapan anda',
+                        hintText: 'Contoh: 0.5 atau 1/2',
+                        prefixIcon: const Icon(Icons.edit_outlined),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    if (!answered)
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: submitting
+                              ? null
+                              : () => onSubmit(answerController.text),
+                          icon: submitting
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Icon(Icons.send_rounded),
+                          label: Text(
+                            submitting ? 'Menyemak...' : 'Hantar Jawapan',
+                            style: const TextStyle(fontWeight: FontWeight.w700),
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: _red,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+
+              if (answered)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                  child: Column(
+                    children: [
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: answerCorrect == true
+                              ? Colors.green.shade50
+                              : Colors.red.shade50,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          answerCorrect == true
+                              ? 'Betul! Markah ditambah.'
+                              : 'Salah. Jawapan: ${question.correctAnswer}',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            color: answerCorrect == true
+                                ? Colors.green.shade700
+                                : Colors.red.shade700,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: onDismiss,
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: _red,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                          child: const Text(
+                            'Imbas Seterusnya',
+                            style: TextStyle(fontWeight: FontWeight.w700),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              else
+                const Padding(
+                  padding: EdgeInsets.only(bottom: 16),
+                  child: Text(
+                    'Pilih jawapan anda',
+                    style: TextStyle(color: Colors.grey, fontSize: 12),
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );
@@ -793,13 +1135,13 @@ class _SoalSelidikSheetState extends State<_SoalSelidikSheet> {
   static const _red = Color(0xFF8B1A1A);
 
   // Section 1 — Maklumat Responden
-  int? _status;       // 0=Pelajar 1=Guru 2=Pelancong 3=Lain-lain
-  int? _ageGroup;     // 0=7-12  1=13-17  2=18-25  3=26+
+  int? _status; // 0=Pelajar 1=Guru 2=Pelancong 3=Lain-lain
+  int? _ageGroup; // 0=7-12  1=13-17  2=18-25  3=26+
 
   // Section 2 — Pengalaman App
-  int? _easiness;     // 0=Sangat Mudah … 3=Sukar
+  int? _easiness; // 0=Sangat Mudah … 3=Sukar
   int? _arExperience; // 0=Sangat Menarik … 3=Tidak Menarik
-  int? _questionFit;  // 0=Sangat Sesuai … 3=Tidak Sesuai
+  int? _questionFit; // 0=Sangat Sesuai … 3=Tidak Sesuai
 
   // Section 3 — Penilaian & Cadangan
   int _starRating = 0;
@@ -844,7 +1186,10 @@ class _SoalSelidikSheetState extends State<_SoalSelidikSheet> {
               margin: const EdgeInsets.only(top: 10, bottom: 4),
               width: 40,
               height: 4,
-              decoration: BoxDecoration(color: Colors.grey.shade300, borderRadius: BorderRadius.circular(2)),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade300,
+                borderRadius: BorderRadius.circular(2),
+              ),
             ),
             // Header
             Container(
@@ -856,16 +1201,28 @@ class _SoalSelidikSheetState extends State<_SoalSelidikSheet> {
               ),
               child: Row(
                 children: [
-                  const Icon(Icons.assignment_rounded, color: Colors.white, size: 22),
+                  const Icon(
+                    Icons.assignment_rounded,
+                    color: Colors.white,
+                    size: 22,
+                  ),
                   const SizedBox(width: 10),
                   const Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text('Soal Selidik i.-GB',
-                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w800, fontSize: 16)),
-                        Text('Maklum balas anda amat kami hargai',
-                            style: TextStyle(color: Colors.white70, fontSize: 11)),
+                        Text(
+                          'Soal Selidik i.-GB',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 16,
+                          ),
+                        ),
+                        Text(
+                          'Maklum balas anda amat kami hargai',
+                          style: TextStyle(color: Colors.white70, fontSize: 11),
+                        ),
                       ],
                     ),
                   ),
@@ -904,7 +1261,12 @@ class _SoalSelidikSheetState extends State<_SoalSelidikSheet> {
 
         _questionLabel('2. Peringkat umur anda?', required: true),
         _radioGroup(
-          options: ['7 – 12 tahun', '13 – 17 tahun', '18 – 25 tahun', '26 tahun ke atas'],
+          options: [
+            '7 – 12 tahun',
+            '13 – 17 tahun',
+            '18 – 25 tahun',
+            '26 tahun ke atas',
+          ],
           selected: _ageGroup,
           onChanged: (v) => setState(() => _ageGroup = v),
         ),
@@ -922,14 +1284,25 @@ class _SoalSelidikSheetState extends State<_SoalSelidikSheet> {
           onChanged: (v) => setState(() => _easiness = v),
         ),
 
-        _questionLabel('4. Adakah pengalaman AR (Augmented Reality) menarik?', required: true),
+        _questionLabel(
+          '4. Adakah pengalaman AR (Augmented Reality) menarik?',
+          required: true,
+        ),
         _radioGroup(
-          options: ['Sangat Menarik', 'Menarik', 'Biasa-biasa Sahaja', 'Tidak Menarik'],
+          options: [
+            'Sangat Menarik',
+            'Menarik',
+            'Biasa-biasa Sahaja',
+            'Tidak Menarik',
+          ],
           selected: _arExperience,
           onChanged: (v) => setState(() => _arExperience = v),
         ),
 
-        _questionLabel('5. Adakah soalan dalam app sesuai dengan topik?', required: true),
+        _questionLabel(
+          '5. Adakah soalan dalam app sesuai dengan topik?',
+          required: true,
+        ),
         _radioGroup(
           options: ['Sangat Sesuai', 'Sesuai', 'Kurang Sesuai', 'Tidak Sesuai'],
           selected: _questionFit,
@@ -965,10 +1338,21 @@ class _SoalSelidikSheetState extends State<_SoalSelidikSheet> {
           Padding(
             padding: const EdgeInsets.only(top: 6),
             child: Text(
-              ['', 'Sangat Buruk', 'Buruk', 'Sederhana', 'Baik', 'Sangat Baik'][_starRating],
+              [
+                '',
+                'Sangat Buruk',
+                'Buruk',
+                'Sederhana',
+                'Baik',
+                'Sangat Baik',
+              ][_starRating],
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: _starRating >= 4 ? Colors.green.shade700 : _starRating == 3 ? Colors.orange : Colors.red.shade700,
+                color: _starRating >= 4
+                    ? Colors.green.shade700
+                    : _starRating == 3
+                    ? Colors.orange
+                    : Colors.red.shade700,
                 fontWeight: FontWeight.w600,
                 fontSize: 13,
               ),
@@ -984,8 +1368,14 @@ class _SoalSelidikSheetState extends State<_SoalSelidikSheet> {
           decoration: InputDecoration(
             hintText: 'Tulis cadangan anda di sini...',
             hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 13),
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide(color: Colors.grey.shade300)),
-            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: _red)),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Colors.grey.shade300),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: const BorderSide(color: _red),
+            ),
             contentPadding: const EdgeInsets.all(12),
           ),
         ),
@@ -1002,10 +1392,14 @@ class _SoalSelidikSheetState extends State<_SoalSelidikSheet> {
               disabledBackgroundColor: Colors.grey.shade300,
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 14),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
             ),
             child: Text(
-              _canSubmit ? 'Hantar Maklum Balas' : 'Sila lengkapkan semua soalan (★)',
+              _canSubmit
+                  ? 'Hantar Maklum Balas'
+                  : 'Sila lengkapkan semua soalan (★)',
               style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
             ),
           ),
@@ -1023,13 +1417,23 @@ class _SoalSelidikSheetState extends State<_SoalSelidikSheet> {
           children: [
             const Text('🎉', style: TextStyle(fontSize: 64)),
             const SizedBox(height: 16),
-            const Text('Terima Kasih!',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: _red)),
+            const Text(
+              'Terima Kasih!',
+              style: TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.w800,
+                color: _red,
+              ),
+            ),
             const SizedBox(height: 10),
             Text(
               'Maklum balas anda telah berjaya dihantar.\nPenilaian anda: ${'⭐' * _starRating}',
               textAlign: TextAlign.center,
-              style: const TextStyle(fontSize: 14, color: Colors.black54, height: 1.5),
+              style: const TextStyle(
+                fontSize: 14,
+                color: Colors.black54,
+                height: 1.5,
+              ),
             ),
             const SizedBox(height: 32),
             ElevatedButton(
@@ -1037,10 +1441,18 @@ class _SoalSelidikSheetState extends State<_SoalSelidikSheet> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: _red,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 32,
+                  vertical: 12,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
-              child: const Text('Tutup', style: TextStyle(fontWeight: FontWeight.w700)),
+              child: const Text(
+                'Tutup',
+                style: TextStyle(fontWeight: FontWeight.w700),
+              ),
             ),
           ],
         ),
@@ -1049,8 +1461,14 @@ class _SoalSelidikSheetState extends State<_SoalSelidikSheet> {
   }
 
   Widget _sectionTitle(String text) {
-    return Text(text,
-        style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 14, color: _red));
+    return Text(
+      text,
+      style: const TextStyle(
+        fontWeight: FontWeight.w800,
+        fontSize: 14,
+        color: _red,
+      ),
+    );
   }
 
   Widget _questionLabel(String text, {bool required = false}) {
@@ -1059,9 +1477,18 @@ class _SoalSelidikSheetState extends State<_SoalSelidikSheet> {
       child: RichText(
         text: TextSpan(
           text: text,
-          style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13, color: Colors.black87),
+          style: const TextStyle(
+            fontWeight: FontWeight.w600,
+            fontSize: 13,
+            color: Colors.black87,
+          ),
           children: required
-              ? [const TextSpan(text: ' *', style: TextStyle(color: _red))]
+              ? [
+                  const TextSpan(
+                    text: ' *',
+                    style: TextStyle(color: _red),
+                  ),
+                ]
               : [],
         ),
       ),
@@ -1085,22 +1512,31 @@ class _SoalSelidikSheetState extends State<_SoalSelidikSheet> {
             decoration: BoxDecoration(
               color: isSelected ? _red.withOpacity(0.08) : Colors.grey.shade50,
               borderRadius: BorderRadius.circular(10),
-              border: Border.all(color: isSelected ? _red : Colors.grey.shade200),
+              border: Border.all(
+                color: isSelected ? _red : Colors.grey.shade200,
+              ),
             ),
             child: Row(
               children: [
                 Icon(
-                  isSelected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+                  isSelected
+                      ? Icons.radio_button_checked
+                      : Icons.radio_button_unchecked,
                   color: isSelected ? _red : Colors.grey.shade400,
                   size: 20,
                 ),
                 const SizedBox(width: 10),
                 Expanded(
-                  child: Text(options[i],
-                      style: TextStyle(
-                          fontSize: 13,
-                          color: isSelected ? _red : Colors.black87,
-                          fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal)),
+                  child: Text(
+                    options[i],
+                    style: TextStyle(
+                      fontSize: 13,
+                      color: isSelected ? _red : Colors.black87,
+                      fontWeight: isSelected
+                          ? FontWeight.w600
+                          : FontWeight.normal,
+                    ),
+                  ),
                 ),
               ],
             ),

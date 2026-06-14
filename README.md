@@ -21,7 +21,7 @@ i.-GB App
 ├── 🏠 Home Screen      — Enter name, choose topic, navigate to demo or game
 ├── 📱 AR Demo Screen   — Showcase Flutter AR capabilities (place 3D objects)
 ├── 🎲 Game Board       — 30-square Melaka-themed Snake & Ladder board
-└── ❓ Question Card    — Multiple-choice question with AR flip animation
+└── ❓ Question Card    — Typed-answer question with AR flip animation
 ```
 
 ---
@@ -43,7 +43,8 @@ i.-GB App
 - **30-Square Board** — Melaka landmark squares with zigzag layout
 - **Dice Roll** — Animated dice with numbers 1–6
 - **Snake & Ladder** — Special squares that move you up or down
-- **Question Cards** — Flip-animated multiple-choice questions
+- **Question Cards** — Flip-animated typed-answer questions
+- **Flexible Grading** — Ignores case and accepts equivalent fractions/decimals
 - **Score Tracking** — +10 per correct answer, accuracy calculation
 - **End Game Summary** — Results dialog with score and accuracy
 - **Offline Mode** — All questions stored locally (no internet needed for game)
@@ -137,6 +138,28 @@ flutter build apk --release
 # Build iOS (requires Mac + Xcode)
 flutter build ios
 ```
+
+### Flask API and Lecturer Admin
+
+The `server/` directory contains the Flask API, SQLite database, image uploads,
+learner answer tracking, and lecturer question-management page. Its controller
+is the `ar3d` Blueprint.
+
+```bash
+cd server
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+export FLASK_SECRET_KEY="replace-me"
+export AR3D_ADMIN_PASSWORD="replace-me"
+export AR3D_ADMIN_API_KEY="replace-me"
+flask --app app run --host 0.0.0.0 --port 5000
+```
+
+Open `http://127.0.0.1:5000/admin/ar3d` for the lecturer page. See
+`server/README.md` for the API request formats and Flutter connection command.
+The Flutter home screen also provides **Lecturer Admin** for managing typed
+questions and viewing learner responses directly inside the app.
 
 ### Android Requirements
 - Minimum SDK: **API 24** (Android 7.0) — ARCore requirement

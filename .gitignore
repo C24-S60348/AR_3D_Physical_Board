@@ -48,3 +48,10 @@ node_modules/
 package.json
 package-lock.json
 invoice_igb.*
+
+# Flask backend runtime data
+server/instance/
+server/uploads/*
+!server/uploads/.gitkeep
+server/.venv/
+server/**/__pycache__/

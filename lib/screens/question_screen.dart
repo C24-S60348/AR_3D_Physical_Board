@@ -19,7 +19,8 @@ class QuestionScreen extends StatefulWidget {
 
 class _QuestionScreenState extends State<QuestionScreen>
     with SingleTickerProviderStateMixin {
-  int? _selectedIndex;
+  final TextEditingController _answerController = TextEditingController();
+  String? _submittedAnswer;
   bool _answered = false;
   late AnimationController _flipController;
   late Animation<double> _flip;
@@ -39,20 +40,21 @@ class _QuestionScreenState extends State<QuestionScreen>
 
   @override
   void dispose() {
+    _answerController.dispose();
     _flipController.dispose();
     super.dispose();
   }
 
-  void _select(int index) {
-    if (_answered) return;
+  void _submit() {
+    final answer = _answerController.text.trim();
+    if (_answered || answer.isEmpty) return;
     setState(() {
-      _selectedIndex = index;
+      _submittedAnswer = answer;
       _answered = true;
     });
   }
 
-  bool get _isCorrect =>
-      _selectedIndex == widget.question.correctIndex;
+  bool get _isCorrect => widget.question.matchesAnswer(_submittedAnswer ?? '');
 
   void _continue() {
     Navigator.pop(context, _isCorrect);
@@ -89,7 +91,7 @@ class _QuestionScreenState extends State<QuestionScreen>
   }
 
   Widget _buildCard() {
-    return Padding(
+    return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Column(
         children: [
@@ -97,7 +99,10 @@ class _QuestionScreenState extends State<QuestionScreen>
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.amber.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(20),
@@ -105,14 +110,15 @@ class _QuestionScreenState extends State<QuestionScreen>
                 ),
                 child: Text(
                   'Petak ${widget.squareId}',
-                  style: const TextStyle(color: Colors.amber, fontSize: 12, fontWeight: FontWeight.w700),
+                  style: const TextStyle(
+                    color: Colors.amber,
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
               ),
               const Spacer(),
-              Text(
-                widget.question.emoji,
-                style: const TextStyle(fontSize: 28),
-              ),
+              Text(widget.question.emoji, style: const TextStyle(fontSize: 28)),
             ],
           ),
           const SizedBox(height: 16),
@@ -172,19 +178,55 @@ class _QuestionScreenState extends State<QuestionScreen>
           ),
           const SizedBox(height: 16),
 
-          // Options
-          ...List.generate(widget.question.options.length, (i) {
-            return _OptionButton(
-              label: widget.question.options[i],
-              index: i,
-              selected: _selectedIndex == i,
-              answered: _answered,
-              isCorrect: i == widget.question.correctIndex,
-              onTap: () => _select(i),
-            );
-          }),
+          TextField(
+            controller: _answerController,
+            enabled: !_answered,
+            style: const TextStyle(color: Colors.white),
+            textInputAction: TextInputAction.done,
+            onSubmitted: (_) => _submit(),
+            decoration: InputDecoration(
+              labelText: 'Taip jawapan anda',
+              labelStyle: const TextStyle(color: Colors.white70),
+              hintText: 'Contoh: 0.5 atau 1/2',
+              hintStyle: const TextStyle(color: Colors.white38),
+              prefixIcon: const Icon(Icons.edit_outlined, color: Colors.amber),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Colors.white38),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Colors.amber, width: 2),
+              ),
+              disabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: const BorderSide(color: Colors.white24),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          if (!_answered)
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton.icon(
+                onPressed: _submit,
+                icon: const Icon(Icons.send_rounded),
+                label: const Text(
+                  'Hantar Jawapan',
+                  style: TextStyle(fontWeight: FontWeight.w800),
+                ),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.amber,
+                  foregroundColor: Colors.black,
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+              ),
+            ),
 
-          const Spacer(),
+          const SizedBox(height: 24),
 
           // Result + Continue
           if (_answered) ...[
@@ -221,8 +263,11 @@ class _QuestionScreenState extends State<QuestionScreen>
                         ),
                         if (!_isCorrect)
                           Text(
-                            'Jawapan: ${widget.question.options[widget.question.correctIndex]}',
-                            style: const TextStyle(color: Colors.white70, fontSize: 12),
+                            'Jawapan: ${widget.question.correctAnswer}',
+                            style: const TextStyle(
+                              color: Colors.white70,
+                              fontSize: 12,
+                            ),
                           ),
                       ],
                     ),
@@ -251,90 +296,6 @@ class _QuestionScreenState extends State<QuestionScreen>
             ),
           ],
         ],
-      ),
-    );
-  }
-}
-
-class _OptionButton extends StatelessWidget {
-  final String label;
-  final int index;
-  final bool selected;
-  final bool answered;
-  final bool isCorrect;
-  final VoidCallback onTap;
-
-  const _OptionButton({
-    required this.label,
-    required this.index,
-    required this.selected,
-    required this.answered,
-    required this.isCorrect,
-    required this.onTap,
-  });
-
-  static const _letters = ['A', 'B', 'C', 'D'];
-
-  Color _bgColor() {
-    if (!answered) return Colors.white.withOpacity(0.08);
-    if (isCorrect) return Colors.green.withOpacity(0.25);
-    if (selected && !isCorrect) return Colors.red.withOpacity(0.25);
-    return Colors.white.withOpacity(0.05);
-  }
-
-  Color _borderColor() {
-    if (!answered) return Colors.white24;
-    if (isCorrect) return Colors.green;
-    if (selected && !isCorrect) return Colors.red;
-    return Colors.white12;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: answered ? null : onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 250),
-        margin: const EdgeInsets.only(bottom: 8),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
-        decoration: BoxDecoration(
-          color: _bgColor(),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: _borderColor()),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 28,
-              height: 28,
-              decoration: BoxDecoration(
-                color: _borderColor().withOpacity(0.3),
-                shape: BoxShape.circle,
-              ),
-              child: Center(
-                child: Text(
-                  _letters[index],
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 12,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                label,
-                style: const TextStyle(color: Colors.white, fontSize: 14),
-              ),
-            ),
-            if (answered && isCorrect)
-              const Icon(Icons.check, color: Colors.green, size: 18),
-            if (answered && selected && !isCorrect)
-              const Icon(Icons.close, color: Colors.red, size: 18),
-          ],
-        ),
       ),
     );
   }

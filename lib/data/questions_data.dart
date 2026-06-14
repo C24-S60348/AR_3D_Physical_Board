@@ -1,19 +1,92 @@
 class Question {
+  final int? id;
+  final int? topicId;
   final String topic;
   final String question;
   final List<String> options;
   final int correctIndex;
   final String landmark;
   final String emoji;
+  final String? imageUrl;
+  final List<String> acceptedAnswers;
+  final bool isActive;
 
   const Question({
+    this.id,
+    this.topicId,
     required this.topic,
     required this.question,
     required this.options,
     required this.correctIndex,
     required this.landmark,
     required this.emoji,
+    this.imageUrl,
+    this.acceptedAnswers = const [],
+    this.isActive = true,
   });
+
+  String get correctAnswer {
+    if (acceptedAnswers.isNotEmpty) return acceptedAnswers.first;
+    if (options.isNotEmpty &&
+        correctIndex >= 0 &&
+        correctIndex < options.length) {
+      return options[correctIndex];
+    }
+    return '';
+  }
+
+  Iterable<String> get allAcceptedAnswers =>
+      acceptedAnswers.isNotEmpty ? acceptedAnswers : [correctAnswer];
+
+  bool matchesAnswer(String submitted) {
+    return allAcceptedAnswers.any(
+      (accepted) => answersAreEquivalent(submitted, accepted),
+    );
+  }
+
+  factory Question.fromApiJson(Map<String, dynamic> json) {
+    return Question(
+      id: json['id'] as int?,
+      topicId: json['topic_id'] as int?,
+      topic: json['topic_name'] as String? ?? '',
+      question: json['prompt'] as String? ?? '',
+      options: const [],
+      correctIndex: 0,
+      landmark: json['topic_name'] as String? ?? 'i.-GB',
+      emoji: '❓',
+      imageUrl: json['image_url'] as String?,
+      acceptedAnswers: (json['accepted_answers'] as List<dynamic>? ?? const [])
+          .map((answer) => answer.toString())
+          .toList(),
+      isActive: json['is_active'] as bool? ?? true,
+    );
+  }
+}
+
+bool answersAreEquivalent(String submitted, String accepted) {
+  final submittedNumber = _parseNumber(submitted);
+  final acceptedNumber = _parseNumber(accepted);
+  if (submittedNumber != null && acceptedNumber != null) {
+    return (submittedNumber - acceptedNumber).abs() < 1e-12;
+  }
+  return _normalizeAnswer(submitted) == _normalizeAnswer(accepted);
+}
+
+String _normalizeAnswer(String value) =>
+    value.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
+
+double? _parseNumber(String value) {
+  final compact = _normalizeAnswer(value).replaceAll(' ', '');
+  final fractionParts = compact.split('/');
+  if (fractionParts.length == 2) {
+    final numerator = double.tryParse(fractionParts[0]);
+    final denominator = double.tryParse(fractionParts[1]);
+    if (numerator == null || denominator == null || denominator == 0) {
+      return null;
+    }
+    return numerator / denominator;
+  }
+  return double.tryParse(compact);
 }
 
 final Map<String, List<Question>> questionsByTopic = {
@@ -79,7 +152,12 @@ final Map<String, List<Question>> questionsByTopic = {
     const Question(
       topic: 'Maths for Secondary Students',
       question: 'Apakah maksud "Stadthuys" dalam bahasa Belanda?',
-      options: ['Dewan Bandaraya', 'Istana Raja', 'Rumah Penjara', 'Gereja Lama'],
+      options: [
+        'Dewan Bandaraya',
+        'Istana Raja',
+        'Rumah Penjara',
+        'Gereja Lama',
+      ],
       correctIndex: 0,
       landmark: 'Stadthuys',
       emoji: '🏛️',
@@ -95,7 +173,12 @@ final Map<String, List<Question>> questionsByTopic = {
     const Question(
       topic: 'Maths for Secondary Students',
       question: 'Apakah nama menara putar di Bandar Hilir Melaka?',
-      options: ['Menara Taming Sari', 'Menara Melaka', 'Menara Warisan', 'Menara KL'],
+      options: [
+        'Menara Taming Sari',
+        'Menara Melaka',
+        'Menara Warisan',
+        'Menara KL',
+      ],
       correctIndex: 0,
       landmark: 'Menara Taming Sari',
       emoji: '🗼',
@@ -121,7 +204,12 @@ final Map<String, List<Question>> questionsByTopic = {
     const Question(
       topic: 'Maths for Higher Education',
       question: 'Apakah yang dimaksudkan dengan komuniti "Baba Nyonya"?',
-      options: ['Peranakan Cina', 'Peranakan India', 'Peranakan Arab', 'Peranakan Bugis'],
+      options: [
+        'Peranakan Cina',
+        'Peranakan India',
+        'Peranakan Arab',
+        'Peranakan Bugis',
+      ],
       correctIndex: 0,
       landmark: 'Muzium Baba Nyonya',
       emoji: '🎎',
@@ -129,7 +217,12 @@ final Map<String, List<Question>> questionsByTopic = {
     const Question(
       topic: 'Maths for Higher Education',
       question: 'Apakah makanan Melaka yang paling terkenal?',
-      options: ['Nasi Ayam Bola', 'Nasi Lemak', 'Char Kuey Teow', 'Laksa Penang'],
+      options: [
+        'Nasi Ayam Bola',
+        'Nasi Lemak',
+        'Char Kuey Teow',
+        'Laksa Penang',
+      ],
       correctIndex: 0,
       landmark: 'Jalan Hang Jebat',
       emoji: '🍚',
@@ -137,7 +230,12 @@ final Map<String, List<Question>> questionsByTopic = {
     const Question(
       topic: 'Maths for Higher Education',
       question: 'Apakah Jalan Jonker paling terkenal?',
-      options: ['Barangan antik & makanan', 'Beli belah moden', 'Pasar ikan', 'Pertanian'],
+      options: [
+        'Barangan antik & makanan',
+        'Beli belah moden',
+        'Pasar ikan',
+        'Pertanian',
+      ],
       correctIndex: 0,
       landmark: 'Jalan Jonker',
       emoji: '🛍️',
@@ -171,7 +269,12 @@ final Map<String, List<Question>> questionsByTopic = {
     const Question(
       topic: 'Tourism Melaka',
       question: 'Bagaimana cara terbaik menikmati pemandangan Sungai Melaka?',
-      options: ['Bot pelancong sungai', 'Menaiki feri', 'Berenang', 'Berjalan kaki'],
+      options: [
+        'Bot pelancong sungai',
+        'Menaiki feri',
+        'Berenang',
+        'Berjalan kaki',
+      ],
       correctIndex: 0,
       landmark: 'Sungai Melaka',
       emoji: '🚤',
@@ -187,7 +290,12 @@ final Map<String, List<Question>> questionsByTopic = {
     const Question(
       topic: 'Tourism Melaka',
       question: 'Di manakah terletaknya Masjid Selat Melaka yang unik?',
-      options: ['Di atas air', 'Di bukit', 'Di tengah bandar', 'Di dalam hutan'],
+      options: [
+        'Di atas air',
+        'Di bukit',
+        'Di tengah bandar',
+        'Di dalam hutan',
+      ],
       correctIndex: 0,
       landmark: 'Masjid Selat Melaka',
       emoji: '🕌',
@@ -195,7 +303,12 @@ final Map<String, List<Question>> questionsByTopic = {
     const Question(
       topic: 'Tourism Melaka',
       question: 'Status UNESCO apakah yang diterima Melaka pada 2008?',
-      options: ['Bandar Warisan Dunia', 'Taman Warisan', 'Tapak Semula Jadi', 'Warisan Tak Ketara'],
+      options: [
+        'Bandar Warisan Dunia',
+        'Taman Warisan',
+        'Tapak Semula Jadi',
+        'Warisan Tak Ketara',
+      ],
       correctIndex: 0,
       landmark: 'Pusat Melaka',
       emoji: '🌏',
@@ -211,7 +324,12 @@ final Map<String, List<Question>> questionsByTopic = {
     const Question(
       topic: 'Tourism Melaka',
       question: 'Apakah nama pantai yang terkenal di Melaka?',
-      options: ['Pantai Klebang', 'Pantai Batu Feringgi', 'Pantai Cenang', 'Pantai Morib'],
+      options: [
+        'Pantai Klebang',
+        'Pantai Batu Feringgi',
+        'Pantai Cenang',
+        'Pantai Morib',
+      ],
       correctIndex: 0,
       landmark: 'Klebang',
       emoji: '🏖️',

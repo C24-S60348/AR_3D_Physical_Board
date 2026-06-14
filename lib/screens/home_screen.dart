@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
 import '../data/questions_data.dart';
+import '../services/ar3d_api.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -9,8 +10,7 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen>
-    with TickerProviderStateMixin {
+class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   final _nameController = TextEditingController();
   String _selectedTopic = 'Maths for Primary Students';
   final _formKey = GlobalKey<FormState>();
@@ -23,6 +23,7 @@ class _HomeScreenState extends State<HomeScreen>
   late AnimationController _starsCtrl;
   final AudioPlayer _audioPlayer = AudioPlayer();
   bool _showStars = false;
+  bool _testingApi = false;
 
   @override
   void initState() {
@@ -39,13 +40,17 @@ class _HomeScreenState extends State<HomeScreen>
     );
     _logoScale = TweenSequence<double>([
       TweenSequenceItem(
-        tween: Tween(begin: 1.0, end: 1.10)
-            .chain(CurveTween(curve: Curves.easeOut)),
+        tween: Tween(
+          begin: 1.0,
+          end: 1.10,
+        ).chain(CurveTween(curve: Curves.easeOut)),
         weight: 40,
       ),
       TweenSequenceItem(
-        tween: Tween(begin: 1.10, end: 1.0)
-            .chain(CurveTween(curve: Curves.easeInOut)),
+        tween: Tween(
+          begin: 1.10,
+          end: 1.0,
+        ).chain(CurveTween(curve: Curves.easeInOut)),
         weight: 60,
       ),
     ]).animate(_logoScaleCtrl);
@@ -80,16 +85,16 @@ class _HomeScreenState extends State<HomeScreen>
   /// 5 stars flying out from the logo edge outward — never over the logo face.
   List<Widget> _buildStars() {
     const directions = [
-      Offset(0, -1),        // top
-      Offset(0.85, -0.85),  // top-right
-      Offset(1, 0.3),       // right
-      Offset(-0.8, 0.85),   // bottom-left
-      Offset(-0.9, -0.55),  // top-left
+      Offset(0, -1), // top
+      Offset(0.85, -0.85), // top-right
+      Offset(1, 0.3), // right
+      Offset(-0.8, 0.85), // bottom-left
+      Offset(-0.9, -0.55), // top-left
     ];
 
     // Logo radius ~100px; stars start just outside the edge and travel further
     const logoEdge = 65.0;
-    const travel   = 65.0;
+    const travel = 65.0;
 
     return directions.map((dir) {
       return AnimatedBuilder(
@@ -101,14 +106,13 @@ class _HomeScreenState extends State<HomeScreen>
           final dx = dir.dx * dist;
           final dy = dir.dy * dist;
           // Fade out in last 40%
-          final opacity = t < 0.6 ? 1.0 : (1.0 - (t - 0.6) / 0.4).clamp(0.0, 1.0);
+          final opacity = t < 0.6
+              ? 1.0
+              : (1.0 - (t - 0.6) / 0.4).clamp(0.0, 1.0);
 
           return Transform.translate(
             offset: Offset(dx, dy),
-            child: Opacity(
-              opacity: opacity,
-              child: child,
-            ),
+            child: Opacity(opacity: opacity, child: child),
           );
         },
         child: const Text('⭐', style: TextStyle(fontSize: 16)),
@@ -132,33 +136,88 @@ class _HomeScreenState extends State<HomeScreen>
       showDialog(
         context: context,
         builder: (ctx) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           title: const Row(
             children: [
               Icon(Icons.person_off, color: _red),
               SizedBox(width: 8),
-              Text('Nama Diperlukan', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700)),
+              Text(
+                'Nama Diperlukan',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+              ),
             ],
           ),
-          content: const Text('Sila masukkan nama pemain sebelum memulakan permainan.'),
+          content: const Text(
+            'Sila masukkan nama pemain sebelum memulakan permainan.',
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(ctx),
-              child: const Text('OK', style: TextStyle(color: _red, fontWeight: FontWeight.w700)),
+              child: const Text(
+                'OK',
+                style: TextStyle(color: _red, fontWeight: FontWeight.w700),
+              ),
             ),
           ],
         ),
       );
       return;
     }
-    Navigator.pushNamed(context, '/loading', arguments: {
-      'destination': '/scanner',
-      'topic': _selectedTopic,
-      'arguments': {
-        'playerName': name,
+    Navigator.pushNamed(
+      context,
+      '/loading',
+      arguments: {
+        'destination': '/scanner',
         'topic': _selectedTopic,
+        'arguments': {'playerName': name, 'topic': _selectedTopic},
       },
-    });
+    );
+  }
+
+  Future<void> _testApi() async {
+    if (_testingApi) return;
+    setState(() => _testingApi = true);
+
+    String title;
+    String message;
+    bool success;
+    try {
+      final service = await Ar3dApi.testConnection();
+      title = 'API Connected';
+      message = 'Connected to $service at ${Ar3dApi.baseUrl}.';
+      success = true;
+    } catch (error) {
+      title = 'API Connection Failed';
+      message = error.toString().replaceFirst('Bad state: ', '');
+      success = false;
+    }
+
+    if (!mounted) return;
+    setState(() => _testingApi = false);
+    showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(
+              success ? Icons.cloud_done : Icons.cloud_off,
+              color: success ? Colors.green : Colors.red,
+            ),
+            const SizedBox(width: 10),
+            Expanded(child: Text(title)),
+          ],
+        ),
+        content: Text(message),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: const Text('OK'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -176,200 +235,308 @@ class _HomeScreenState extends State<HomeScreen>
               ),
             ),
             child: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  const SizedBox(height: 8),
-                  // Header — tappable logo with star burst
-                  Center(
-                    child: GestureDetector(
-                      onTap: _onLogoTap,
-                      child: SizedBox(
-                        width: 150,
-                        height: 150,
-                        child: Stack(
-                          alignment: Alignment.center,
-                          clipBehavior: Clip.none,
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      const SizedBox(height: 8),
+                      // Header — tappable logo with star burst
+                      Center(
+                        child: GestureDetector(
+                          onTap: _onLogoTap,
+                          child: SizedBox(
+                            width: 150,
+                            height: 150,
+                            child: Stack(
+                              alignment: Alignment.center,
+                              clipBehavior: Clip.none,
+                              children: [
+                                // Logo with bounce scale
+                                ScaleTransition(
+                                  scale: _logoScale,
+                                  child: Stack(
+                                    alignment: Alignment.center,
+                                    children: [
+                                      ColorFiltered(
+                                        colorFilter: const ColorFilter.mode(
+                                          Colors.white,
+                                          BlendMode.srcIn,
+                                        ),
+                                        child: Image.asset(
+                                          'assets/images/logo_igb.png',
+                                          width: 138,
+                                          height: 138,
+                                        ),
+                                      ),
+                                      Image.asset(
+                                        'assets/images/logo_igb.png',
+                                        width: 128,
+                                        height: 128,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                                // Stars on top of logo
+                                if (_showStars) ..._buildStars(),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Card
+                      Container(
+                        padding: const EdgeInsets.all(24),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.3),
+                              blurRadius: 20,
+                              offset: const Offset(0, 8),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            // Logo with bounce scale
-                            ScaleTransition(
-                              scale: _logoScale,
-                              child: Stack(
-                                alignment: Alignment.center,
-                                children: [
-                                  ColorFiltered(
-                                    colorFilter: const ColorFilter.mode(
-                                      Colors.white,
-                                      BlendMode.srcIn,
-                                    ),
-                                    child: Image.asset(
-                                      'assets/images/logo_igb.png',
-                                      width: 138,
-                                      height: 138,
-                                    ),
-                                  ),
-                                  Image.asset(
-                                    'assets/images/logo_igb.png',
-                                    width: 128,
-                                    height: 128,
-                                  ),
-                                ],
+                            const Text(
+                              'Nama Pemain',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 14,
+                                color: _red,
                               ),
                             ),
-                            // Stars on top of logo
-                            if (_showStars)
-                              ..._buildStars(),
+                            const SizedBox(height: 8),
+                            TextFormField(
+                              controller: _nameController,
+                              decoration: InputDecoration(
+                                hintText: 'Taip nama disini',
+                                prefixIcon: const Icon(
+                                  Icons.person,
+                                  color: _red,
+                                ),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: const BorderSide(
+                                    color: _red,
+                                    width: 2,
+                                  ),
+                                ),
+                              ),
+                              validator: null,
+                            ),
+                            const SizedBox(height: 20),
+                            const Text(
+                              'Pilih Topik',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w700,
+                                fontSize: 14,
+                                color: _red,
+                              ),
+                            ),
+                            const SizedBox(height: 12),
+                            SizedBox(
+                              height: 160,
+                              child: PageView.builder(
+                                controller: _topicPageController,
+                                itemCount: allTopics.length,
+                                onPageChanged: (i) => setState(
+                                  () => _selectedTopic = allTopics[i],
+                                ),
+                                itemBuilder: (context, i) {
+                                  final distance = (_currentPage - i).abs();
+                                  final scale = (1 - distance * 0.18).clamp(
+                                    0.82,
+                                    1.0,
+                                  );
+                                  return GestureDetector(
+                                    onTap: () =>
+                                        _topicPageController.animateToPage(
+                                          i,
+                                          duration: const Duration(
+                                            milliseconds: 300,
+                                          ),
+                                          curve: Curves.easeInOut,
+                                        ),
+                                    child: Transform.scale(
+                                      scale: scale,
+                                      child: _TopicCard(
+                                        topic: allTopics[i],
+                                        selected:
+                                            _selectedTopic == allTopics[i],
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
                           ],
                         ),
                       ),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
+                      const SizedBox(height: 24),
 
-                  // Card
-                  Container(
-                    padding: const EdgeInsets.all(24),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.3),
-                          blurRadius: 20,
-                          offset: const Offset(0, 8),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Nama Pemain',
+                      // Play button
+                      ElevatedButton.icon(
+                        onPressed: _startGame,
+                        icon: const Icon(Icons.sports_esports, size: 24),
+                        label: const Text(
+                          'MAIN i.-GB',
                           style: TextStyle(
-                            fontWeight: FontWeight.w700,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w800,
+                            letterSpacing: 1,
+                          ),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: _gold,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          elevation: 6,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+
+                      Row(
+                        children: [
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: () =>
+                                  Navigator.pushNamed(context, '/tutorial'),
+                              icon: const Icon(Icons.menu_book, size: 20),
+                              label: const Text(
+                                'Tutorial',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: Colors.white,
+                                side: const BorderSide(
+                                  color: Colors.white54,
+                                  width: 1.5,
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 14,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: OutlinedButton.icon(
+                              onPressed: () =>
+                                  Navigator.pushNamed(context, '/nota'),
+                              icon: const Icon(Icons.notes, size: 20),
+                              label: const Text(
+                                'Nota',
+                                style: TextStyle(
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: Colors.white,
+                                side: const BorderSide(
+                                  color: Colors.white54,
+                                  width: 1.5,
+                                ),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 14,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      OutlinedButton.icon(
+                        onPressed: _testingApi ? null : _testApi,
+                        icon: _testingApi
+                            ? const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Icon(Icons.cloud_sync, size: 20),
+                        label: Text(
+                          _testingApi
+                              ? 'Menguji API...'
+                              : 'Test API Connection',
+                          style: const TextStyle(
                             fontSize: 14,
-                            color: _red,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
-                        const SizedBox(height: 8),
-                        TextFormField(
-                          controller: _nameController,
-                          decoration: InputDecoration(
-                            hintText: 'Taip nama disini',
-                            prefixIcon: const Icon(Icons.person, color: _red),
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            focusedBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(color: _red, width: 2),
-                            ),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.white,
+                          disabledForegroundColor: Colors.white70,
+                          side: const BorderSide(
+                            color: Colors.white54,
+                            width: 1.5,
                           ),
-                          validator: null,
+                          padding: const EdgeInsets.symmetric(vertical: 13),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
                         ),
-                        const SizedBox(height: 20),
-                        const Text(
-                          'Pilih Topik',
+                      ),
+                      const SizedBox(height: 10),
+                      OutlinedButton.icon(
+                        onPressed: () =>
+                            Navigator.pushNamed(context, '/lecturer'),
+                        icon: const Icon(
+                          Icons.admin_panel_settings_outlined,
+                          size: 20,
+                        ),
+                        label: const Text(
+                          'Lecturer Admin',
                           style: TextStyle(
-                            fontWeight: FontWeight.w700,
                             fontSize: 14,
-                            color: _red,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
-                        const SizedBox(height: 12),
-                        SizedBox(
-                          height: 160,
-                          child: PageView.builder(
-                            controller: _topicPageController,
-                            itemCount: allTopics.length,
-                            onPageChanged: (i) => setState(() => _selectedTopic = allTopics[i]),
-                            itemBuilder: (context, i) {
-                              final distance = (_currentPage - i).abs();
-                              final scale = (1 - distance * 0.18).clamp(0.82, 1.0);
-                              return GestureDetector(
-                                onTap: () => _topicPageController.animateToPage(
-                                  i,
-                                  duration: const Duration(milliseconds: 300),
-                                  curve: Curves.easeInOut,
-                                ),
-                                child: Transform.scale(
-                                  scale: scale,
-                                  child: _TopicCard(
-                                    topic: allTopics[i],
-                                    selected: _selectedTopic == allTopics[i],
-                                  ),
-                                ),
-                              );
-                            },
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.white,
+                          side: const BorderSide(
+                            color: Colors.white54,
+                            width: 1.5,
                           ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-
-                  // Play button
-                  ElevatedButton.icon(
-                    onPressed: _startGame,
-                    icon: const Icon(Icons.sports_esports, size: 24),
-                    label: const Text(
-                      'MAIN i.-GB',
-                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800, letterSpacing: 1),
-                    ),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: _gold,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      elevation: 6,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-
-                  Row(
-                    children: [
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: () => Navigator.pushNamed(context, '/tutorial'),
-                          icon: const Icon(Icons.menu_book, size: 20),
-                          label: const Text('Tutorial', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: Colors.white,
-                            side: const BorderSide(color: Colors.white54, width: 1.5),
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+                          padding: const EdgeInsets.symmetric(vertical: 13),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
                           ),
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: () => Navigator.pushNamed(context, '/nota'),
-                          icon: const Icon(Icons.notes, size: 20),
-                          label: const Text('Nota', style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600)),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: Colors.white,
-                            side: const BorderSide(color: Colors.white54, width: 1.5),
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                          ),
-                        ),
-                      ),
+                      const SizedBox(height: 16),
                     ],
                   ),
-                  const SizedBox(height: 16),
-                ],
+                ),
               ),
             ),
           ),
-        ),
-      ),
           // ? button top right
           Positioned(
             top: 12,
@@ -412,10 +579,12 @@ class _TopicCard extends StatelessWidget {
   const _TopicCard({required this.topic, required this.selected});
 
   static const _topicImages = {
-    'Maths for Primary Students':   'assets/images/topics/topic_maths_primary.png',
-    'Maths for Secondary Students': 'assets/images/topics/topic_maths_secondary.png',
-    'Maths for Higher Education':   'assets/images/topics/topic_maths_higher.png',
-    'Tourism Melaka':               'assets/images/topics/topic_tourism_melaka.png',
+    'Maths for Primary Students':
+        'assets/images/topics/topic_maths_primary.png',
+    'Maths for Secondary Students':
+        'assets/images/topics/topic_maths_secondary.png',
+    'Maths for Higher Education': 'assets/images/topics/topic_maths_higher.png',
+    'Tourism Melaka': 'assets/images/topics/topic_tourism_melaka.png',
   };
 
   @override
@@ -431,8 +600,20 @@ class _TopicCard extends StatelessWidget {
           width: selected ? 3 : 0,
         ),
         boxShadow: selected
-            ? [BoxShadow(color: const Color(0xFF8B1A1A).withOpacity(0.5), blurRadius: 14, offset: const Offset(0, 4))]
-            : [BoxShadow(color: Colors.black.withOpacity(0.15), blurRadius: 6, offset: const Offset(0, 2))],
+            ? [
+                BoxShadow(
+                  color: const Color(0xFF8B1A1A).withOpacity(0.5),
+                  blurRadius: 14,
+                  offset: const Offset(0, 4),
+                ),
+              ]
+            : [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.15),
+                  blurRadius: 6,
+                  offset: const Offset(0, 2),
+                ),
+              ],
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(14),
@@ -442,17 +623,19 @@ class _TopicCard extends StatelessWidget {
           height: double.infinity,
           padding: const EdgeInsets.all(8),
           child: imgPath != null
-              ? Image.asset(
-                  imgPath,
-                  fit: BoxFit.contain,
-                )
+              ? Image.asset(imgPath, fit: BoxFit.contain)
               : Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     const Text('📚', style: TextStyle(fontSize: 44)),
-                    Text(topic,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13)),
+                    Text(
+                      topic,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 13,
+                      ),
+                    ),
                   ],
                 ),
         ),
@@ -460,4 +643,3 @@ class _TopicCard extends StatelessWidget {
     );
   }
 }
-
