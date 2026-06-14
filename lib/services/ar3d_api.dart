@@ -9,7 +9,7 @@ import '../data/questions_data.dart';
 class Ar3dApi {
   static const String baseUrl = String.fromEnvironment(
     'AR3D_API_BASE_URL',
-    defaultValue: '',
+    defaultValue: 'https://afwanhaziq.vps.webdock.cloud',
   );
 
   static bool get isConfigured => baseUrl.trim().isNotEmpty;
@@ -315,12 +315,9 @@ class Ar3dApi {
       );
       final responseBody = await utf8.decoder.bind(response).join();
       if (response.statusCode < 200 || response.statusCode >= 300) {
-        var message = 'API returned ${response.statusCode}';
-        if (responseBody.isNotEmpty) {
-          final error = jsonDecode(responseBody) as Map<String, dynamic>;
-          message = error['error'] as String? ?? message;
-        }
-        throw HttpException(message);
+        throw HttpException(
+          _responseErrorMessage(response.statusCode, path, responseBody),
+        );
       }
     } finally {
       client.close(force: true);
@@ -401,6 +398,10 @@ class Ar3dApi {
     }
     if (statusCode == HttpStatus.notFound) {
       return 'Endpoint $path was not found. Restart or update the AR3D server.';
+    }
+    if (statusCode == HttpStatus.requestEntityTooLarge) {
+      return 'The question image is too large for the deployed server. '
+          'Choose a smaller image and try again.';
     }
     return 'API request to $path returned status $statusCode.';
   }

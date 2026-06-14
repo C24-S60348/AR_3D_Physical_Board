@@ -525,9 +525,10 @@ class _NoteEditorState extends State<_NoteEditor> {
   Widget build(BuildContext context) {
     const border = OutlineInputBorder();
     return AlertDialog(
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
       title: Text(widget.note == null ? 'New Note' : 'Edit Note'),
       content: SizedBox(
-        width: 520,
+        width: 600,
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -669,15 +670,17 @@ class _QuestionEditorState extends State<_QuestionEditor> {
     try {
       final picked = await ImagePicker().pickImage(
         source: ImageSource.gallery,
-        maxWidth: 2000,
-        imageQuality: 85,
+        maxWidth: 1280,
+        imageQuality: 65,
       );
       if (picked == null) return;
       final bytes = await picked.readAsBytes();
-      if (bytes.length > 5 * 1024 * 1024) {
+      if (bytes.length > 900 * 1024) {
         if (!mounted) return;
         setState(() {
-          _error = 'The selected image must be smaller than 5 MB.';
+          _error =
+              'The selected image is still too large to upload. '
+              'Please choose a smaller image.';
         });
         return;
       }
@@ -752,9 +755,10 @@ class _QuestionEditorState extends State<_QuestionEditor> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
+      insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
       title: Text(widget.question == null ? 'New Question' : 'Edit Question'),
       content: SizedBox(
-        width: 520,
+        width: 600,
         child: SingleChildScrollView(
           child: Column(
             mainAxisSize: MainAxisSize.min,
@@ -915,7 +919,9 @@ class _QuestionEditorState extends State<_QuestionEditor> {
                   : 'Change image',
             ),
           ),
-          const Text('PNG, JPG, GIF, or WEBP. Maximum 5 MB.'),
+          const Text(
+            'PNG, JPG, GIF, or WEBP. Images are compressed for upload.',
+          ),
         ],
       ),
     );

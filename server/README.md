@@ -21,6 +21,32 @@ flask --app app run --host 0.0.0.0 --port 5000
 Open `http://127.0.0.1:5000/admin/ar3d` for the lecturer interface.
 The SQLite database is created automatically in `server/instance/`.
 
+## Run inside afwan_cron
+
+AR3D is registered by `afwanhaziqmy.py` and uses the existing server port.
+Configure production credentials before restarting `afwanapp`:
+
+```bash
+export AR3D_ADMIN_PASSWORD="choose-a-strong-password"
+export AR3D_ADMIN_API_KEY="choose-a-long-random-api-key"
+```
+
+Optional storage overrides:
+
+```bash
+export AR3D_DATABASE="/path/to/ar3d.sqlite3"
+export AR3D_UPLOAD_FOLDER="/path/to/ar3d-uploads"
+```
+
+The integrated routes include:
+
+- `GET /api/ar3d/health`
+- `GET /api/ar3d/topics`
+- `GET /api/ar3d/questions`
+- `GET /api/ar3d/notes`
+- `POST /api/ar3d/answers`
+- `GET /admin/ar3d`
+
 For an Android emulator, the host machine is normally available at
 `http://10.0.2.2:5000`. A physical phone must use the computer's LAN IP address.
 
@@ -35,6 +61,15 @@ Use HTTPS for deployed builds. If no URL is configured or the server cannot be
 reached, the scanner falls back to the questions bundled inside the app.
 Android debug builds allow local HTTP traffic; release builds do not enable
 that exception.
+
+For Nginx deployments, allow the Flask app's 5 MB upload limit in the relevant
+server block:
+
+```nginx
+client_max_body_size 6M;
+```
+
+Then run `sudo nginx -t` and reload Nginx.
 
 ## Public mobile API
 
