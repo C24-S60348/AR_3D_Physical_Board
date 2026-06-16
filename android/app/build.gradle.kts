@@ -5,6 +5,11 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+// Release keystore lives on the developer's machine. In CI (GitHub Actions) the file
+// won't exist, so we fall back to the auto-generated debug keystore instead.
+val releaseKeystoreFile = file("/Users/afwanhaziq/documents/keystore.jks")
+val hasReleaseKeystore  = releaseKeystoreFile.exists()
+
 android {
     namespace = "com.af1productions.igb"
     compileSdk = flutter.compileSdkVersion
@@ -20,11 +25,13 @@ android {
     }
 
     signingConfigs {
-        create("release") {
-            storeFile = file("/Users/afwanhaziq/documents/keystore.jks")
-            storePassword = "123456"
-            keyAlias = "af1"
-            keyPassword = "123456"
+        if (hasReleaseKeystore) {
+            create("release") {
+                storeFile    = releaseKeystoreFile
+                storePassword = "123456"
+                keyAlias     = "af1"
+                keyPassword  = "123456"
+            }
         }
     }
 
@@ -38,8 +45,12 @@ android {
 
     buildTypes {
         release {
-            signingConfig = signingConfigs.getByName("release")
-            // R8 keep rules for ar_flutter_plugin / ARCore / Sceneform
+            // Use release signing locally; fall back to debug signing in CI
+            signingConfig = if (hasReleaseKeystore) {
+                signingConfigs.getByName("release")
+            } else {
+                signingConfigs.getByName("debug")
+            }
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
