@@ -184,7 +184,7 @@ internal class AndroidARView(
             try {
                 val anchor    = img.createAnchor(img.centerPose)
                 val modelPath = "flutter_assets/assets/models/duck.glb"
-                val instance  = arSceneView.modelLoader.loadModelGlb(modelPath)
+                val instance  = arSceneView.modelLoader.loadModelInstance(modelPath) { "" }
                 if (instance != null) {
                     val modelNode = ModelNode(
                         modelInstance = instance,
@@ -266,7 +266,7 @@ internal class AndroidARView(
                     2, 3 -> activity.applicationInfo.dataDir + "/app_flutter/$uri"
                     else -> uri
                 }
-                val instance = arSceneView.modelLoader.loadModelGlb(modelPath)
+                val instance = arSceneView.modelLoader.loadModelInstance(modelPath) { "" }
                 withContext(Dispatchers.Main) {
                     if (instance != null) {
                         val node = ModelNode(modelInstance = instance, scaleToUnits = 0.1f)
