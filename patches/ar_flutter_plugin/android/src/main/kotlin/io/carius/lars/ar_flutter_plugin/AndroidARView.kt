@@ -8,6 +8,7 @@ import android.graphics.Rect
 import android.os.Handler
 import android.os.HandlerThread
 import android.util.Log
+import android.view.MotionEvent
 import android.view.PixelCopy
 import android.view.View
 import androidx.lifecycle.LifecycleOwner
@@ -225,15 +226,29 @@ internal class AndroidARView(
                     }
                 }
 
-                // Wire up plane/point tap → Flutter callback
+                // Wire up plane/point tap → Flutter callback via ARCore Frame.hitTest
                 if (handleTapsArg) {
-                    arSceneView.onTapAr = { _, hitResult ->
-                        if (hitResult.trackable is Plane || hitResult.trackable is Point) {
-                            sessionManagerChannel.invokeMethod(
-                                "onPlaneOrPointTap",
-                                arrayListOf(serializeHitResult(hitResult))
-                            )
+                    arSceneView.setOnTouchListener { _, motionEvent ->
+                        if (motionEvent.action == MotionEvent.ACTION_UP) {
+                            val frame = lastFrame
+                            if (frame != null) {
+                                try {
+                                    val hit = frame.hitTest(motionEvent)
+                                        .firstOrNull { it.trackable is Plane || it.trackable is Point }
+                                    if (hit != null) {
+                                        activity.runOnUiThread {
+                                            sessionManagerChannel.invokeMethod(
+                                                "onPlaneOrPointTap",
+                                                arrayListOf(serializeHitResult(hit))
+                                            )
+                                        }
+                                    }
+                                } catch (e: Exception) {
+                                    Log.w(TAG, "hitTest failed: ${e.message}")
+                                }
+                            }
                         }
+                        false
                     }
                 }
 
