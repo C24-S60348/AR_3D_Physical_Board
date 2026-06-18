@@ -51,6 +51,15 @@ android {
     }
 }
 
+configurations.all {
+    resolutionStrategy {
+        // Force Filament 1.72.0 — 16KB memory page size compliant (Android 15+)
+        force 'com.google.android.filament:filament-android:1.72.0'
+        force 'com.google.android.filament:filament-utils-android:1.72.0'
+        force 'com.google.android.filament:gltfio-android:1.72.0'
+    }
+}
+
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
     // SceneView 2.x bundles ARCore 1.44+ and Filament 1.53+ (both 16 KB page-size compliant)
