@@ -13,7 +13,7 @@ val hasReleaseKeystore  = releaseKeystoreFile.exists()
 android {
     namespace = "com.af1productions.igb"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
+    ndkVersion = "28.2.13676358"  // NDK r28 — required for 16KB page size support (Android 15+)
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
