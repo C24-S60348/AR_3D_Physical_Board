@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+<meta charset="UTF-8">
+<base href="/gameboard/">
+<title>i-GB Interactive Game Board</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+
+body {
+  background: #1a0f05;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  font-family: 'Arial Black', Arial, sans-serif;
+}
+
+/* ══ PAGE (A3 landscape) ══ */
+#page {
+  width: 1680px;
+  height: 1188px;
+  display: flex;
+  flex-direction: row;
+  background: linear-gradient(150deg,#c8e8d4 0%,#a8d8c8 50%,#84c0ac 100%);
+  border: 14px solid #7a1010;
+  border-radius: 20px;
+  box-shadow: 0 0 80px rgba(0,0,0,.7), inset 0 0 30px rgba(0,0,0,.1);
+  overflow: hidden;
+  position: relative;
+}
+
+/* gold corner circles */
+.corn {
+  position:absolute; width:52px; height:52px; border-radius:50%;
+  background:radial-gradient(circle at 35% 35%,#FFE066,#B8860B);
+  border:4px solid #7a1010; z-index:20;
+  box-shadow:0 2px 8px rgba(0,0,0,.4);
+}
+.corn.tl{top:6px;left:6px}
+.corn.bl{bottom:6px;left:6px}
+.corn.tr{top:6px;right:356px}
+.corn.br{bottom:6px;right:356px}
+
+/* ══ BOARD AREA ══ */
+#board {
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  padding:10px 8px 8px 12px;
+  gap:4px;
+}
+
+/* ── HEADER ── */
+#hdr {
+  display:flex; align-items:center; height:86px;
+  background:rgba(255,255,255,.28);
+  border-radius:12px; border:2px solid rgba(180,130,50,.5);
+  padding:6px 14px; gap:12px;
+}
+#logo { height:74px; width:auto; filter:drop-shadow(2px 2px 5px rgba(0,0,0,.35)); }
+
+/* ── GRID ── */
+#grid {
+  flex:1;
+  display:flex;
+  flex-direction:column-reverse; /* row1 at bottom */
+  gap:3px;
+}
+
+.row-card {
+  flex:1;
+  background:rgba(255,252,240,.9);
+  border-radius:10px;
+  border:2px solid #c8a050;
+  box-shadow:0 2px 6px rgba(0,0,0,.13), inset 0 1px 0 rgba(255,255,255,.7);
+  padding:3px;
+  display:flex;
+}
+.brow {
+  display:flex; flex-direction:row; gap:3px; flex:1;
+}
+.brow.rtl { flex-direction:row-reverse; }
+
+/* ══ SQUARE BASE ══ */
+.sq {
+  flex:1;
+  border-radius:6px;
+  border:1.5px solid #d4b870;
+  background:#fdf8ee;
+  display:flex; flex-direction:column;
+  align-items:center; justify-content:center;
+  position:relative; overflow:hidden;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.8);
+  cursor:default;
+  transition:transform .12s;
+}
+.sq:hover { transform:scale(1.06); z-index:10; box-shadow:0 4px 14px rgba(0,0,0,.25); }
+
+.sq-n { font-size:15px; font-weight:900; color:#1a1a1a; line-height:1; }
+.sq-b { font-size:14px; font-weight:900; line-height:1; }
+
+/* green */
+.sq.green {
+  background:linear-gradient(150deg,#56c157,#2e7d32);
+  border-color:#1b5e20;
+}
+.sq.green .sq-n, .sq.green .sq-b { color:#fff; text-shadow:1px 1px 3px rgba(0,0,0,.5); }
+
+/* red */
+.sq.red {
+  background:linear-gradient(150deg,#f05454,#b71c1c);
+  border-color:#7f0000;
+}
+.sq.red .sq-n, .sq.red .sq-b { color:#fff; text-shadow:1px 1px 3px rgba(0,0,0,.5); }
+
+/* ── LANDMARK ── */
+.sq.lm {
+  border:2.5px solid #1565c0;
+  background:#e8f4fd;
+  padding:0;
+  justify-content:flex-start;
+}
+/* number pinned top-right */
+.lm-num {
+  position:absolute; top:2px; right:3px;
+  font-size:12px; font-weight:900;
+  color:#fff;
+  text-shadow: 1px 1px 0 #000,-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000;
+  z-index:10; line-height:1;
+}
+/* image fills middle */
+.lm-wrap {
+  position:absolute; top:0; left:0; right:0; bottom:18px;
+  overflow:hidden;
+}
+.lm-wrap img {
+  width:100%; height:100%; object-fit:cover; display:block;
+}
+/* name at bottom */
+.lm-name {
+  position:absolute; bottom:0; left:0; right:0; height:18px;
+  background:rgba(255,255,255,.92);
+  font-size:6.5px; font-weight:900; color:#0d47a1;
+  text-align:center; line-height:18px;
+  border-top:1px solid #90caf9;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  padding:0 2px;
+}
+
+/* MULA */
+.sq.mula {
+  background:linear-gradient(150deg,#1976d2,#0d47a1);
+  border-color:#0a2a6e; border-width:2.5px;
+  min-width:80px; flex:1.2;
+}
+.mula-t { font-size:19px; font-weight:900; color:#fff; letter-spacing:2px; text-shadow:1px 1px 4px rgba(0,0,0,.5); }
+.mula-a { font-size:18px; color:#FFD700; }
+
+/* TAMAT */
+.sq.tamat {
+  background:linear-gradient(150deg,#FFD700,#FF8C00);
+  border-color:#B8860B; border-width:2.5px; flex:1.2;
+}
+.tamat-f { font-size:18px; }
+.tamat-n { font-size:26px; font-weight:900; color:#fff; text-shadow:2px 2px 5px rgba(0,0,0,.5); line-height:1; }
+.tamat-l { font-size:11px; font-weight:900; color:#fff; letter-spacing:2px; }
+
+/* ── LEGEND ── */
+#legend {
+  display:flex; align-items:center; gap:10px;
+  height:72px;
+  background:rgba(255,252,240,.85);
+  border-radius:10px; border:2px solid rgba(180,130,50,.5);
+  padding:8px 12px;
+}
+.l-badge {
+  background:linear-gradient(135deg,#FFD700,#FFA500);
+  border:2.5px solid #7a1010; border-radius:8px;
+  padding:5px 10px; font-size:12px; font-weight:900;
+  color:#5a0000; letter-spacing:.5px; white-space:nowrap;
+  height:100%; display:flex; align-items:center; gap:5px;
+}
+.l-badge::before,.l-badge::after{content:'◆';font-size:10px}
+.l-cols { display:flex; gap:18px; flex:1; align-items:center; }
+.l-col  { display:flex; flex-direction:column; gap:5px; }
+.l-item { display:flex; align-items:center; gap:7px; font-size:12px; font-weight:700; color:#1a1a1a; white-space:nowrap; }
+.lchip  {
+  width:38px; height:24px; border-radius:5px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:13px; font-weight:900; color:#fff; flex-shrink:0;
+}
+.lchip.g{background:linear-gradient(145deg,#56c157,#2e7d32);border:1.5px solid #1b5e20}
+.lchip.r{background:linear-gradient(145deg,#f05454,#b71c1c);border:1.5px solid #7f0000}
+.l-lm {
+  display:flex; align-items:center; gap:8px;
+  padding:6px 10px; background:rgba(255,255,255,.7);
+  border-radius:8px; border:1.5px solid #90caf9;
+}
+.l-lm img { width:46px; height:40px; border-radius:5px; border:2px solid #1565c0; object-fit:cover; }
+.l-lm-t  { font-size:11px; font-weight:800; color:#0d47a1; line-height:1.45; }
+
+/* ══ RIGHT PANEL ══ */
+#panel {
+  width:350px; flex-shrink:0;
+  display:flex; flex-direction:column;
+  background:linear-gradient(180deg,#8B1A1A 0%,#5a0a0a 100%);
+  border-left:6px solid #FFD700;
+}
+
+#phdr {
+  background:linear-gradient(135deg,#FFD700,#FFA500);
+  padding:12px 14px; text-align:center;
+  border-bottom:4px solid #5a0a0a;
+  display:flex; align-items:center; justify-content:center; gap:8px;
+}
+#phdr::before,#phdr::after{content:'◆';color:#8B1A1A;font-size:13px}
+#phdr span { font-size:16px; font-weight:900; color:#5a0000; letter-spacing:.3px; }
+
+#steps {
+  flex:1; padding:14px 16px;
+  display:flex; flex-direction:column; gap:10px;
+}
+.step { display:flex; gap:12px; align-items:flex-start; }
+.snum {
+  width:34px; height:34px; border-radius:50%;
+  background:linear-gradient(135deg,#FFD700,#FFA500);
+  color:#5a0000; font-size:18px; font-weight:900;
+  display:flex; align-items:center; justify-content:center;
+  flex-shrink:0; border:2px solid rgba(255,255,255,.25);
+  box-shadow:0 2px 6px rgba(0,0,0,.35);
+}
+.sbody { flex:1; }
+.srow  { display:flex; gap:8px; align-items:center; }
+.stitle { font-size:14px; font-weight:900; color:#FFD700; margin-bottom:3px; }
+.sdesc  { font-size:11.5px; color:#ffd0a0; line-height:1.5; font-weight:500; }
+.sicon  { font-size:30px; width:44px; text-align:center; flex-shrink:0; }
+
+/* tip */
+#tip {
+  margin:0 14px 14px;
+  background:linear-gradient(135deg,#FFD700,#FFA500);
+  border-radius:12px; padding:10px 12px;
+  display:flex; align-items:flex-end; gap:8px; min-height:90px;
+}
+.tleft { flex:1; }
+.tt    { font-size:14px; font-weight:900; color:#5a0000; margin-bottom:4px; }
+.td    { font-size:11px; color:#7a2000; line-height:1.45; font-weight:600; }
+#tbulb { font-size:28px; margin-right:4px; }
+#mascot {
+  height:96px; width:auto; object-fit:contain;
+  margin-bottom:-10px; filter:drop-shadow(2px 2px 5px rgba(0,0,0,.3));
+}
+
+/* ══ PDF BUTTON ══ */
+#pdfbtn {
+  position:fixed; bottom:22px; right:22px;
+  padding:14px 28px;
+  background:linear-gradient(135deg,#FFD700,#FFA500);
+  color:#5a0000; font-size:15px; font-weight:900;
+  border:none; border-radius:50px; cursor:pointer;
+  box-shadow:0 4px 20px rgba(0,0,0,.4); z-index:100;
+  transition:transform .15s, box-shadow .15s;
+}
+#pdfbtn:hover{transform:translateY(-2px);box-shadow:0 6px 26px rgba(0,0,0,.5)}
+
+/* ══ PRINT ══ */
+@media print {
+  @page{size:A3 landscape;margin:0}
+  body{background:white;width:420mm;height:297mm;display:block}
+  #pdfbtn{display:none!important}
+  #page{width:420mm;height:297mm;border-radius:0;box-shadow:none}
+}
+@media screen {
+  body{overflow:hidden;width:100vw;height:100vh;padding:0;align-items:flex-start;justify-content:flex-start}
+  #page{transform-origin:top left;position:absolute;top:0;left:0}
+}
+</style>
+</head>
+<body>
+
+<div id="page">
+  <div class="corn tl"></div>
+  <div class="corn bl"></div>
+  <div class="corn tr"></div>
+  <div class="corn br"></div>
+
+  <!-- ══ BOARD ══ -->
+  <div id="board">
+    <div id="hdr">
+      <img id="logo" src="../assets/images/logo i.-GB.png" alt="i-GB Logo">
+    </div>
+
+    <div id="grid">
+      <!-- rows are built by JS, appended here; column-reverse so row1 = bottom -->
+    </div>
+
+    <div id="legend">
+      <div class="l-badge">PETUNJUK PETAK</div>
+      <div class="l-cols">
+        <div class="l-col">
+          <div class="l-item"><div class="lchip g">+1</div>Gerak ke hadapan 1 petak</div>
+          <div class="l-item"><div class="lchip g">+2</div>Gerak ke hadapan 2 petak</div>
+          <div class="l-item"><div class="lchip g">+3</div>Gerak ke hadapan 3 petak</div>
+        </div>
+        <div class="l-col">
+          <div class="l-item"><div class="lchip r">-1</div>Undur ke belakang 1 petak</div>
+          <div class="l-item"><div class="lchip r">-2</div>Undur ke belakang 2 petak</div>
+          <div class="l-item"><div class="lchip r">-3</div>Undur ke belakang 3 petak</div>
+        </div>
+        <div class="l-col">
+          <div class="l-lm">
+            <img src="./masjidselatmelaka.png" alt="Tempat Bersejarah">
+            <div class="l-lm-t"><b>Tempat Bersejarah</b><br>Imbas dalam aplikasi<br>untuk menjawab soalan</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ PANEL ══ -->
+  <div id="panel">
+    <div id="phdr"><span>CARA MENGGUNAKAN APLIKASI</span></div>
+
+    <div id="steps">
+      <div class="step">
+        <div class="snum">1</div>
+        <div class="sbody">
+          <div class="srow">
+            <div><div class="stitle">IMBAS QR CODE</div>
+              <div class="sdesc">Imbas QR code untuk muat turun dan pasang aplikasi i-GB.</div></div>
+            <div class="sicon">📱</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="snum">2</div>
+        <div class="sbody">
+          <div class="srow">
+            <div><div class="stitle">PILIH TOPIK</div>
+              <div class="sdesc">Buka aplikasi dan pilih topik yang ingin dimainkan.</div></div>
+            <div class="sicon">📋</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="snum">3</div>
+        <div class="sbody">
+          <div class="srow">
+            <div><div class="stitle">IMBAS TEMPAT</div>
+              <div class="sdesc">Imbas petak tempat bersejarah pada papan permainan menggunakan aplikasi.</div></div>
+            <div class="sicon">🏛️</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="snum">4</div>
+        <div class="sbody">
+          <div class="srow">
+            <div><div class="stitle">JAWAB SOALAN</div>
+              <div class="sdesc">Jawab soalan yang muncul dalam aplikasi dengan betul.</div></div>
+            <div class="sicon">❓</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="step">
+        <div class="snum">5</div>
+        <div class="sbody">
+          <div class="srow">
+            <div><div class="stitle">IKUT ARAHAN APLIKASI</div>
+              <div class="sdesc">Ikuti arahan dalam aplikasi untuk bergerak ke hadapan atau ke belakang mengikut jumlah petak yang ditunjukkan.</div></div>
+            <div class="sicon">✅</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="tip">
+      <div id="tbulb">💡</div>
+      <div class="tleft">
+        <div class="tt">TIP</div>
+        <div class="td">Pastikan jawapan anda betul untuk dapatkan mata dan maju lebih jauh!</div>
+      </div>
+      <img id="mascot" src="./mascotcharacter.png" alt="Maskot">
+    </div>
+  </div>
+</div>
+
+<button id="pdfbtn" onclick="doPDF()">⬇ Jana PDF</button>
+
+<script>
+// ── Landmark images ──
+const I = './';
+const LM = (img, name) => ({ t:'lm',   img: I+img, name });
+const G  = b           => ({ t:'green', b });
+const R  = b           => ({ t:'red',   b });
+const N  = ()          => ({ t:'n' });
+
+// ── 100 squares: 10 rows × 10 cols ──
+// Define specials; everything else is normal.
+const special = {
+  // landmarks
+  10:  LM('muziumsamudera.png',   'Muzium Samudera'),
+  20:  LM('afamosa.png',          'A Famosa'),
+  30:  LM('menaratamingsari.png', 'Menara Taming Sari'),
+  40:  LM('masjidselatmelaka.png','Pantai Klebang'),
+  50:  LM('afamosa2.png',         'Kota Santiago'),
+  60:  LM('masjidselatmelaka.png','Masjid Selat Melaka'),
+  70:  LM('stadium.png',          'Stadium Hang Jebat'),
+  80:  LM('muziumsamudera.png',   'Muzium Samudera'),
+  90:  LM('afamosa.png',          'A Famosa'),
+  // green
+  3:   G('+2'),  17: G('+3'),  28: G('+2'),  37: G('+2'),  46: G('+2'),
+  53:  G('+2'),  62: G('+3'),  74: G('+2'),  83: G('+2'),  92: G('+3'),
+  // red
+  7:   R('-2'),  14: R('-2'),  22: R('-2'),  34: R('-2'),  41: R('-3'),
+  48:  R('-5'),  57: R('-2'),  67: R('-3'),  77: R('-2'),  86: R('-3'),
+  95:  R('-5'),
+};
+
+// Build rows
+const grid = document.getElementById('grid');
+
+for (let row = 1; row <= 10; row++) {
+  const isRTL   = (row % 2 === 0);   // even rows go right-to-left
+  const rowStart = (row - 1) * 10 + 1;
+  const rowEnd   = row * 10;
+
+  const card = document.createElement('div');
+  card.className = 'row-card';
+  const brow = document.createElement('div');
+  brow.className = 'brow' + (isRTL ? ' rtl' : '');
+  card.appendChild(brow);
+  grid.appendChild(card);
+
+  // First cell of row 1 = MULA
+  if (row === 1) {
+    const mula = document.createElement('div');
+    mula.className = 'sq mula';
+    mula.innerHTML = '<div class="mula-t">MULA</div><div class="mula-a">➡</div>';
+    brow.appendChild(mula);
+  }
+
+  for (let n = rowStart; n <= rowEnd; n++) {
+    const isLast = (n === 100);
+    const cell   = document.createElement('div');
+
+    if (isLast) {
+      cell.className = 'sq tamat';
+      cell.innerHTML = '<div class="tamat-f">🏁</div><div class="tamat-n">100</div><div class="tamat-l">TAMAT</div>';
+    } else {
+      const s = special[n];
+      if (s && s.t === 'lm') {
+        cell.className = 'sq lm';
+        cell.innerHTML = `
+          <span class="lm-num">${n}</span>
+          <div class="lm-wrap"><img src="${s.img}" alt="${s.name}" loading="eager" onerror="this.style.display='none'"></div>
+          <div class="lm-name">${s.name}</div>`;
+      } else if (s && s.t === 'green') {
+        cell.className = 'sq green';
+        cell.innerHTML = `<div class="sq-n">${n}</div><div class="sq-b">${s.b}</div>`;
+      } else if (s && s.t === 'red') {
+        cell.className = 'sq red';
+        cell.innerHTML = `<div class="sq-n">${n}</div><div class="sq-b">${s.b}</div>`;
+      } else {
+        cell.className = 'sq';
+        cell.innerHTML = `<div class="sq-n">${n}</div>`;
+      }
+    }
+    brow.appendChild(cell);
+  }
+}
+
+// ── Scale to viewport ──
+function scale() {
+  const p  = document.getElementById('page');
+  const sx = window.innerWidth  / 1680;
+  const sy = window.innerHeight / 1188;
+  const s  = Math.min(sx, sy);
+  p.style.transform = `scale(${s})`;
+  p.style.left = ((window.innerWidth  - 1680*s)/2) + 'px';
+  p.style.top  = ((window.innerHeight - 1188*s)/2) + 'px';
+}
+scale();
+window.addEventListener('resize', scale);
+
+// ── PDF ──
+function doPDF() {
+  const p = document.getElementById('page');
+  document.getElementById('pdfbtn').style.display = 'none';
+  p.style.cssText += ';transform:none;left:0;top:0;position:static;width:420mm;height:297mm;border-radius:0';
+  window.print();
+  setTimeout(() => { location.reload(); }, 1500);
+}
+</script>
+</body>
+</html>
