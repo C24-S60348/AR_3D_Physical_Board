@@ -45,12 +45,12 @@ class _ARDemoScreenState extends State<ARDemoScreen> {
     if (mounted) setState(() { _isEmulator = emulator; _deviceChecked = true; });
   }
 
-  // Local GLB filenames — copied from assets/models/ to app_flutter/ on first AR init
+  // Asset paths for bundled GLB models (loaded directly from flutter_assets/)
   static const _modelFiles = [
-    'duck.glb',
-    'box.glb',
-    'cesiumtruck.glb',
-    'lantern.glb',
+    'assets/models/duck.glb',
+    'assets/models/box.glb',
+    'assets/models/cesiumtruck.glb',
+    'assets/models/lantern.glb',
   ];
   static const _modelNames = ['🦆 Duck', '📦 Box', '🚛 Truck', '🏮 Lantern'];
   int _modelIndex = 0;
@@ -309,7 +309,7 @@ class _ARDemoScreenState extends State<ARDemoScreen> {
       _anchors.add(anchor);
 
       final node = ARNode(
-        type: NodeType.fileSystemAppFolderGLB,
+        type: NodeType.localGLTF2,
         uri: _modelFiles[_modelIndex % _modelFiles.length],
         scale: vector.Vector3(0.15, 0.15, 0.15),
       );

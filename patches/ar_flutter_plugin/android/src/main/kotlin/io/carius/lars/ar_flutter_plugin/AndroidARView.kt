@@ -44,8 +44,7 @@ internal class AndroidARView(
     private val arSceneView: ARSceneView
 
     // Image-based AR tracking
-    private val detectedImages   = mutableSetOf<String>()
-    private val imageAnchorNodes = mutableMapOf<String, AnchorNode>()
+    private val detectedImages = mutableSetOf<String>()
 
     // Plane-tap anchor tracking (AR 3D demo)
     private val planeAnchorNodes = mutableMapOf<String, AnchorNode>()
@@ -138,12 +137,6 @@ internal class AndroidARView(
         frame.getUpdatedTrackables(AugmentedImage::class.java).forEach { img ->
             when (img.trackingState) {
                 TrackingState.TRACKING -> {
-                    val existing = imageAnchorNodes[img.name]
-                    if (existing != null) {
-                        activity.runOnUiThread { existing.isVisible = true }
-                    } else {
-                        spawnModelForImage(img)
-                    }
                     if (detectedImages.add(img.name)) {
                         activity.runOnUiThread {
                             sessionManagerChannel.invokeMethod(
@@ -152,42 +145,10 @@ internal class AndroidARView(
                         }
                     }
                 }
-                TrackingState.PAUSED -> {
+                TrackingState.PAUSED, TrackingState.STOPPED -> {
                     detectedImages.remove(img.name)
-                    activity.runOnUiThread { imageAnchorNodes[img.name]?.isVisible = false }
-                }
-                TrackingState.STOPPED -> {
-                    detectedImages.remove(img.name)
-                    activity.runOnUiThread {
-                        imageAnchorNodes.remove(img.name)?.let { node ->
-                            node.anchor?.detach()
-                            arSceneView.removeChildNode(node)
-                        }
-                    }
                 }
                 else -> {}
-            }
-        }
-    }
-
-    private fun spawnModelForImage(img: AugmentedImage) {
-        scope.launch {
-            try {
-                val anchor    = img.createAnchor(img.centerPose)
-                val modelPath = "flutter_assets/assets/models/duck.glb"
-                val instance  = arSceneView.modelLoader.loadModelInstance(modelPath) { "" }
-                withContext(Dispatchers.Main) {
-                    val anchorNode = AnchorNode(engine = arSceneView.engine, anchor = anchor)
-                    if (instance != null) {
-                        anchorNode.addChildNode(
-                            ModelNode(modelInstance = instance, scaleToUnits = 0.1f)
-                        )
-                    }
-                    arSceneView.addChildNode(anchorNode)
-                    imageAnchorNodes[img.name] = anchorNode
-                }
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to spawn model for ${img.name}: ${e.message}")
             }
         }
     }
@@ -432,8 +393,7 @@ internal class AndroidARView(
     override fun dispose() {
         Log.d(TAG, "dispose called")
         try {
-            (imageAnchorNodes.values + planeAnchorNodes.values).forEach { it.anchor?.detach() }
-            imageAnchorNodes.clear()
+            planeAnchorNodes.values.forEach { it.anchor?.detach() }
             planeAnchorNodes.clear()
             detectedImages.clear()
             arSceneView.destroy()
