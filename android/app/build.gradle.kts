@@ -59,12 +59,3 @@ android {
 flutter {
     source = "../.."
 }
-
-// Force Filament 1.72.0 — 16KB memory page size compliant (Android 15+)
-configurations.all {
-    resolutionStrategy {
-        force("com.google.android.filament:filament-android:1.72.0")
-        force("com.google.android.filament:filament-utils-android:1.72.0")
-        force("com.google.android.filament:gltfio-android:1.72.0")
-    }
-}
