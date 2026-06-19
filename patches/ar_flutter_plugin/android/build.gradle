@@ -53,8 +53,8 @@ android {
 
 dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
-    // SceneView 2.x bundles ARCore 1.44+ and Filament 1.53+ (both 16 KB page-size compliant)
-    implementation "io.github.sceneview:arsceneview:2.2.1"
+    // SceneView 2.3.3 natively bundles Filament 1.68.2 which is 16KB page-size compliant
+    implementation "io.github.sceneview:arsceneview:2.3.3"
     implementation 'androidx.appcompat:appcompat:1.6.1'
     implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.7.0'
 }
