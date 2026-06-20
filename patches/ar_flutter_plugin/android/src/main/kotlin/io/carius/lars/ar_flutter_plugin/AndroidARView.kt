@@ -223,7 +223,7 @@ internal class AndroidARView(
             }
             "getAnchorPose"  -> {
                 val id     = call.argument<String>("anchorId")
-                val anchor = id?.let { planeAnchorNodes[it] ?: imageAnchorNodes[it] }?.anchor
+                val anchor = id?.let { planeAnchorNodes[it] }?.anchor
                 if (anchor != null) result.success(serializePose(anchor.pose))
                 else result.error("Error", "anchor not found", null)
             }
