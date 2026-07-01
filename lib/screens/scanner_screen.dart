@@ -13,43 +13,37 @@ import '../utils/emulator_check.dart';
 
 // Map from ARCore image name → (display name, asset path)
 const _placeInfo = <String, Map<String, String>>{
-  'afamosa': {'name': "A'Famosa", 'asset': 'assets/imagesscan/afamosa.png'},
-  'chenghoontengtemple': {
-    'name': 'Cheng Hoon Teng Temple',
-    'asset': 'assets/imagesscan/chenghoontengtemple.png',
+  'kotaafamosa-new': {
+    'name': "Kota A'Famosa",
+    'asset': 'assets/imagesscan/kotaafamosa-new.png',
   },
-  'christchurchmelaka': {
-    'name': 'Christ Church Melaka',
-    'asset': 'assets/imagesscan/christchurchmelaka.png',
+  'masjidcina-new': {
+    'name': 'Masjid Cina Melaka',
+    'asset': 'assets/imagesscan/masjidcina-new.png',
   },
-  'junkerstreetmelaka': {
-    'name': 'Jonker Street Melaka',
-    'asset': 'assets/imagesscan/junkerstreetmelaka.png',
-  },
-  'masjidselatmelaka': {
+  'masjidselatmelaka-new': {
     'name': 'Masjid Selat Melaka',
-    'asset': 'assets/imagesscan/masjidselatmelaka.png',
+    'asset': 'assets/imagesscan/masjidselatmelaka-new.png',
   },
-  'menaratamingsari': {
+  'masjidselatmelaka-new2': {
+    'name': 'Masjid Selat Melaka',
+    'asset': 'assets/imagesscan/masjidselatmelaka-new2.png',
+  },
+  'menaratamingsari-new': {
     'name': 'Menara Taming Sari',
-    'asset': 'assets/imagesscan/menaratamingsari.png',
+    'asset': 'assets/imagesscan/menaratamingsari-new.png',
   },
-  'muziumkapalselammelaka': {
-    'name': 'Muzium Kapal Selam Melaka',
-    'asset': 'assets/imagesscan/muziumkapalselammelaka.png',
+  'muziumsamudera-new': {
+    'name': 'Muzium Samudera',
+    'asset': 'assets/imagesscan/muziumsamudera-new.png',
   },
-  'stadhuysmelaka': {
-    'name': 'Stadthuys Melaka',
-    'asset': 'assets/imagesscan/stadhuysmelaka.png',
+  'pantaiklebang-new': {
+    'name': 'Pantai Klebang',
+    'asset': 'assets/imagesscan/pantaiklebang-new.png',
   },
-  'stpaulhillchurch': {
-    'name': "St. Paul's Hill Church",
-    'asset': 'assets/imagesscan/stpaulhillchurch.png',
-  },
-  'trishaw': {'name': 'Beca Melaka', 'asset': 'assets/imagesscan/trishaw.png'},
-  'sampleimagetoscan': {
-    'name': 'Tempat Melaka',
-    'asset': 'assets/imagesscan/sampleimagetoscan.png',
+  'stadiumhangjebat-new': {
+    'name': 'Stadium Hang Jebat',
+    'asset': 'assets/imagesscan/stadiumhangjebat-new.png',
   },
 };
 

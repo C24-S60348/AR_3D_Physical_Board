@@ -129,64 +129,46 @@ class _MelakaTab extends StatelessWidget {
 
   static const _places = [
     _Place(
-      name: "A'Famosa",
-      asset: 'assets/imagesscan/afamosa.png',
+      name: "Kota A'Famosa",
+      asset: 'assets/imagesscan/kotaafamosa-new.png',
       description:
           'Kubu Portugis yang dibina pada 1512 oleh Alfonso de Albuquerque. Salah satu tinggalan Eropah tertua di Asia Tenggara.',
     ),
     _Place(
-      name: 'Cheng Hoon Teng Temple',
-      asset: 'assets/imagesscan/chenghoontengtemple.png',
+      name: 'Masjid Cina Melaka',
+      asset: 'assets/imagesscan/masjidcina-new.png',
       description:
-          'Kuil Cina tertua di Malaysia, dibina pada 1646. Diiktiraf sebagai Warisan Budaya oleh UNESCO.',
-    ),
-    _Place(
-      name: 'Christ Church Melaka',
-      asset: 'assets/imagesscan/christchurchmelaka.png',
-      description:
-          'Gereja Belanda yang dibina pada 1753 dan merupakan salah satu gereja Protestant tertua di Malaysia.',
-    ),
-    _Place(
-      name: 'Jonker Street',
-      asset: 'assets/imagesscan/junkerstreetmelaka.png',
-      description:
-          'Jalan ikonik di Pekan Cina Melaka, terkenal dengan barangan antik, kraftangan, dan pelbagai hidangan tempatan.',
+          'Masjid unik bergaya seni bina Cina, menggabungkan elemen budaya Melayu dan Tionghoa dalam satu binaan yang indah.',
     ),
     _Place(
       name: 'Masjid Selat Melaka',
-      asset: 'assets/imagesscan/masjidselatmelaka.png',
+      asset: 'assets/imagesscan/masjidselatmelaka-new.png',
       description:
           'Masjid unik yang dibina di atas air, kelihatan terapung di Selat Melaka ketika air pasang.',
     ),
     _Place(
       name: 'Menara Taming Sari',
-      asset: 'assets/imagesscan/menaratamingsari.png',
+      asset: 'assets/imagesscan/menaratamingsari-new.png',
       description:
           'Menara giroskop berputar 360° yang membawa pelancong ke ketinggian 80 meter untuk menikmati pemandangan Melaka.',
     ),
     _Place(
-      name: 'Muzium Kapal Selam',
-      asset: 'assets/imagesscan/muziumkapalselammelaka.png',
+      name: 'Muzium Samudera',
+      asset: 'assets/imagesscan/muziumsamudera-new.png',
       description:
-          'Muzium berasaskan kapal selam sebenar KD Oumanoff yang boleh diterokai oleh pengunjung.',
+          'Muzium bertemakan kapal layar sejarah, memaparkan replika kapal dan kisah kegemilangan pelabuhan Melaka sebagai pusat perdagangan maritim.',
     ),
     _Place(
-      name: 'Stadthuys',
-      asset: 'assets/imagesscan/stadhuysmelaka.png',
+      name: 'Pantai Klebang',
+      asset: 'assets/imagesscan/pantaiklebang-new.png',
       description:
-          'Bangunan Belanda tertua di Asia Tenggara, dibina pada 1650. Kini berfungsi sebagai muzium sejarah dan etnografi.',
+          'Pantai terkenal di Melaka dengan pemandangan matahari terbenam yang indah serta gerai makanan tepi pantai yang popular.',
     ),
     _Place(
-      name: 'St. Paul Hill Church',
-      asset: 'assets/imagesscan/stpaulhillchurch.png',
+      name: 'Stadium Hang Jebat',
+      asset: 'assets/imagesscan/stadiumhangjebat-new.png',
       description:
-          'Gereja Portugis bersejarah di atas Bukit St. Paul, dibina pada 1521. Mempunyai batu nisan bertanda Eropah.',
-    ),
-    _Place(
-      name: 'Beca Melaka',
-      asset: 'assets/imagesscan/trishaw.png',
-      description:
-          'Kenderaan ikonik Melaka yang dihiasi dengan bunga warna-warni. Menjadi simbol pelancongan unik bandar bersejarah ini.',
+          'Stadium utama negeri Melaka, menjadi tuan rumah pelbagai acara sukan dan perlawanan bola sepak peringkat kebangsaan.',
     ),
   ];
 
