@@ -31,6 +31,8 @@
 		<key>NSAllowsLocalNetworking</key>
 		<true/>
 	</dict>
+	<key>NSCameraUsageDescription</key>
+	<string>i.-GB uses the camera to scan the AR game board and detect landmark cards.</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>i.-GB connects to the lecturer's local AR3D question server.</string>
 	<key>NSPhotoLibraryUsageDescription</key>

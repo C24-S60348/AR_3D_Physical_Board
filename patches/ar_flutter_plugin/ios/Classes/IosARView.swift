@@ -24,6 +24,9 @@ class IosARView: NSObject, FlutterPlatformView, ARSCNViewDelegate, UIGestureReco
     private var arcoreMode: Bool = false
     private var configuration: ARWorldTrackingConfiguration!
     private var tappedPlaneAnchorAlignment = ARPlaneAnchor.Alignment.horizontal // default alignment
+
+    // Image-based AR tracking (board card scanning)
+    private var detectedImages = Set<String>()
     
     private var panStartLocation: CGPoint?
     private var panCurrentLocation: CGPoint?
@@ -231,6 +234,15 @@ class IosARView: NSObject, FlutterPlatformView, ARSCNViewDelegate, UIGestureReco
         // Set plane detection configuration
         self.configuration = ARWorldTrackingConfiguration()
         self.configuration.environmentTexturing = .automatic
+
+        // Load every image in assets/imagesscan/ into ARKit's reference image set,
+        // mirroring the Android side's AugmentedImageDatabase behaviour.
+        let referenceImages = loadReferenceImages()
+        if !referenceImages.isEmpty {
+            self.configuration.detectionImages = referenceImages
+            self.configuration.maximumNumberOfTrackedImages = 1
+        }
+
         if let planeDetectionConfig = arguments["planeDetectionConfig"] as? Int {
             switch planeDetectionConfig {
                 case 1: 
@@ -342,7 +354,7 @@ class IosARView: NSObject, FlutterPlatformView, ARSCNViewDelegate, UIGestureReco
     }
 
     func renderer(_ renderer: SCNSceneRenderer, didAdd node: SCNNode, for anchor: ARAnchor) {
-        
+
         if let planeAnchor = anchor as? ARPlaneAnchor{
             let plane = modelBuilder.makePlane(anchor: planeAnchor, flutterAssetFile: customPlaneTexturePath)
             trackedPlanes[anchor.identifier] = (node, plane)
@@ -350,17 +362,68 @@ class IosARView: NSObject, FlutterPlatformView, ARSCNViewDelegate, UIGestureReco
                 node.addChildNode(plane)
             }
         }
+
+        if let imageAnchor = anchor as? ARImageAnchor {
+            handleImageAnchorUpdate(imageAnchor)
+        }
     }
 
     func renderer(_ renderer: SCNSceneRenderer, didUpdate node: SCNNode, for anchor: ARAnchor) {
-        
+
         if let planeAnchor = anchor as? ARPlaneAnchor, let plane = trackedPlanes[anchor.identifier] {
             modelBuilder.updatePlaneNode(planeNode: plane.1, anchor: planeAnchor)
+        }
+
+        if let imageAnchor = anchor as? ARImageAnchor {
+            handleImageAnchorUpdate(imageAnchor)
         }
     }
 
     func renderer(_ renderer: SCNSceneRenderer, didRemove node: SCNNode, for anchor: ARAnchor) {
         trackedPlanes.removeValue(forKey: anchor.identifier)
+        if let imageAnchor = anchor as? ARImageAnchor, let name = imageAnchor.referenceImage.name {
+            detectedImages.remove(name)
+        }
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // Image-based AR tracking (board card scanning)
+    // ──────────────────────────────────────────────────────────────
+
+    private func handleImageAnchorUpdate(_ imageAnchor: ARImageAnchor) {
+        guard let name = imageAnchor.referenceImage.name else { return }
+        if imageAnchor.isTracked {
+            if detectedImages.insert(name).inserted {
+                DispatchQueue.main.async {
+                    self.sessionManagerChannel.invokeMethod("onImageDetected", arguments: ["name": name])
+                }
+            }
+        } else {
+            detectedImages.remove(name)
+        }
+    }
+
+    // Loads every image in assets/imagesscan/ (bundled Flutter assets) as an
+    // ARReferenceImage, named after the file (without extension) so detected
+    // names line up with the Android side and the Dart-side place lookup maps.
+    private func loadReferenceImages() -> Set<ARReferenceImage> {
+        var images = Set<ARReferenceImage>()
+        let key = FlutterDartProject.lookupKey(forAsset: "assets/imagesscan")
+        guard let folderPath = Bundle.main.path(forResource: key, ofType: nil),
+              let files = try? FileManager.default.contentsOfDirectory(atPath: folderPath) else {
+            return images
+        }
+        for file in files {
+            let ext = (file as NSString).pathExtension.lowercased()
+            guard ["png", "jpg", "jpeg"].contains(ext) else { continue }
+            let filePath = folderPath + "/" + file
+            guard let uiImage = UIImage(contentsOfFile: filePath), let cgImage = uiImage.cgImage else { continue }
+            let name = (file as NSString).deletingPathExtension
+            let referenceImage = ARReferenceImage(cgImage, orientation: .up, physicalWidth: 0.1)
+            referenceImage.name = name
+            images.insert(referenceImage)
+        }
+        return images
     }
     
     func session(_ session: ARSession, didUpdate frame: ARFrame) {
