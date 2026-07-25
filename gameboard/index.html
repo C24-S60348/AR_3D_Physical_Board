@@ -22,8 +22,8 @@ body {
   height: 1188px;
   display: flex;
   flex-direction: row;
-  background: linear-gradient(150deg,#c8e8d4 0%,#a8d8c8 50%,#84c0ac 100%);
-  border: 14px solid #7a1010;
+  background: #cbb488;
+  border: 14px solid #6b3d17;
   border-radius: 20px;
   box-shadow: 0 0 80px rgba(0,0,0,.7), inset 0 0 30px rgba(0,0,0,.1);
   overflow: hidden;
@@ -48,109 +48,107 @@ body {
   display:flex;
   flex-direction:column;
   padding:10px 8px 8px 12px;
-  gap:4px;
+  gap:6px;
+  position:relative;
+  background: linear-gradient(rgba(20,10,0,.12),rgba(20,10,0,.12)), url('./background.png') center/cover no-repeat;
 }
 
 /* ── HEADER ── */
 #hdr {
   display:flex; align-items:center; height:86px;
-  background:rgba(255,255,255,.28);
-  border-radius:12px; border:2px solid rgba(180,130,50,.5);
+  background:rgba(255,255,255,.55);
+  border-radius:12px; border:2px solid rgba(107,61,23,.6);
   padding:6px 14px; gap:12px;
+  box-shadow:0 3px 10px rgba(0,0,0,.25);
 }
 #logo { height:74px; width:auto; filter:drop-shadow(2px 2px 5px rgba(0,0,0,.35)); }
 
-/* ── GRID ── */
+/* ── GRID (spiral path, absolutely positioned) ── */
 #grid {
   flex:1;
-  display:flex;
-  flex-direction:column-reverse; /* row1 at bottom */
-  gap:3px;
+  position:relative;
 }
-
-.row-card {
-  flex:1;
-  background:rgba(255,252,240,.9);
-  border-radius:10px;
-  border:2px solid #c8a050;
-  box-shadow:0 2px 6px rgba(0,0,0,.13), inset 0 1px 0 rgba(255,255,255,.7);
-  padding:3px;
-  display:flex;
-}
-.brow {
-  display:flex; flex-direction:row; gap:3px; flex:1;
-}
-.brow.rtl { flex-direction:row-reverse; }
 
 /* ══ SQUARE BASE ══ */
 .sq {
-  flex:1;
-  border-radius:6px;
-  border:1.5px solid #d4b870;
-  background:#fdf8ee;
+  position:absolute;
+  border-radius:9px;
+  border:1.5px solid #d9c397;
+  background:#fdf6e6;
   display:flex; flex-direction:column;
   align-items:center; justify-content:center;
-  position:relative; overflow:hidden;
-  box-shadow:inset 0 1px 0 rgba(255,255,255,.8);
+  overflow:visible;
+  box-shadow:0 3px 7px rgba(0,0,0,.28), inset 0 1px 0 rgba(255,255,255,.8);
   cursor:default;
   transition:transform .12s;
+  box-sizing:border-box;
 }
-.sq:hover { transform:scale(1.06); z-index:10; box-shadow:0 4px 14px rgba(0,0,0,.25); }
+.sq:hover { transform:scale(1.08); z-index:50; box-shadow:0 6px 16px rgba(0,0,0,.35); }
 
 .sq-n { font-size:15px; font-weight:900; color:#1a1a1a; line-height:1; }
 .sq-b { font-size:14px; font-weight:900; line-height:1; }
 
 /* green */
 .sq.green {
-  background:linear-gradient(150deg,#56c157,#2e7d32);
-  border-color:#1b5e20;
+  background:#8bd15a;
+  border-color:#5a9c34;
 }
-.sq.green .sq-n, .sq.green .sq-b { color:#fff; text-shadow:1px 1px 3px rgba(0,0,0,.5); }
+.sq.green .sq-n, .sq.green .sq-b { color:#0d3d0a; }
 
 /* red */
 .sq.red {
-  background:linear-gradient(150deg,#f05454,#b71c1c);
-  border-color:#7f0000;
+  background:#f0857a;
+  border-color:#c94a3d;
 }
-.sq.red .sq-n, .sq.red .sq-b { color:#fff; text-shadow:1px 1px 3px rgba(0,0,0,.5); }
+.sq.red .sq-n, .sq.red .sq-b { color:#4d0a04; }
 
-/* ── LANDMARK ── */
+/* ── LANDMARK (badge sticker style) ── */
 .sq.lm {
-  border:2.5px solid #1565c0;
-  background:#e8f4fd;
+  border:none;
+  background:transparent;
+  box-shadow:none;
   padding:0;
-  justify-content:flex-start;
+  overflow:visible;
 }
-/* number pinned top-right */
+/* number pinned top-left, white pill like reference */
 .lm-num {
-  position:absolute; top:2px; right:3px;
+  position:absolute; top:-6px; left:-4px;
+  min-width:20px; padding:1px 4px;
   font-size:12px; font-weight:900;
-  color:#fff;
-  text-shadow: 1px 1px 0 #000,-1px -1px 0 #000,1px -1px 0 #000,-1px 1px 0 #000;
-  z-index:10; line-height:1;
+  color:#1a1a1a;
+  background:#fff;
+  border-radius:6px;
+  box-shadow:0 2px 5px rgba(0,0,0,.35);
+  z-index:10; line-height:1.4; text-align:center;
 }
-/* image fills middle */
+/* circular badge image */
 .lm-wrap {
-  position:absolute; top:0; left:0; right:0; bottom:18px;
+  position:absolute; top:-14%; left:8%; right:8%; bottom:26%;
+  border-radius:50%;
   overflow:hidden;
+  border:2.5px solid #fff;
+  box-shadow:0 3px 8px rgba(0,0,0,.4);
+  background:#dfeeff;
 }
 .lm-wrap img {
   width:100%; height:100%; object-fit:cover; display:block;
 }
-/* name at bottom */
+/* name pill at bottom, floating over tile */
 .lm-name {
-  position:absolute; bottom:0; left:0; right:0; height:18px;
-  background:rgba(255,255,255,.92);
-  font-size:6.5px; font-weight:900; color:#0d47a1;
-  text-align:center; line-height:18px;
-  border-top:1px solid #90caf9;
+  position:absolute; bottom:2px; left:4%; right:4%; height:16px;
+  background:#fff;
+  font-size:6px; font-weight:900; color:#1a1a1a;
+  text-align:center; line-height:16px;
+  border-radius:5px;
+  box-shadow:0 2px 5px rgba(0,0,0,.3);
   white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-  padding:0 2px;
+  padding:0 3px;
+  z-index:5;
 }
 
 /* MULA */
 .sq.mula {
-  background:linear-gradient(150deg,#1976d2,#0d47a1);
+  background:#3d7fc9;
   border-color:#0a2a6e; border-width:2.5px;
   min-width:80px; flex:1.2;
 }
@@ -159,7 +157,7 @@ body {
 
 /* TAMAT */
 .sq.tamat {
-  background:linear-gradient(150deg,#FFD700,#FF8C00);
+  background:#f4b93c;
   border-color:#B8860B; border-width:2.5px; flex:1.2;
 }
 .tamat-f { font-size:18px; }
@@ -170,15 +168,16 @@ body {
 #legend {
   display:flex; align-items:center; gap:10px;
   height:72px;
-  background:rgba(255,252,240,.85);
-  border-radius:10px; border:2px solid rgba(180,130,50,.5);
+  background:rgba(255,250,235,.9);
+  border-radius:10px; border:2px solid rgba(107,61,23,.5);
   padding:8px 12px;
+  box-shadow:0 3px 8px rgba(0,0,0,.2);
 }
 .l-badge {
-  background:linear-gradient(135deg,#FFD700,#FFA500);
-  border:2.5px solid #7a1010; border-radius:8px;
+  background:#f4b93c;
+  border:2.5px solid #6b3d17; border-radius:8px;
   padding:5px 10px; font-size:12px; font-weight:900;
-  color:#5a0000; letter-spacing:.5px; white-space:nowrap;
+  color:#5a2c00; letter-spacing:.5px; white-space:nowrap;
   height:100%; display:flex; align-items:center; gap:5px;
 }
 .l-badge::before,.l-badge::after{content:'◆';font-size:10px}
@@ -188,17 +187,17 @@ body {
 .lchip  {
   width:38px; height:24px; border-radius:5px;
   display:flex; align-items:center; justify-content:center;
-  font-size:13px; font-weight:900; color:#fff; flex-shrink:0;
+  font-size:13px; font-weight:900; flex-shrink:0;
 }
-.lchip.g{background:linear-gradient(145deg,#56c157,#2e7d32);border:1.5px solid #1b5e20}
-.lchip.r{background:linear-gradient(145deg,#f05454,#b71c1c);border:1.5px solid #7f0000}
+.lchip.g{background:#8bd15a;border:1.5px solid #5a9c34;color:#0d3d0a}
+.lchip.r{background:#f0857a;border:1.5px solid #c94a3d;color:#4d0a04}
 .l-lm {
   display:flex; align-items:center; gap:8px;
-  padding:6px 10px; background:rgba(255,255,255,.7);
-  border-radius:8px; border:1.5px solid #90caf9;
+  padding:6px 10px; background:rgba(255,255,255,.75);
+  border-radius:8px; border:1.5px solid #6b3d17;
 }
-.l-lm img { width:46px; height:40px; border-radius:5px; border:2px solid #1565c0; object-fit:cover; }
-.l-lm-t  { font-size:11px; font-weight:800; color:#0d47a1; line-height:1.45; }
+.l-lm img { width:40px; height:40px; border-radius:50%; border:2px solid #fff; box-shadow:0 2px 5px rgba(0,0,0,.3); object-fit:cover; }
+.l-lm-t  { font-size:11px; font-weight:800; color:#3d2200; line-height:1.45; }
 
 /* ══ RIGHT PANEL ══ */
 #panel {
@@ -422,57 +421,85 @@ const special = {
   95:  R('-5'),
 };
 
-// Build rows
+// ── Spiral path geometry ──
+// Generate a rectangular inward spiral (top-left, right→down→left→up),
+// then flip vertically so it starts bottom-left going right, matching
+// a physical snake board. One extra column (col 0) is reserved for MULA.
+const SPIRAL_ROWS = 8;
+const SPIRAL_COLS = 13;          // + 1 reserved column for MULA = 14 total
+const GRID_COLS   = SPIRAL_COLS + 1;
+const GRID_ROWS   = SPIRAL_ROWS;
+
+function spiralCoords(rows, cols) {
+  let top = 0, bottom = rows - 1, left = 0, right = cols - 1;
+  const seq = [];
+  while (top <= bottom && left <= right) {
+    for (let c = left; c <= right; c++) seq.push([top, c]);
+    top++;
+    for (let r = top; r <= bottom; r++) seq.push([r, right]);
+    right--;
+    if (top <= bottom) { for (let c = right; c >= left; c--) seq.push([bottom, c]); bottom--; }
+    if (left <= right) { for (let r = bottom; r >= top; r--) seq.push([r, left]); left++; }
+  }
+  return seq;
+}
+
+const rawSpiral = spiralCoords(SPIRAL_ROWS, SPIRAL_COLS);
+// flip row (start at bottom) and shift col by +1 (reserve col 0 for MULA)
+const path = rawSpiral.map(([r, c]) => [GRID_ROWS - 1 - r, c + 1]);
+
+const mulaCoord = [GRID_ROWS - 1, 0]; // bottom row, reserved column
+
+// ── Build squares ──
 const grid = document.getElementById('grid');
+const cellWpct = 100 / GRID_COLS;
+const cellHpct = 100 / GRID_ROWS;
+const GAP = 0.5; // % gap between tiles
 
-for (let row = 1; row <= 10; row++) {
-  const isRTL   = (row % 2 === 0);   // even rows go right-to-left
-  const rowStart = (row - 1) * 10 + 1;
-  const rowEnd   = row * 10;
+function place(el, row, col, spanW = 1, spanH = 1) {
+  el.style.left   = (col * cellWpct + GAP / 2) + '%';
+  el.style.top    = (row * cellHpct + GAP / 2) + '%';
+  el.style.width  = (cellWpct * spanW - GAP) + '%';
+  el.style.height = (cellHpct * spanH - GAP) + '%';
+}
 
-  const card = document.createElement('div');
-  card.className = 'row-card';
-  const brow = document.createElement('div');
-  brow.className = 'brow' + (isRTL ? ' rtl' : '');
-  card.appendChild(brow);
-  grid.appendChild(card);
+// MULA
+const mula = document.createElement('div');
+mula.className = 'sq mula';
+mula.innerHTML = '<div class="mula-t">MULA</div><div class="mula-a">➡</div>';
+place(mula, mulaCoord[0], mulaCoord[1]);
+grid.appendChild(mula);
 
-  // First cell of row 1 = MULA
-  if (row === 1) {
-    const mula = document.createElement('div');
-    mula.className = 'sq mula';
-    mula.innerHTML = '<div class="mula-t">MULA</div><div class="mula-a">➡</div>';
-    brow.appendChild(mula);
-  }
+// Squares 1–100, positioned along the spiral path
+for (let n = 1; n <= 100; n++) {
+  const [row, col] = path[n - 1];
+  const isLast = (n === 100);
+  const cell = document.createElement('div');
 
-  for (let n = rowStart; n <= rowEnd; n++) {
-    const isLast = (n === 100);
-    const cell   = document.createElement('div');
-
-    if (isLast) {
-      cell.className = 'sq tamat';
-      cell.innerHTML = '<div class="tamat-f">🏁</div><div class="tamat-n">100</div><div class="tamat-l">TAMAT</div>';
+  if (isLast) {
+    cell.className = 'sq tamat';
+    cell.innerHTML = '<div class="tamat-f">🏁</div><div class="tamat-n">100</div><div class="tamat-l">TAMAT</div>';
+  } else {
+    const s = special[n];
+    if (s && s.t === 'lm') {
+      cell.className = 'sq lm';
+      cell.innerHTML = `
+        <span class="lm-num">${n}</span>
+        <div class="lm-wrap"><img src="${s.img}" alt="${s.name}" loading="eager" onerror="this.style.display='none'"></div>
+        <div class="lm-name">${s.name}</div>`;
+    } else if (s && s.t === 'green') {
+      cell.className = 'sq green';
+      cell.innerHTML = `<div class="sq-n">${n}</div><div class="sq-b">${s.b}</div>`;
+    } else if (s && s.t === 'red') {
+      cell.className = 'sq red';
+      cell.innerHTML = `<div class="sq-n">${n}</div><div class="sq-b">${s.b}</div>`;
     } else {
-      const s = special[n];
-      if (s && s.t === 'lm') {
-        cell.className = 'sq lm';
-        cell.innerHTML = `
-          <span class="lm-num">${n}</span>
-          <div class="lm-wrap"><img src="${s.img}" alt="${s.name}" loading="eager" onerror="this.style.display='none'"></div>
-          <div class="lm-name">${s.name}</div>`;
-      } else if (s && s.t === 'green') {
-        cell.className = 'sq green';
-        cell.innerHTML = `<div class="sq-n">${n}</div><div class="sq-b">${s.b}</div>`;
-      } else if (s && s.t === 'red') {
-        cell.className = 'sq red';
-        cell.innerHTML = `<div class="sq-n">${n}</div><div class="sq-b">${s.b}</div>`;
-      } else {
-        cell.className = 'sq';
-        cell.innerHTML = `<div class="sq-n">${n}</div>`;
-      }
+      cell.className = 'sq';
+      cell.innerHTML = `<div class="sq-n">${n}</div>`;
     }
-    brow.appendChild(cell);
   }
+  place(cell, row, col);
+  grid.appendChild(cell);
 }
 
 // ── Scale to viewport ──

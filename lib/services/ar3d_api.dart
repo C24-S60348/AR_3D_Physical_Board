@@ -52,13 +52,21 @@ class Ar3dApi {
     }
   }
 
-  static Future<List<Question>> getQuestions(String topic) async {
+  static Future<List<Question>> getQuestions(
+    String topic, {
+    String? level,
+  }) async {
     if (!isConfigured) return const [];
 
     final client = HttpClient();
     try {
       final request = await client
-          .getUrl(_uri('/api/ar3d/questions', {'topic': topic}))
+          .getUrl(
+            _uri('/api/ar3d/questions', {
+              'topic': topic,
+              if (level != null && level.isNotEmpty) 'level': level,
+            }),
+          )
           .timeout(const Duration(seconds: 5));
       request.headers.set(HttpHeaders.acceptHeader, ContentType.json.mimeType);
       final response = await request.close().timeout(

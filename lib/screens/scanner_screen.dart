@@ -11,39 +11,47 @@ import '../data/questions_data.dart';
 import '../services/ar3d_api.dart';
 import '../utils/emulator_check.dart';
 
-// Map from ARCore image name → (display name, asset path)
+// Map from ARCore image name → (display name, asset path, question level)
 const _placeInfo = <String, Map<String, String>>{
   'kotaafamosa-new': {
     'name': "Kota A'Famosa",
     'asset': 'assets/imagesscan/kotaafamosa-new.png',
+    'topic': 'APLIKASI',
   },
   'masjidcina-new': {
     'name': 'Masjid Cina Melaka',
     'asset': 'assets/imagesscan/masjidcina-new.png',
+    'topic': 'ASAS',
   },
   'masjidselatmelaka-new': {
     'name': 'Masjid Selat Melaka',
     'asset': 'assets/imagesscan/masjidselatmelaka-new.png',
+    'topic': 'SEDERHANA',
   },
   'masjidselatmelaka-new2': {
     'name': 'Masjid Selat Melaka',
     'asset': 'assets/imagesscan/masjidselatmelaka-new2.png',
+    'topic': 'SEDERHANA',
   },
   'menaratamingsari-new': {
     'name': 'Menara Taming Sari',
     'asset': 'assets/imagesscan/menaratamingsari-new.png',
+    'topic': 'APLIKASI',
   },
   'muziumsamudera-new': {
     'name': 'Muzium Samudera',
     'asset': 'assets/imagesscan/muziumsamudera-new.png',
+    'topic': 'ASAS',
   },
   'pantaiklebang-new': {
     'name': 'Pantai Klebang',
     'asset': 'assets/imagesscan/pantaiklebang-new.png',
+    'topic': 'ANALISIS',
   },
   'stadiumhangjebat-new': {
     'name': 'Stadium Hang Jebat',
     'asset': 'assets/imagesscan/stadiumhangjebat-new.png',
+    'topic': 'CABARAN',
   },
 };
 
@@ -193,14 +201,33 @@ class _ScannerScreenState extends State<ScannerScreen>
       _sessionManager = null;
     });
 
+    final normalizedName = imageName.toLowerCase().replaceAll(
+      RegExp(r'\.(png|jpg|jpeg)$'),
+      '',
+    );
+    final placeTopic = _placeInfo[normalizedName]?['topic'] ?? _topic;
+    // Level buckets (ASAS..CABARAN) live under the secondary-school topic on
+    // the server; other place topics map to a server topic directly.
+    final isLevel = questionsByLevel.containsKey(placeTopic);
+
     List<Question> questions = const [];
     try {
-      questions = await Ar3dApi.getQuestions(_topic);
+      questions = isLevel
+          ? await Ar3dApi.getQuestions(
+              'Maths for Secondary Students',
+              level: placeTopic,
+            )
+          : await Ar3dApi.getQuestions(placeTopic);
     } catch (_) {
       // Keep scanning available when the configured server cannot be reached.
     }
+    if (isLevel) {
+      // An older server ignores the level filter and returns the whole
+      // topic; keep only rows the server tagged with the requested level.
+      questions = questions.where((q) => q.level == placeTopic).toList();
+    }
     if (questions.isEmpty) {
-      questions = getQuestionsForTopic(_topic);
+      questions = getQuestionsForTopic(placeTopic);
     }
     if (questions.isEmpty) {
       if (mounted && generation == _detectionGeneration) {
@@ -220,10 +247,7 @@ class _ScannerScreenState extends State<ScannerScreen>
       return;
     }
     setState(() {
-      _detectedImageName = imageName.toLowerCase().replaceAll(
-        RegExp(r'\.(png|jpg|jpeg)$'),
-        '',
-      );
+      _detectedImageName = normalizedName;
       _showingFlipCard = true;
       _currentQuestion = q;
       _answerController.clear();

@@ -124,9 +124,15 @@ class _NotaScreenState extends State<NotaScreen>
 
 // ── Tab 1: Melaka places ──────────────────────────────────────────────────────
 
-class _MelakaTab extends StatelessWidget {
+class _MelakaTab extends StatefulWidget {
   const _MelakaTab();
 
+  @override
+  State<_MelakaTab> createState() => _MelakaTabState();
+}
+
+class _MelakaTabState extends State<_MelakaTab>
+    with SingleTickerProviderStateMixin {
   static const _places = [
     _Place(
       name: "Kota A'Famosa",
@@ -172,13 +178,49 @@ class _MelakaTab extends StatelessWidget {
     ),
   ];
 
+  late final AnimationController _entranceCtrl;
+
+  @override
+  void initState() {
+    super.initState();
+    _entranceCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 900),
+    )..forward();
+  }
+
+  @override
+  void dispose() {
+    _entranceCtrl.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return ListView.separated(
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
       itemCount: _places.length,
-      separatorBuilder: (_, _) => const SizedBox(height: 16),
-      itemBuilder: (context, i) => _PlaceCard(place: _places[i]),
+      separatorBuilder: (_, _) => const SizedBox(height: 18),
+      itemBuilder: (context, i) {
+        // Stagger: each card fades in and slides up slightly after the last.
+        final start = (i * 0.09).clamp(0.0, 0.6);
+        final animation = CurvedAnimation(
+          parent: _entranceCtrl,
+          curve: Interval(start, (start + 0.4).clamp(0.0, 1.0),
+              curve: Curves.easeOutCubic),
+        );
+        return AnimatedBuilder(
+          animation: animation,
+          builder: (context, child) => Opacity(
+            opacity: animation.value,
+            child: Transform.translate(
+              offset: Offset(0, 24 * (1 - animation.value)),
+              child: child,
+            ),
+          ),
+          child: _PlaceCard(place: _places[i], index: i),
+        );
+      },
     );
   }
 }
@@ -196,16 +238,18 @@ class _Place {
 
 class _PlaceCard extends StatelessWidget {
   final _Place place;
-  const _PlaceCard({required this.place});
+  final int index;
+  const _PlaceCard({required this.place, required this.index});
 
   static const _red = Color(0xFF8B1A1A);
+  static const _gold = Color(0xFFB8860B);
 
   @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(22),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.28),
@@ -218,43 +262,121 @@ class _PlaceCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Place image
-          AspectRatio(
-            aspectRatio: 16 / 9,
-            child: Image.asset(
-              place.asset,
-              fit: BoxFit.fitHeight,
-              errorBuilder: (_, _, _) => Container(
-                color: Colors.grey.shade200,
-                child: const Icon(
-                  Icons.image_not_supported,
-                  color: Colors.grey,
-                  size: 48,
-                ),
-              ),
-            ),
-          ),
-          // Name + description
-          Padding(
-            padding: const EdgeInsets.all(14),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  place.name,
-                  style: const TextStyle(
-                    color: _red,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 15,
+          // Image with gradient scrim, numbered badge, and name overlay
+          Stack(
+            children: [
+              AspectRatio(
+                aspectRatio: 16 / 9,
+                child: Image.asset(
+                  place.asset,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, _, _) => Container(
+                    color: Colors.grey.shade200,
+                    child: const Icon(
+                      Icons.image_not_supported,
+                      color: Colors.grey,
+                      size: 48,
+                    ),
                   ),
                 ),
-                const SizedBox(height: 6),
-                Text(
-                  place.description,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    color: Colors.black87,
-                    height: 1.5,
+              ),
+              Positioned.fill(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      stops: const [0.45, 1.0],
+                      colors: [
+                        Colors.transparent,
+                        Colors.black.withValues(alpha: 0.72),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              Positioned(
+                top: 12,
+                left: 12,
+                child: Container(
+                  width: 30,
+                  height: 30,
+                  decoration: BoxDecoration(
+                    color: _gold,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 1.5),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.3),
+                        blurRadius: 6,
+                      ),
+                    ],
+                  ),
+                  child: Center(
+                    child: Text(
+                      '${index + 1}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              Positioned(
+                left: 16,
+                right: 16,
+                bottom: 12,
+                child: Row(
+                  children: [
+                    const Icon(Icons.place, color: _gold, size: 18),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        place.name,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w800,
+                          fontSize: 17,
+                          shadows: [
+                            Shadow(color: Colors.black54, blurRadius: 6),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          // Description with gold accent bar
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  width: 4,
+                  height: 44,
+                  margin: const EdgeInsets.only(right: 12, top: 2),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [_red, _gold],
+                    ),
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+                Expanded(
+                  child: Text(
+                    place.description,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: Colors.black87,
+                      height: 1.55,
+                    ),
                   ),
                 ),
               ],
@@ -276,61 +398,8 @@ class _NotaPermainanTab extends StatefulWidget {
 }
 
 class _NotaPermainanTabState extends State<_NotaPermainanTab> {
-  static const _fallbackNotes = [
-    GameNote(
-      emoji: '📜',
-      title: 'Sejarah Melaka',
-      points: [
-        'Melaka diasaskan oleh Parameswara pada tahun 1400.',
-        'Portugis menakluki Melaka pada tahun 1511.',
-        'Belanda mengambil alih Melaka pada tahun 1641.',
-        'British mengambil alih Melaka pada tahun 1824 melalui Perjanjian Inggeris-Belanda.',
-      ],
-    ),
-    GameNote(
-      emoji: '🏛️',
-      title: 'Seni Bina',
-      points: [
-        'Stadthuys adalah bangunan Belanda tertua di Asia Tenggara.',
-        "A'Famosa dibina oleh Alfonso de Albuquerque pada tahun 1512.",
-        'Christ Church Melaka dibina pada tahun 1753.',
-        'Menara Taming Sari berputar 360° sambil naik ke atas.',
-      ],
-    ),
-    GameNote(
-      emoji: '🎎',
-      title: 'Budaya',
-      points: [
-        'Budaya Baba-Nyonya adalah perpaduan Melayu dan Cina.',
-        'Beca adalah simbol pelancongan Melaka yang terkenal.',
-        'Jonker Street terkenal dengan barangan antik dan makanan.',
-        'Melaka merupakan tapak warisan dunia UNESCO sejak 2008.',
-      ],
-    ),
-    GameNote(
-      emoji: '🗺️',
-      title: 'Pelancongan',
-      points: [
-        'Masjid Selat Melaka dibina di atas air, kelihatan terapung.',
-        'Muzium Kapal Selam KD Oumanoff adalah kapal selam sebenar.',
-        'Bukit St. Paul mempunyai gereja dan makam bersejarah.',
-        'Cheng Hoon Teng adalah kuil Cina tertua di Malaysia.',
-      ],
-    ),
-    GameNote(
-      emoji: '🔢',
-      title: 'Matematik',
-      points: [
-        'Luas = panjang × lebar (segi empat tepat).',
-        'Luas = sisi × sisi (segi empat sama).',
-        'Peratusan: bahagi dengan 100, kemudian darab.',
-        'Punca kuasa dua: √169 = 13 kerana 13 × 13 = 169.',
-      ],
-    ),
-  ];
-
-  List<GameNote> _notes = _fallbackNotes;
-  bool _loading = false;
+  List<GameNote> _notes = const [];
+  bool _loading = true;
   String? _error;
 
   @override
@@ -340,7 +409,6 @@ class _NotaPermainanTabState extends State<_NotaPermainanTab> {
   }
 
   Future<void> _loadNotes() async {
-    if (!Ar3dApi.isConfigured) return;
     setState(() {
       _loading = true;
       _error = null;
@@ -348,14 +416,11 @@ class _NotaPermainanTabState extends State<_NotaPermainanTab> {
     try {
       final notes = await Ar3dApi.getNotes();
       if (!mounted) return;
-      setState(() {
-        if (notes.isNotEmpty) _notes = notes;
-      });
+      setState(() => _notes = notes);
     } catch (_) {
       if (mounted) {
         setState(() {
-          _error =
-              'Showing saved app notes. Pull down to try the server again.';
+          _error = 'Tidak dapat memuatkan nota dari pelayan.';
         });
       }
     } finally {
@@ -363,29 +428,63 @@ class _NotaPermainanTabState extends State<_NotaPermainanTab> {
     }
   }
 
+  Widget _statusMessage({
+    required IconData icon,
+    required String message,
+  }) {
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.fromLTRB(32, 60, 32, 24),
+      children: [
+        Icon(icon, color: Colors.white54, size: 56),
+        const SizedBox(height: 16),
+        Text(
+          message,
+          style: const TextStyle(color: Colors.white70, fontSize: 15),
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 20),
+        Center(
+          child: OutlinedButton.icon(
+            onPressed: _loadNotes,
+            icon: const Icon(Icons.refresh, size: 18),
+            label: const Text('Cuba Semula'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: Colors.white,
+              side: const BorderSide(color: Colors.white54, width: 1.5),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    return RefreshIndicator(
-      onRefresh: _loadNotes,
-      child: ListView.separated(
+    if (_loading) {
+      return const Center(
+        child: CircularProgressIndicator(color: Colors.white),
+      );
+    }
+
+    Widget child;
+    if (_error != null) {
+      child = _statusMessage(icon: Icons.cloud_off, message: _error!);
+    } else if (_notes.isEmpty) {
+      child = _statusMessage(
+        icon: Icons.note_alt_outlined,
+        message: 'Tiada nota buat masa ini. Tarik ke bawah untuk muat semula.',
+      );
+    } else {
+      child = ListView.separated(
         physics: const AlwaysScrollableScrollPhysics(),
         padding: const EdgeInsets.fromLTRB(20, 0, 20, 24),
-        itemCount: _notes.length + (_loading || _error != null ? 1 : 0),
+        itemCount: _notes.length,
         separatorBuilder: (_, _) => const SizedBox(height: 16),
-        itemBuilder: (context, i) {
-          if (i == 0 && (_loading || _error != null)) {
-            if (_loading) return const LinearProgressIndicator();
-            return Text(
-              _error!,
-              style: const TextStyle(color: Colors.white),
-              textAlign: TextAlign.center,
-            );
-          }
-          final noteIndex = i - (_loading || _error != null ? 1 : 0);
-          return _NotaCard(nota: _notes[noteIndex]);
-        },
-      ),
-    );
+        itemBuilder: (context, i) => _NotaCard(nota: _notes[i]),
+      );
+    }
+    return RefreshIndicator(onRefresh: _loadNotes, child: child);
   }
 }
 
@@ -423,12 +522,14 @@ class _NotaCard extends StatelessWidget {
               children: [
                 Text(nota.emoji, style: const TextStyle(fontSize: 22)),
                 const SizedBox(width: 10),
-                Text(
-                  nota.title,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 16,
+                Expanded(
+                  child: Text(
+                    nota.title,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 16,
+                    ),
                   ),
                 ),
               ],
