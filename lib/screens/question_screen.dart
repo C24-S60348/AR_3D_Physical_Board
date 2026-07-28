@@ -45,12 +45,95 @@ class _QuestionScreenState extends State<QuestionScreen>
     super.dispose();
   }
 
-  void _submit() {
-    final answer = _answerController.text.trim();
+  void _submit() => _answer(_answerController.text);
+
+  void _answer(String value) {
+    final answer = value.trim();
     if (_answered || answer.isEmpty) return;
     setState(() {
       _submittedAnswer = answer;
       _answered = true;
+    });
+  }
+
+  List<Widget> _buildChoices() {
+    const letters = ['A', 'B', 'C', 'D', 'E', 'F'];
+    final options = widget.question.options;
+
+    return List.generate(options.length, (index) {
+      final option = options[index];
+      final isChosen = _submittedAnswer == option;
+      final isAnswer = _answered && widget.question.matchesAnswer(option);
+
+      var border = Colors.white24;
+      var background = Colors.white.withOpacity(0.06);
+      var badge = Colors.amber;
+      if (isAnswer) {
+        border = Colors.green;
+        background = Colors.green.withOpacity(0.18);
+        badge = Colors.green;
+      } else if (isChosen) {
+        border = Colors.red;
+        background = Colors.red.withOpacity(0.18);
+        badge = Colors.red;
+      }
+
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 10),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: _answered ? null : () => _answer(option),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+            decoration: BoxDecoration(
+              color: background,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: border,
+                width: isChosen || isAnswer ? 2 : 1,
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 28,
+                  height: 28,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: badge,
+                    borderRadius: BorderRadius.circular(9),
+                  ),
+                  child: Text(
+                    index < letters.length ? letters[index] : '${index + 1}',
+                    style: const TextStyle(
+                      color: Colors.black,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    option,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                      height: 1.3,
+                    ),
+                  ),
+                ),
+                if (isAnswer)
+                  const Icon(Icons.check_circle, color: Colors.green, size: 22)
+                else if (isChosen)
+                  const Icon(Icons.cancel, color: Colors.red, size: 22),
+              ],
+            ),
+          ),
+        ),
+      );
     });
   }
 
@@ -178,53 +261,60 @@ class _QuestionScreenState extends State<QuestionScreen>
           ),
           const SizedBox(height: 16),
 
-          TextField(
-            controller: _answerController,
-            enabled: !_answered,
-            style: const TextStyle(color: Colors.white),
-            textInputAction: TextInputAction.done,
-            onSubmitted: (_) => _submit(),
-            decoration: InputDecoration(
-              labelText: 'Taip jawapan anda',
-              labelStyle: const TextStyle(color: Colors.white70),
-              hintText: 'Contoh: 0.5 atau 1/2',
-              hintStyle: const TextStyle(color: Colors.white38),
-              prefixIcon: const Icon(Icons.edit_outlined, color: Colors.amber),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Colors.white38),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Colors.amber, width: 2),
-              ),
-              disabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(12),
-                borderSide: const BorderSide(color: Colors.white24),
+          if (widget.question.isMultipleChoice)
+            ..._buildChoices()
+          else ...[
+            TextField(
+              controller: _answerController,
+              enabled: !_answered,
+              style: const TextStyle(color: Colors.white),
+              textInputAction: TextInputAction.done,
+              onSubmitted: (_) => _submit(),
+              decoration: InputDecoration(
+                labelText: 'Taip jawapan anda',
+                labelStyle: const TextStyle(color: Colors.white70),
+                hintText: 'Contoh: 0.5 atau 1/2',
+                hintStyle: const TextStyle(color: Colors.white38),
+                prefixIcon: const Icon(
+                  Icons.edit_outlined,
+                  color: Colors.amber,
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Colors.white38),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Colors.amber, width: 2),
+                ),
+                disabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Colors.white24),
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 12),
-          if (!_answered)
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton.icon(
-                onPressed: _submit,
-                icon: const Icon(Icons.send_rounded),
-                label: const Text(
-                  'Hantar Jawapan',
-                  style: TextStyle(fontWeight: FontWeight.w800),
-                ),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.amber,
-                  foregroundColor: Colors.black,
-                  padding: const EdgeInsets.symmetric(vertical: 14),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+            const SizedBox(height: 12),
+            if (!_answered)
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton.icon(
+                  onPressed: _submit,
+                  icon: const Icon(Icons.send_rounded),
+                  label: const Text(
+                    'Hantar Jawapan',
+                    style: TextStyle(fontWeight: FontWeight.w800),
+                  ),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.amber,
+                    foregroundColor: Colors.black,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
                   ),
                 ),
               ),
-            ),
+          ],
 
           const SizedBox(height: 24),
 

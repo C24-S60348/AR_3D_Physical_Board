@@ -2,6 +2,7 @@ class Question {
   final int? id;
   final int? topicId;
   final String? level;
+  final String? place;
   final String topic;
   final String question;
   final List<String> options;
@@ -16,6 +17,7 @@ class Question {
     this.id,
     this.topicId,
     this.level,
+    this.place,
     required this.topic,
     required this.question,
     required this.options,
@@ -37,6 +39,9 @@ class Question {
     return '';
   }
 
+  /// Questions with choices are answered by tapping one, not by typing.
+  bool get isMultipleChoice => options.length >= 2;
+
   Iterable<String> get allAcceptedAnswers =>
       acceptedAnswers.isNotEmpty ? acceptedAnswers : [correctAnswer];
 
@@ -47,20 +52,32 @@ class Question {
   }
 
   factory Question.fromApiJson(Map<String, dynamic> json) {
+    final options = (json['options'] as List<dynamic>? ?? const [])
+        .map((option) => option.toString())
+        .toList();
+    final accepted = (json['accepted_answers'] as List<dynamic>? ?? const [])
+        .map((answer) => answer.toString())
+        .toList();
+    // The public endpoint hides the answers, so the correct choice is only
+    // known for admin payloads; otherwise the server grades the submission.
+    final correctIndex = options.indexWhere(
+      (option) =>
+          accepted.any((answer) => answersAreEquivalent(option, answer)),
+    );
+
     return Question(
       id: json['id'] as int?,
       topicId: json['topic_id'] as int?,
       level: json['level'] as String?,
+      place: json['place'] as String?,
       topic: json['topic_name'] as String? ?? '',
       question: json['prompt'] as String? ?? '',
-      options: const [],
-      correctIndex: 0,
+      options: options,
+      correctIndex: correctIndex,
       landmark: json['topic_name'] as String? ?? 'i.-GB',
       emoji: '❓',
       imageUrl: json['image_url'] as String?,
-      acceptedAnswers: (json['accepted_answers'] as List<dynamic>? ?? const [])
-          .map((answer) => answer.toString())
-          .toList(),
+      acceptedAnswers: accepted,
       isActive: json['is_active'] as bool? ?? true,
     );
   }
@@ -545,15 +562,7 @@ final Map<String, List<Question>> questionsByLevel = {
       correctIndex: 0,
       landmark: aplikasiLandmark,
       emoji: '📊',
-      acceptedAnswers: [
-        'x = ±7',
-        '7',
-        '-7',
-        '+7',
-        'x = 7',
-        'x = -7',
-        'x = +7',
-      ],
+      acceptedAnswers: ['x = ±7', '7', '-7', '+7', 'x = 7', 'x = -7', 'x = +7'],
     ),
     const Question(
       topic: 'APLIKASI',
@@ -607,15 +616,7 @@ final Map<String, List<Question>> questionsByLevel = {
       correctIndex: 0,
       landmark: aplikasiLandmark,
       emoji: '📊',
-      acceptedAnswers: [
-        'x = ±3',
-        '3',
-        '-3',
-        '+3',
-        'x = 3',
-        'x = -3',
-        'x = +3',
-      ],
+      acceptedAnswers: ['x = ±3', '3', '-3', '+3', 'x = 3', 'x = -3', 'x = +3'],
     ),
     const Question(
       topic: 'APLIKASI',
@@ -745,15 +746,7 @@ final Map<String, List<Question>> questionsByLevel = {
       correctIndex: 0,
       landmark: analisisLandmark,
       emoji: '🧠',
-      acceptedAnswers: [
-        'x = ±5',
-        '5',
-        '-5',
-        '+5',
-        'x = 5',
-        'x = -5',
-        'x = +5',
-      ],
+      acceptedAnswers: ['x = ±5', '5', '-5', '+5', 'x = 5', 'x = -5', 'x = +5'],
     ),
     const Question(
       topic: 'ANALISIS',
@@ -878,8 +871,7 @@ final Map<String, List<Question>> questionsByLevel = {
     ),
     const Question(
       topic: 'CABARAN',
-      question:
-          'Segi empat luas 120 cm², panjang x+5, lebar x. Cari x',
+      question: 'Segi empat luas 120 cm², panjang x+5, lebar x. Cari x',
       options: [],
       correctIndex: 0,
       landmark: cabaranLandmark,

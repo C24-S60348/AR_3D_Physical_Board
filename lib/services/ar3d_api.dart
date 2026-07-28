@@ -55,6 +55,7 @@ class Ar3dApi {
   static Future<List<Question>> getQuestions(
     String topic, {
     String? level,
+    String? place,
   }) async {
     if (!isConfigured) return const [];
 
@@ -65,6 +66,7 @@ class Ar3dApi {
             _uri('/api/ar3d/questions', {
               'topic': topic,
               if (level != null && level.isNotEmpty) 'level': level,
+              if (place != null && place.isNotEmpty) 'place': place,
             }),
           )
           .timeout(const Duration(seconds: 5));
