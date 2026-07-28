@@ -1,0 +1,992 @@
+[
+  {
+    "place": "kota-a-famosa",
+    "place_name": "Kota A'Famosa",
+    "number": 1,
+    "question": "Siapakah yang membina Kota A Famosa?",
+    "options": [
+      "Belanda",
+      "Portugis",
+      "British",
+      "Jepun"
+    ],
+    "correct_index": 1,
+    "correct_answer": "Portugis",
+    "matched_by": "text"
+  },
+  {
+    "place": "kota-a-famosa",
+    "place_name": "Kota A'Famosa",
+    "number": 2,
+    "question": "Bilakah Kota A famosa mula dibina?",
+    "options": [
+      "1400",
+      "1511",
+      "1641",
+      "1824"
+    ],
+    "correct_index": 1,
+    "correct_answer": "1511",
+    "matched_by": "text"
+  },
+  {
+    "place": "kota-a-famosa",
+    "place_name": "Kota A'Famosa",
+    "number": 3,
+    "question": "Di manakah lokasi terletaknya Kota A Famosa",
+    "options": [
+      "Alor Gajah",
+      "Ayer Keroh",
+      "Banda Hilir",
+      "Jasin"
+    ],
+    "correct_index": 2,
+    "correct_answer": "Banda Hilir",
+    "matched_by": "text"
+  },
+  {
+    "place": "kota-a-famosa",
+    "place_name": "Kota A'Famosa",
+    "number": 4,
+    "question": "Apakah tujuan utama pembinaan Kota A Famosa",
+    "options": [
+      "Tempat ibadat",
+      "Istana Pemerintah",
+      "Kubu Pertahanan",
+      "Pusat Pendidikan"
+    ],
+    "correct_index": 2,
+    "correct_answer": "Kubu Pertahanan",
+    "matched_by": "text"
+  },
+  {
+    "place": "kota-a-famosa",
+    "place_name": "Kota A'Famosa",
+    "number": 5,
+    "question": "Apakah nama pintu gerbang yang masih kekal hingga kini?",
+    "options": [
+      "Porta de Santiago",
+      "Porta Victoria",
+      "Bastion Gate",
+      "Melaka Gate"
+    ],
+    "correct_index": 0,
+    "correct_answer": "Porta de Santiago",
+    "matched_by": "text"
+  },
+  {
+    "place": "kota-a-famosa",
+    "place_name": "Kota A'Famosa",
+    "number": 6,
+    "question": "Siapakah yang menawan Melaka daripada Portugis pada tahun 1641?",
+    "options": [
+      "British",
+      "Jepun",
+      "Belanda",
+      "Siam"
+    ],
+    "correct_index": 2,
+    "correct_answer": "Belanda",
+    "matched_by": "text"
+  },
+  {
+    "place": "kota-a-famosa",
+    "place_name": "Kota A'Famosa",
+    "number": 7,
+    "question": "Apakah yang dimaksudkan dengan nama “A Famosa”?",
+    "options": [
+      "Kota Lama",
+      "Yang Termasyur",
+      "Kota Baharu",
+      "Kota Perdagangan"
+    ],
+    "correct_index": 1,
+    "correct_answer": "Yang Termasyur",
+    "matched_by": "text"
+  },
+  {
+    "place": "kota-a-famosa",
+    "place_name": "Kota A'Famosa",
+    "number": 8,
+    "question": "Mengapakah kebanyakan bahagian Kota A Famosa telah dirobohkan?",
+    "options": [
+      "Gempa Bumi",
+      "Banjir Besar",
+      "Arahan Pihak British",
+      "Kebakaran"
+    ],
+    "correct_index": 2,
+    "correct_answer": "Arahan Pihak British",
+    "matched_by": "text"
+  },
+  {
+    "place": "kota-a-famosa",
+    "place_name": "Kota A'Famosa",
+    "number": 9,
+    "question": "Kota A Famosa dibina menggunakan batu daripada sumber berikut, kecuali:",
+    "options": [
+      "Batu Laterit",
+      "Batu Daripada Bangunan Yang Musnah",
+      "Batu Mamar Import",
+      "Batu Tempatan"
+    ],
+    "correct_index": 2,
+    "correct_answer": "Batu Mamar Import",
+    "matched_by": "text"
+  },
+  {
+    "place": "kota-a-famosa",
+    "place_name": "Kota A'Famosa",
+    "number": 10,
+    "question": "Siapakah yang mengarahkan pembinaan Kota A Famosa?",
+    "options": [
+      "Hang Tuah",
+      "Alfonso de Albuquerque",
+      "Francis light",
+      "Stamford Raffles"
+    ],
+    "correct_index": 1,
+    "correct_answer": "Alfonso de Albuquerque",
+    "matched_by": "text"
+  },
+  {
+    "place": "masjid-cina",
+    "place_name": "Masjid Cina Melaka",
+    "number": 1,
+    "question": "Di manakah terletaknya Masjid Cina Melaka?",
+    "options": [
+      "Banda Hilir",
+      "Krubong",
+      "Alor Gajah",
+      "Jasin"
+    ],
+    "correct_index": 1,
+    "correct_answer": "Krubong",
+    "matched_by": "text"
+  },
+  {
+    "place": "masjid-cina",
+    "place_name": "Masjid Cina Melaka",
+    "number": 2,
+    "question": "Bilakah Masjid Cin amula dibuka?",
+    "options": [
+      "2005",
+      "2010",
+      "2014",
+      "2018"
+    ],
+    "correct_index": 1,
+    "correct_answer": "2010",
+    "matched_by": "text"
+  },
+  {
+    "place": "masjid-cina",
+    "place_name": "Masjid Cina Melaka",
+    "number": 3,
+    "question": "Apakah keunikan utama Masjid Cina Melaka?",
+    "options": [
+      "Dibina di atas laut",
+      "Seni bina bercirikan budaya Cina",
+      "Dibina sepenuhnya daripada kayu",
+      "Berbentuk piramid"
+    ],
+    "correct_index": 1,
+    "correct_answer": "Seni bina bercirikan budaya Cina",
+    "matched_by": "text"
+  },
+  {
+    "place": "masjid-cina",
+    "place_name": "Masjid Cina Melaka",
+    "number": 4,
+    "question": "Seni bina Masjid Cina Melaka mendapat inspirasi daripada ________________",
+    "options": [
+      "Seni bina Eropah",
+      "Seni bina Timur Tengah",
+      "Seni bina Cina tradisional",
+      "Seni bina India"
+    ],
+    "correct_index": 2,
+    "correct_answer": "Seni bina Cina tradisional",
+    "matched_by": "text"
+  },
+  {
+    "place": "masjid-cina",
+    "place_name": "Masjid Cina Melaka",
+    "number": 5,
+    "question": "Apakah tujuan pembinaan Masjid Cina Melaka?",
+    "options": [
+      "Sebagai pusat membeli-belah",
+      "Sebagai tempat ibadah dan pusat dakwah",
+      "Sebagai hotel",
+      "Sebagai muzium"
+    ],
+    "correct_index": 1,
+    "correct_answer": "Sebagai tempat ibadah dan pusat dakwah",
+    "matched_by": "text"
+  },
+  {
+    "place": "masjid-cina",
+    "place_name": "Masjid Cina Melaka",
+    "number": 6,
+    "question": "Menara Masjid Cina Melaka menyerupai _________",
+    "options": [
+      "Menara Eiffel",
+      "Pagoda Cina",
+      "Menara Berkembar Petronas",
+      "Rumah Melayu"
+    ],
+    "correct_index": 1,
+    "correct_answer": "Pagoda Cina",
+    "matched_by": "text"
+  },
+  {
+    "place": "masjid-cina",
+    "place_name": "Masjid Cina Melaka",
+    "number": 7,
+    "question": "Apakah agama yang dianuti oleh jemaah yang beribadah di Masjid Cina Melaka?",
+    "options": [
+      "Buddha",
+      "Kristen",
+      "Islam",
+      "Hindu"
+    ],
+    "correct_index": 2,
+    "correct_answer": "Islam",
+    "matched_by": "text"
+  },
+  {
+    "place": "masjid-cina",
+    "place_name": "Masjid Cina Melaka",
+    "number": 8,
+    "question": "Apakah tujuan seni bina bercirikan Cina digunakan pada masjid ini?",
+    "options": [
+      "Untuk menarik pelancong sahaja",
+      "Untuk mencerminkan kepelbagaian budaya dan mengeratkan perpaduan",
+      "Untuk dijadikan restoren",
+      "Untuk pertandingan seni bina"
+    ],
+    "correct_index": 1,
+    "correct_answer": "Untuk mencerminkan kepelbagaian budaya dan mengeratkan perpaduan",
+    "matched_by": "text"
+  },
+  {
+    "place": "masjid-cina",
+    "place_name": "Masjid Cina Melaka",
+    "number": 9,
+    "question": "Warna yang banyak digunakan pada Masjid Cina Melaka ialah ______________.",
+    "options": [
+      "Merah,putih dan hijau",
+      "Hitam sahaja",
+      "Biru sahaja",
+      "Ungu sahaja"
+    ],
+    "correct_index": 0,
+    "correct_answer": "Merah,putih dan hijau",
+    "matched_by": "text"
+  },
+  {
+    "place": "masjid-cina",
+    "place_name": "Masjid Cina Melaka",
+    "number": 10,
+    "question": "Apakah fungsi utama Masjid Cina Melaka?",
+    "options": [
+      "Tempat beribadah umat Islam",
+      "Pusat hiburan",
+      "Pusat sukan",
+      "Muzium sejarah"
+    ],
+    "correct_index": 0,
+    "correct_answer": "Tempat beribadah umat Islam",
+    "matched_by": "text"
+  },
+  {
+    "place": "masjid-selat",
+    "place_name": "Masjid Selat Melaka",
+    "number": 1,
+    "question": "Di manakah terletaknya Masjid Selat Melaka?",
+    "options": [
+      "Ayer keroh",
+      "Bandar Hilir",
+      "Pulau Melaka",
+      "Alor Gajah"
+    ],
+    "correct_index": 2,
+    "correct_answer": "Pulau Melaka",
+    "matched_by": "text"
+  },
+  {
+    "place": "masjid-selat",
+    "place_name": "Masjid Selat Melaka",
+    "number": 2,
+    "question": "Masjid Selat Melaka mula dibuka kepada orang ramai pada tahun _______________",
+    "options": [
+      "2003",
+      "2006",
+      "2008",
+      "2012"
+    ],
+    "correct_index": 1,
+    "correct_answer": "2006",
+    "matched_by": "text"
+  },
+  {
+    "place": "masjid-selat",
+    "place_name": "Masjid Selat Melaka",
+    "number": 3,
+    "question": "Apakah keunikan utama Masjid Selat Melaka?",
+    "options": [
+      "Dibina di atas bukit",
+      "Dibina di atas laut menggunakan tiang-tiang sokongan",
+      "Dibina sepenuhnya daripada kayu",
+      "Dibina di dalam gua"
+    ],
+    "correct_index": 1,
+    "correct_answer": "Dibina di atas laut menggunakan tiang-tiang sokongan",
+    "matched_by": "text"
+  },
+  {
+    "place": "masjid-selat",
+    "place_name": "Masjid Selat Melaka",
+    "number": 4,
+    "question": "Masjid Selat Melaka sering dikenali sebagai _________",
+    "options": [
+      "Masjid Terapung",
+      "Masjid Kristal",
+      "Masjid Putih",
+      "Masjid Diraja"
+    ],
+    "correct_index": 0,
+    "correct_answer": "Masjid Terapung",
+    "matched_by": "text"
+  },
+  {
+    "place": "masjid-selat",
+    "place_name": "Masjid Selat Melaka",
+    "number": 5,
+    "question": "Apakah fungsi utama Masjid Selat Melaka?",
+    "options": [
+      "Pusat membeli-belah",
+      "Tempat beribadah umat Islam",
+      "Muzium sejarah",
+      "Pusat sukan"
+    ],
+    "correct_index": 1,
+    "correct_answer": "Tempat beribadah umat Islam",
+    "matched_by": "text"
+  },
+  {
+    "place": "masjid-selat",
+    "place_name": "Masjid Selat Melaka",
+    "number": 6,
+    "question": "Masjid Selat Melaka mengadap ke arah _________",
+    "options": [
+      "Laut China Selatan",
+      "Selat Melaka",
+      "Sungai Melaka",
+      "Tasik Chini"
+    ],
+    "correct_index": 1,
+    "correct_answer": "Selat Melaka",
+    "matched_by": "text"
+  },
+  {
+    "place": "menara-taming-sari",
+    "place_name": "Menara Taming Sari",
+    "number": 1,
+    "question": "Di manakah terletaknya Menara Taming Sari?",
+    "options": [
+      "Ayer Keroh",
+      "Banda Hilir",
+      "Alor Gajah",
+      "Jasin"
+    ],
+    "correct_index": 1,
+    "correct_answer": "Banda Hilir",
+    "matched_by": "text"
+  },
+  {
+    "place": "menara-taming-sari",
+    "place_name": "Menara Taming Sari",
+    "number": 2,
+    "question": "Apakah jenis tarikan Menara Taming Sari?",
+    "options": [
+      "Muzium",
+      "Menara berputar (gyro tower)",
+      "Akuarium",
+      "Taman tema air"
+    ],
+    "correct_index": 1,
+    "correct_answer": "Menara berputar (gyro tower)",
+    "matched_by": "text"
+  },
+  {
+    "place": "menara-taming-sari",
+    "place_name": "Menara Taming Sari",
+    "number": 3,
+    "question": "Berapakah ketinggian Menara Taming Sari?",
+    "options": [
+      "50 meter",
+      "80 meter",
+      "110 meter",
+      "150 meter"
+    ],
+    "correct_index": 2,
+    "correct_answer": "110 meter",
+    "matched_by": "text"
+  },
+  {
+    "place": "menara-taming-sari",
+    "place_name": "Menara Taming Sari",
+    "number": 4,
+    "question": "Apakah tujuan utama pembinaan Menara Taming Sari?",
+    "options": [
+      "Sebagai menara telekomunikasi",
+      "Sebagai tarikan pelancongan",
+      "Sebagai pejabat kerajaan",
+      "Sebagai hotel"
+    ],
+    "correct_index": 1,
+    "correct_answer": "Sebagai tarikan pelancongan",
+    "matched_by": "text"
+  },
+  {
+    "place": "menara-taming-sari",
+    "place_name": "Menara Taming Sari",
+    "number": 5,
+    "question": "Menara Taming Sari mula dibuka kepada orang ramai pada tahun __________",
+    "options": [
+      "2002",
+      "2005",
+      "2008",
+      "2012"
+    ],
+    "correct_index": 2,
+    "correct_answer": "2008",
+    "matched_by": "text"
+  },
+  {
+    "place": "menara-taming-sari",
+    "place_name": "Menara Taming Sari",
+    "number": 6,
+    "question": "Dari puncak Menara Taming Sari, pengunjung boleh melihat __________",
+    "options": [
+      "Pemandangan sekitar Bandar melaka",
+      "Gunung Kinabalu",
+      "Menara Berkembar petronas",
+      "Pulau Langkawi"
+    ],
+    "correct_index": 0,
+    "correct_answer": "Pemandangan sekitar Bandar melaka",
+    "matched_by": "text"
+  },
+  {
+    "place": "menara-taming-sari",
+    "place_name": "Menara Taming Sari",
+    "number": 7,
+    "question": "Mengapakah menara ini dinamakan “Taming Sari”?",
+    "options": [
+      "Bersempena nama keris lagenda Hang Tuah",
+      "Bersempena nama sungai di Melaka",
+      "Bersempena nama seorang sultan",
+      "Bersempena nama sebuah kapal"
+    ],
+    "correct_index": 0,
+    "correct_answer": "Bersempena nama keris lagenda Hang Tuah",
+    "matched_by": "text"
+  },
+  {
+    "place": "menara-taming-sari",
+    "place_name": "Menara Taming Sari",
+    "number": 8,
+    "question": "Menara Taming Sari berputar sebanyak _______ semasa satu perjalanan",
+    "options": [
+      "1 pusingan",
+      "2 pusingan",
+      "5 pusingan",
+      "10 pusingan"
+    ],
+    "correct_index": 1,
+    "correct_answer": "2 pusingan",
+    "matched_by": "text"
+  },
+  {
+    "place": "menara-taming-sari",
+    "place_name": "Menara Taming Sari",
+    "number": 9,
+    "question": "Berapakah tempoh satu perjalanan di Menara Taming Sari?",
+    "options": [
+      "3 minit",
+      "7 minit",
+      "15 minit",
+      "30 minit"
+    ],
+    "correct_index": 1,
+    "correct_answer": "7 minit",
+    "matched_by": "text"
+  },
+  {
+    "place": "menara-taming-sari",
+    "place_name": "Menara Taming Sari",
+    "number": 10,
+    "question": "Apakah keunikan Menara Taming Sari?",
+    "options": [
+      "Menara kayu tertinggi di Malaysia",
+      "Menara berputar pertama di Malaysia",
+      "Menara jam terbesar di Asia",
+      "Menara condong pertama di Malaysia"
+    ],
+    "correct_index": 1,
+    "correct_answer": "Menara berputar pertama di Malaysia",
+    "matched_by": "text"
+  },
+  {
+    "place": "muzium-samudera",
+    "place_name": "Muzium Samudera",
+    "number": 1,
+    "question": "Di manakah Muzium Samudera terletak?",
+    "options": [
+      "Ayer Keroh",
+      "Bandar Hilir",
+      "Alor Gajah",
+      "Jasin"
+    ],
+    "correct_index": 1,
+    "correct_answer": "Bandar Hilir",
+    "matched_by": "text"
+  },
+  {
+    "place": "muzium-samudera",
+    "place_name": "Muzium Samudera",
+    "number": 2,
+    "question": "Apkah keunikan utama Muzium Samudera?",
+    "options": [
+      "Dibina di dalam gua",
+      "Berbentuk replika kapal Flor de la Mar",
+      "Dibina di atas laut",
+      "Berbentuk istana Melayu"
+    ],
+    "correct_index": 1,
+    "correct_answer": "Berbentuk replika kapal Flor de la Mar",
+    "matched_by": "text"
+  },
+  {
+    "place": "muzium-samudera",
+    "place_name": "Muzium Samudera",
+    "number": 3,
+    "question": "Kapal yang dijadikan replika di Muzium Samudera ialah __________",
+    "options": [
+      "Santa Maria",
+      "Flor de la Mar",
+      "Black Pearl",
+      "Titanic"
+    ],
+    "correct_index": 1,
+    "correct_answer": "Flor de la Mar",
+    "matched_by": "text"
+  },
+  {
+    "place": "muzium-samudera",
+    "place_name": "Muzium Samudera",
+    "number": 4,
+    "question": "Negara manakah yang memiliki kapal Flor de la Mar?",
+    "options": [
+      "Belanda",
+      "Portugis",
+      "British",
+      "Sepanyol"
+    ],
+    "correct_index": 1,
+    "correct_answer": "Portugis",
+    "matched_by": "text"
+  },
+  {
+    "place": "muzium-samudera",
+    "place_name": "Muzium Samudera",
+    "number": 5,
+    "question": "Apakah tema utama pameran di Muzium Samudera?",
+    "options": [
+      "Sejarah perdagangan maritim Melaka",
+      "Sejarah penerbangan Malaysia",
+      "Sejarah perlombongan",
+      "Sejarah pertanian"
+    ],
+    "correct_index": 0,
+    "correct_answer": "Sejarah perdagangan maritim Melaka",
+    "matched_by": "text"
+  },
+  {
+    "place": "muzium-samudera",
+    "place_name": "Muzium Samudera",
+    "number": 6,
+    "question": "Muzium Samudera memaparkan sejarah Melaka sebagai _________",
+    "options": [
+      "Pusat perlombongan",
+      "Pusat perdagangan maritim terkenal",
+      "Pusat pertanian moden",
+      "Pusat pelancongan semata-mata"
+    ],
+    "correct_index": 1,
+    "correct_answer": "Pusat perdagangan maritim terkenal",
+    "matched_by": "text"
+  },
+  {
+    "place": "muzium-samudera",
+    "place_name": "Muzium Samudera",
+    "number": 7,
+    "question": "Apakah yang dipamerkan di Muzium Samudera?",
+    "options": [
+      "Artifak perdagangan dan pelayaran",
+      "Haiwan liar",
+      "Kereta antik sahaja",
+      "Pesawat pejuang"
+    ],
+    "correct_index": 0,
+    "correct_answer": "Artifak perdagangan dan pelayaran",
+    "matched_by": "text"
+  },
+  {
+    "place": "muzium-samudera",
+    "place_name": "Muzium Samudera",
+    "number": 8,
+    "question": "Flor de la Mar tenggelam berhampiran ______________",
+    "options": [
+      "Pulau Pinang",
+      "Melaka",
+      "Johor Bahru",
+      "Sabah"
+    ],
+    "correct_index": 1,
+    "correct_answer": "Melaka",
+    "matched_by": "text"
+  },
+  {
+    "place": "muzium-samudera",
+    "place_name": "Muzium Samudera",
+    "number": 9,
+    "question": "Apakah tujuan utama penubuhan Muzium Samudera?",
+    "options": [
+      "Sebagai pusat membeli-belah",
+      "Memelihara dan mempamerkan sejarah maritim Melaka",
+      "Sebagai hotel",
+      "Sebagai pusat hiburan"
+    ],
+    "correct_index": 1,
+    "correct_answer": "Memelihara dan mempamerkan sejarah maritim Melaka",
+    "matched_by": "text"
+  },
+  {
+    "place": "muzium-samudera",
+    "place_name": "Muzium Samudera",
+    "number": 10,
+    "question": "Muzium Samudera sesuai dikunjungi oleh ______________",
+    "options": [
+      "Pelajar dan pelancong",
+      "Nelayan sahaja",
+      "Ahli sukan sahaja",
+      "Petani sahaja"
+    ],
+    "correct_index": 0,
+    "correct_answer": "Pelajar dan pelancong",
+    "matched_by": "text"
+  },
+  {
+    "place": "pantai-klebang",
+    "place_name": "Pantai Klebang",
+    "number": 1,
+    "question": "Pantai Klebang terletak di mana?",
+    "options": [
+      "Ayer Keroh",
+      "Klebang, Melaka",
+      "Alor Gajah",
+      "Jasin"
+    ],
+    "correct_index": 1,
+    "correct_answer": "Klebang, Melaka",
+    "matched_by": "text"
+  },
+  {
+    "place": "pantai-klebang",
+    "place_name": "Pantai Klebang",
+    "number": 2,
+    "question": "Pantai Klebang terkenal sebagai ________________.",
+    "options": [
+      "Kawasan perlombongan",
+      "Destinasi rekrasi dan pelancongan",
+      "Kawasan perindustrian",
+      "Kawasan pertanian"
+    ],
+    "correct_index": 1,
+    "correct_answer": "Destinasi rekrasi dan pelancongan",
+    "matched_by": "text"
+  },
+  {
+    "place": "pantai-klebang",
+    "place_name": "Pantai Klebang",
+    "number": 3,
+    "question": "Apakah aktiviti yang popular di Pantai Klebang?",
+    "options": [
+      "Berkelah dan menikmati pemandangan pantai",
+      "Bermain ski",
+      "Mendaki gunung",
+      "Melombong bijih timah"
+    ],
+    "correct_index": 0,
+    "correct_answer": "Berkelah dan menikmati pemandangan pantai",
+    "matched_by": "text"
+  },
+  {
+    "place": "pantai-klebang",
+    "place_name": "Pantai Klebang",
+    "number": 4,
+    "question": "Pantai Klebang mengadap ke ________.",
+    "options": [
+      "Laut China Selatan",
+      "Selat Melaka",
+      "Laut Sulu",
+      "Laut Andaman"
+    ],
+    "correct_index": 1,
+    "correct_answer": "Selat Melaka",
+    "matched_by": "text"
+  },
+  {
+    "place": "pantai-klebang",
+    "place_name": "Pantai Klebang",
+    "number": 5,
+    "question": "Pantai Klebang terkenal dengan _____________",
+    "options": [
+      "Bukit Pasir (sand dune)",
+      "Air terjun",
+      "Hutan hujan tropika",
+      "Gua batu kapur"
+    ],
+    "correct_index": 0,
+    "correct_answer": "Bukit Pasir (sand dune)",
+    "matched_by": "text"
+  },
+  {
+    "place": "pantai-klebang",
+    "place_name": "Pantai Klebang",
+    "number": 6,
+    "question": "Antara berikut yang manakah merupakan makanan terkenal di Pantai Klebang?",
+    "options": [
+      "Cocunat shake",
+      "Laksa Johor",
+      "Nasi dagang",
+      "Mi kolok"
+    ],
+    "correct_index": 0,
+    "correct_answer": "Cocunat shake",
+    "matched_by": "text"
+  },
+  {
+    "place": "pantai-klebang",
+    "place_name": "Pantai Klebang",
+    "number": 7,
+    "question": "Apakah tujuan utama pengunjung datang ke Pantai Klebang?",
+    "options": [
+      "Bersantai dan menikmati suasana pantai",
+      "Membeli-belah di pusat beli-belah",
+      "Melawat lombong",
+      "Menonton wayang"
+    ],
+    "correct_index": 0,
+    "correct_answer": "Bersantai dan menikmati suasana pantai",
+    "matched_by": "text"
+  },
+  {
+    "place": "pantai-klebang",
+    "place_name": "Pantai Klebang",
+    "number": 8,
+    "question": "Pantai Klebang sesuai untuk aktiviti _______________.",
+    "options": [
+      "Beriadah bersama keluarga",
+      "Bermain ski",
+      "Mendaki gunung",
+      "Menyelam di laut dalam"
+    ],
+    "correct_index": 0,
+    "correct_answer": "Beriadah bersama keluarga",
+    "matched_by": "text"
+  },
+  {
+    "place": "pantai-klebang",
+    "place_name": "Pantai Klebang",
+    "number": 9,
+    "question": "Antara berikut, yang manakah boleh dilakukan di Pantai Klebang?",
+    "options": [
+      "Bermain layang-layang",
+      "Bermain hoki ais",
+      "Mendaki gunung",
+      "Bermain ski air di tasik"
+    ],
+    "correct_index": 0,
+    "correct_answer": "Bermain layang-layang",
+    "matched_by": "text"
+  },
+  {
+    "place": "pantai-klebang",
+    "place_name": "Pantai Klebang",
+    "number": 10,
+    "question": "Apakah faktor yang menjadikan Pantai Klebang tarikan pelancong?",
+    "options": [
+      "Pemandangan pantai yang indah dan pelbagai aktiviti rekrasi",
+      "Kawasan perlombongan",
+      "Hutan tebal",
+      "Kawasan Perindustrian"
+    ],
+    "correct_index": 0,
+    "correct_answer": "Pemandangan pantai yang indah dan pelbagai aktiviti rekrasi",
+    "matched_by": "text"
+  },
+  {
+    "place": "stadium-hang-jebat",
+    "place_name": "Stadium Hang Jebat",
+    "number": 1,
+    "question": "Di manakah terletaknya Stadium Hang Jebat?",
+    "options": [
+      "Bandar Hilir",
+      "Ayer Keroh",
+      "Krubong",
+      "Jasin"
+    ],
+    "correct_index": 1,
+    "correct_answer": "Ayer Keroh",
+    "matched_by": "text"
+  },
+  {
+    "place": "stadium-hang-jebat",
+    "place_name": "Stadium Hang Jebat",
+    "number": 2,
+    "question": "Apakah fungsi utama Stadium Hang Jebat?",
+    "options": [
+      "Pusat membeli-belah",
+      "Venue sukan dan acara rasmi",
+      "Muzium sejarah",
+      "Pusat perniagaan"
+    ],
+    "correct_index": 1,
+    "correct_answer": "Venue sukan dan acara rasmi",
+    "matched_by": "text"
+  },
+  {
+    "place": "stadium-hang-jebat",
+    "place_name": "Stadium Hang Jebat",
+    "number": 3,
+    "question": "Apakah jenis sukan yang paling kerap diadakan di Stadium Hang Jebat?",
+    "options": [
+      "Bola sepak",
+      "Badminton",
+      "Golf",
+      "Renang"
+    ],
+    "correct_index": 0,
+    "correct_answer": "Bola sepak",
+    "matched_by": "text"
+  },
+  {
+    "place": "stadium-hang-jebat",
+    "place_name": "Stadium Hang Jebat",
+    "number": 4,
+    "question": "Stadium Hang Jebat dinamakan sempena nama tokoh sejarah _________.",
+    "options": [
+      "Hang Tuah",
+      "Hang Jebat",
+      "Hang Kasturi",
+      "Tun Perak"
+    ],
+    "correct_index": 1,
+    "correct_answer": "Hang Jebat",
+    "matched_by": "text"
+  },
+  {
+    "place": "stadium-hang-jebat",
+    "place_name": "Stadium Hang Jebat",
+    "number": 5,
+    "question": "Stadium Hang Jebat mempunyai kapasiti penonton sekitar _____________ orang.",
+    "options": [
+      "10,000",
+      "20,000",
+      "40,000",
+      "80,000"
+    ],
+    "correct_index": 2,
+    "correct_answer": "40,000",
+    "matched_by": "text"
+  },
+  {
+    "place": "stadium-hang-jebat",
+    "place_name": "Stadium Hang Jebat",
+    "number": 6,
+    "question": "Stadium Hang Jebat merupakan antara stadium terbesar di negeri ___________.",
+    "options": [
+      "Johor",
+      "Melaka",
+      "Negeri Sembilan",
+      "Pahang"
+    ],
+    "correct_index": 1,
+    "correct_answer": "Melaka",
+    "matched_by": "text"
+  },
+  {
+    "place": "stadium-hang-jebat",
+    "place_name": "Stadium Hang Jebat",
+    "number": 7,
+    "question": "Bilakah Stadium Hang Jebat mula dibuka?",
+    "options": [
+      "1998",
+      "2004",
+      "2010",
+      "2018"
+    ],
+    "correct_index": 1,
+    "correct_answer": "2004",
+    "matched_by": "text"
+  },
+  {
+    "place": "stadium-hang-jebat",
+    "place_name": "Stadium Hang Jebat",
+    "number": 8,
+    "question": "Selain bola sepak, stadium ini juga digunakan untuk ____________.",
+    "options": [
+      "Konsert dan acara rasmi",
+      "Perlombongan",
+      "Pertanian",
+      "Perikanan"
+    ],
+    "correct_index": 0,
+    "correct_answer": "Konsert dan acara rasmi",
+    "matched_by": "text"
+  },
+  {
+    "place": "stadium-hang-jebat",
+    "place_name": "Stadium Hang Jebat",
+    "number": 9,
+    "question": "Stadium Hang Jebat terletak berhampiran kawasan __________.",
+    "options": [
+      "Banda Hilir",
+      "Pulau Melaka",
+      "Jonker Walk",
+      "Kompleks Sukan Hang Jebat, Krubong."
+    ],
+    "correct_index": 3,
+    "correct_answer": "Kompleks Sukan Hang Jebat, Krubong.",
+    "matched_by": "text"
+  },
+  {
+    "place": "stadium-hang-jebat",
+    "place_name": "Stadium Hang Jebat",
+    "number": 10,
+    "question": "Permukaan Stadium Hang Jebat menggunakan ______________",
+    "options": [
+      "Rumput semula jadi",
+      "Simen",
+      "Pasir",
+      "Kayu"
+    ],
+    "correct_index": 0,
+    "correct_answer": "Rumput semula jadi",
+    "matched_by": "text"
+  }
+]
