@@ -124,6 +124,7 @@ class _LecturerScreenState extends State<LecturerScreen> {
               required externalUrl,
               required sortOrder,
               required isActive,
+              image,
             }) => Ar3dApi.saveAdminNote(
               password: _password!,
               noteId: note?.id,
@@ -133,6 +134,7 @@ class _LecturerScreenState extends State<LecturerScreen> {
               externalUrl: externalUrl,
               sortOrder: sortOrder,
               isActive: isActive,
+              image: image,
             ),
       ),
     );
@@ -431,6 +433,7 @@ class _NoteEditor extends StatefulWidget {
     required String externalUrl,
     required int sortOrder,
     required bool isActive,
+    AdminQuestionImage? image,
   })
   onSave;
 
@@ -447,6 +450,9 @@ class _NoteEditorState extends State<_NoteEditor> {
   late final TextEditingController _urlController;
   late final TextEditingController _orderController;
   late bool _isActive;
+  Uint8List? _selectedImageBytes;
+  String? _selectedImageName;
+  bool _selectingImage = false;
   bool _saving = false;
   String? _error;
 
@@ -474,6 +480,58 @@ class _NoteEditorState extends State<_NoteEditor> {
     _urlController.dispose();
     _orderController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickImage() async {
+    if (_selectingImage) return;
+    setState(() {
+      _selectingImage = true;
+      _error = null;
+    });
+    try {
+      final picked = await ImagePicker().pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1280,
+        imageQuality: 65,
+      );
+      if (picked == null) return;
+      final bytes = await picked.readAsBytes();
+      if (bytes.length > 900 * 1024) {
+        if (!mounted) return;
+        setState(() {
+          _error =
+              'The selected image is still too large to upload. '
+              'Please choose a smaller image.';
+        });
+        return;
+      }
+      if (!mounted) return;
+      setState(() {
+        _selectedImageBytes = bytes;
+        _selectedImageName = picked.name;
+      });
+    } on MissingPluginException {
+      if (!mounted) return;
+      setState(() {
+        _error =
+            'Image picker is not registered. Fully stop and rebuild the app.';
+      });
+    } on PlatformException catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _error =
+            'Could not open the photo library: ${error.message ?? error.code}';
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _error = 'Could not choose an image: $error';
+      });
+    } finally {
+      if (mounted) {
+        setState(() => _selectingImage = false);
+      }
+    }
   }
 
   Future<void> _save() async {
@@ -509,6 +567,12 @@ class _NoteEditorState extends State<_NoteEditor> {
         externalUrl: url,
         sortOrder: order,
         isActive: _isActive,
+        image: _selectedImageBytes == null
+            ? null
+            : AdminQuestionImage(
+                filename: _selectedImageName ?? 'note.jpg',
+                bytes: _selectedImageBytes!,
+              ),
       );
       if (mounted) Navigator.pop(context, true);
     } catch (error) {
@@ -519,6 +583,78 @@ class _NoteEditorState extends State<_NoteEditor> {
         });
       }
     }
+  }
+
+  Widget _buildImagePicker() {
+    final selectedBytes = _selectedImageBytes;
+    final currentImageUrl = widget.note?.imageUrl;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border.all(color: Colors.grey.shade400),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text(
+            'Note image (optional)',
+            style: TextStyle(fontWeight: FontWeight.w600),
+          ),
+          if (selectedBytes != null) ...[
+            const SizedBox(height: 10),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.memory(
+                selectedBytes,
+                height: 160,
+                width: double.infinity,
+                fit: BoxFit.contain,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(_selectedImageName ?? 'Selected image'),
+          ] else if (currentImageUrl != null) ...[
+            const SizedBox(height: 10),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.network(
+                currentImageUrl,
+                height: 160,
+                width: double.infinity,
+                fit: BoxFit.contain,
+                errorBuilder: (_, _, _) =>
+                    const Text('Current image could not be loaded.'),
+              ),
+            ),
+            const SizedBox(height: 6),
+            const Text('Current image'),
+          ],
+          const SizedBox(height: 10),
+          OutlinedButton.icon(
+            onPressed: _saving || _selectingImage ? null : _pickImage,
+            icon: _selectingImage
+                ? const SizedBox.square(
+                    dimension: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2),
+                  )
+                : const Icon(Icons.image_outlined),
+            label: Text(
+              _selectingImage
+                  ? 'Opening gallery...'
+                  : selectedBytes == null && currentImageUrl == null
+                  ? 'Choose image'
+                  : 'Change image',
+            ),
+          ),
+          const Text(
+            'PNG, JPG, GIF, or WEBP. Images are compressed for upload.',
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -561,6 +697,8 @@ class _NoteEditorState extends State<_NoteEditor> {
                   border: border,
                 ),
               ),
+              const SizedBox(height: 12),
+              _buildImagePicker(),
               const SizedBox(height: 12),
               TextField(
                 controller: _urlController,

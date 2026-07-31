@@ -326,6 +326,7 @@ class _NotaPermainanTabState extends State<_NotaPermainanTab> {
         'Peratusan: bahagi dengan 100, kemudian darab.',
         'Punca kuasa dua: √169 = 13 kerana 13 × 13 = 169.',
       ],
+      imageAsset: 'assets/images/secondary_school_note.jpg',
     ),
   ];
 
@@ -434,6 +435,14 @@ class _NotaCard extends StatelessWidget {
               ],
             ),
           ),
+          if (nota.imageUrl != null)
+            Image.network(
+              nota.imageUrl!,
+              fit: BoxFit.cover,
+              errorBuilder: (_, _, _) => const SizedBox.shrink(),
+            )
+          else if (nota.imageAsset != null)
+            Image.asset(nota.imageAsset!, fit: BoxFit.cover),
           Padding(
             padding: const EdgeInsets.all(16),
             child: Column(

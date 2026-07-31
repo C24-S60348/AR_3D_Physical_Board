@@ -28,7 +28,14 @@ def init_db():
     db = get_db()
     db.executescript(schema_path.read_text(encoding="utf-8"))
     _migrate_questions_to_typed_answers(db)
+    _migrate_notes_add_image(db)
     db.commit()
+
+
+def _migrate_notes_add_image(db):
+    columns = {row["name"] for row in db.execute("PRAGMA table_info(notes)").fetchall()}
+    if "image_filename" not in columns:
+        db.execute("ALTER TABLE notes ADD COLUMN image_filename TEXT")
 
 
 def _migrate_questions_to_typed_answers(db):

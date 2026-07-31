@@ -17,9 +17,17 @@ const _placeInfo = <String, Map<String, String>>{
     'name': "Kota A'Famosa",
     'asset': 'assets/imagesscan/kotaafamosa-new.png',
   },
+  'kotaafamosa-new2': {
+    'name': "Kota A'Famosa",
+    'asset': 'assets/imagesscan/kotaafamosa-new2.png',
+  },
   'masjidcina-new': {
     'name': 'Masjid Cina Melaka',
     'asset': 'assets/imagesscan/masjidcina-new.png',
+  },
+  'masjidcina-new2': {
+    'name': 'Masjid Cina Melaka',
+    'asset': 'assets/imagesscan/masjidcina-new2.png',
   },
   'masjidselatmelaka-new': {
     'name': 'Masjid Selat Melaka',
@@ -33,17 +41,33 @@ const _placeInfo = <String, Map<String, String>>{
     'name': 'Menara Taming Sari',
     'asset': 'assets/imagesscan/menaratamingsari-new.png',
   },
+  'menaratamingsari-new2': {
+    'name': 'Menara Taming Sari',
+    'asset': 'assets/imagesscan/menaratamingsari-new2.png',
+  },
   'muziumsamudera-new': {
     'name': 'Muzium Samudera',
     'asset': 'assets/imagesscan/muziumsamudera-new.png',
+  },
+  'muziumsamudera-new2': {
+    'name': 'Muzium Samudera',
+    'asset': 'assets/imagesscan/muziumsamudera-new2.png',
   },
   'pantaiklebang-new': {
     'name': 'Pantai Klebang',
     'asset': 'assets/imagesscan/pantaiklebang-new.png',
   },
+  'pantaiklebang-new2': {
+    'name': 'Pantai Klebang',
+    'asset': 'assets/imagesscan/pantaiklebang-new2.png',
+  },
   'stadiumhangjebat-new': {
     'name': 'Stadium Hang Jebat',
     'asset': 'assets/imagesscan/stadiumhangjebat-new.png',
+  },
+  'stadiumhangjebat-new2': {
+    'name': 'Stadium Hang Jebat',
+    'asset': 'assets/imagesscan/stadiumhangjebat-new2.png',
   },
 };
 

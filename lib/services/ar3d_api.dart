@@ -185,12 +185,32 @@ class Ar3dApi {
     required String externalUrl,
     required int sortOrder,
     required bool isActive,
+    AdminQuestionImage? image,
   }) async {
+    final method = noteId == null ? 'POST' : 'PUT';
+    final path = noteId == null
+        ? '/api/ar3d/admin/notes'
+        : '/api/ar3d/admin/notes/$noteId';
+    if (image != null) {
+      await _multipartRequest(
+        method,
+        path,
+        adminPassword: password,
+        fields: {
+          'emoji': emoji,
+          'title': title,
+          'points': jsonEncode(points),
+          'external_url': externalUrl,
+          'sort_order': sortOrder.toString(),
+          'is_active': isActive.toString(),
+        },
+        image: image,
+      );
+      return;
+    }
     await _jsonRequest(
-      noteId == null ? 'POST' : 'PUT',
-      noteId == null
-          ? '/api/ar3d/admin/notes'
-          : '/api/ar3d/admin/notes/$noteId',
+      method,
+      path,
       adminPassword: password,
       body: {
         'emoji': emoji,
@@ -225,16 +245,18 @@ class Ar3dApi {
     AdminQuestionImage? image,
   }) async {
     if (image != null) {
-      await _multipartQuestionRequest(
+      await _multipartRequest(
         questionId == null ? 'POST' : 'PUT',
         questionId == null
             ? '/api/ar3d/admin/questions'
             : '/api/ar3d/admin/questions/$questionId',
         adminPassword: password,
-        topicId: topicId,
-        prompt: prompt,
-        acceptedAnswers: acceptedAnswers,
-        isActive: isActive,
+        fields: {
+          'topic_id': topicId.toString(),
+          'prompt': prompt,
+          'accepted_answers': jsonEncode(acceptedAnswers),
+          'is_active': isActive.toString(),
+        },
         image: image,
       );
       return;
@@ -254,14 +276,11 @@ class Ar3dApi {
     );
   }
 
-  static Future<void> _multipartQuestionRequest(
+  static Future<void> _multipartRequest(
     String method,
     String path, {
     required String adminPassword,
-    required int topicId,
-    required String prompt,
-    required List<String> acceptedAnswers,
-    required bool isActive,
+    required Map<String, String> fields,
     required AdminQuestionImage image,
   }) async {
     if (!isConfigured) {
@@ -279,10 +298,7 @@ class Ar3dApi {
       body.add(utf8.encode('$value\r\n'));
     }
 
-    addTextField('topic_id', topicId.toString());
-    addTextField('prompt', prompt);
-    addTextField('accepted_answers', jsonEncode(acceptedAnswers));
-    addTextField('is_active', isActive.toString());
+    fields.forEach(addTextField);
     final safeFilename = image.filename.replaceAll('"', '');
     body.add(utf8.encode('--$boundary\r\n'));
     body.add(
@@ -432,6 +448,8 @@ class GameNote {
   final String? externalUrl;
   final int sortOrder;
   final bool isActive;
+  final String? imageUrl;
+  final String? imageAsset;
 
   const GameNote({
     this.id,
@@ -441,6 +459,8 @@ class GameNote {
     this.externalUrl,
     this.sortOrder = 0,
     this.isActive = true,
+    this.imageUrl,
+    this.imageAsset,
   });
 
   factory GameNote.fromJson(Map<String, dynamic> json) => GameNote(
@@ -453,6 +473,7 @@ class GameNote {
     externalUrl: json['external_url'] as String?,
     sortOrder: json['sort_order'] as int? ?? 0,
     isActive: json['is_active'] as bool? ?? true,
+    imageUrl: json['image_url'] as String?,
   );
 }
 
