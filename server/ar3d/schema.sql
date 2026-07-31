@@ -10,6 +10,9 @@ CREATE TABLE IF NOT EXISTS questions (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     topic_id INTEGER NOT NULL,
     prompt TEXT NOT NULL,
+    level TEXT,
+    place TEXT,
+    choices_json TEXT NOT NULL DEFAULT '[]',
     image_filename TEXT,
     correct_answer TEXT NOT NULL,
     accepted_answers_json TEXT NOT NULL,
@@ -48,6 +51,8 @@ CREATE TABLE IF NOT EXISTS notes (
 );
 
 CREATE INDEX IF NOT EXISTS idx_questions_topic ON questions (topic_id);
+-- idx_questions_place is created by the migration, after the place column is
+-- added to databases that predate it.
 CREATE INDEX IF NOT EXISTS idx_attempts_question ON answer_attempts (question_id);
 CREATE INDEX IF NOT EXISTS idx_attempts_answered_at ON answer_attempts (answered_at);
 CREATE INDEX IF NOT EXISTS idx_notes_order ON notes (sort_order, id);

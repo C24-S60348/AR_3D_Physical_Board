@@ -251,29 +251,63 @@ class _LecturerScreenState extends State<LecturerScreen> {
         backgroundColor: _red,
         foregroundColor: Colors.white,
       ),
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 440),
-            child: Card(
-              child: Padding(
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+            colors: [_red, Color(0xFF3a0a0a)],
+          ),
+        ),
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 440),
+              child: Container(
                 padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(24),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.35),
+                      blurRadius: 24,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
+                ),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Icon(
-                      Icons.admin_panel_settings,
-                      size: 56,
-                      color: _red,
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: _red.withValues(alpha: 0.08),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.admin_panel_settings,
+                        size: 48,
+                        color: _red,
+                      ),
                     ),
-                    const SizedBox(height: 12),
+                    const SizedBox(height: 14),
                     const Text(
-                      'Manage questions and learner responses',
+                      'Lecturer Admin',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.w800,
+                        color: _red,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Manage questions, notes, and learner responses',
                       textAlign: TextAlign.center,
                       style: TextStyle(
-                        fontSize: 17,
-                        fontWeight: FontWeight.w700,
+                        fontSize: 13.5,
+                        color: Colors.grey.shade600,
                       ),
                     ),
                     const SizedBox(height: 20),
@@ -295,14 +329,29 @@ class _LecturerScreenState extends State<LecturerScreen> {
                     const SizedBox(height: 16),
                     SizedBox(
                       width: double.infinity,
-                      child: ElevatedButton(
+                      child: ElevatedButton.icon(
                         onPressed: _busy ? null : _login,
+                        icon: _busy
+                            ? const SizedBox.square(
+                                dimension: 18,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  color: Colors.white,
+                                ),
+                              )
+                            : const Icon(Icons.login, size: 20),
+                        label: Text(
+                          _busy ? 'Connecting...' : 'Log in',
+                          style: const TextStyle(fontWeight: FontWeight.w700),
+                        ),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: _red,
                           foregroundColor: Colors.white,
                           padding: const EdgeInsets.symmetric(vertical: 14),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
-                        child: Text(_busy ? 'Connecting...' : 'Log in'),
                       ),
                     ),
                   ],
@@ -315,18 +364,86 @@ class _LecturerScreenState extends State<LecturerScreen> {
     );
   }
 
+  Widget _statChip({
+    required IconData icon,
+    required String label,
+    required Color color,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withValues(alpha: 0.35)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 15, color: color),
+          const SizedBox(width: 5),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12.5,
+              fontWeight: FontWeight.w700,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Widget _buildQuestions() {
     if (_questions.isEmpty) {
       return const Center(child: Text('No questions yet.'));
     }
+    final active = _questions.where((q) => q.isActive).length;
     return RefreshIndicator(
       onRefresh: _runRefresh,
       child: ListView.builder(
         padding: const EdgeInsets.fromLTRB(12, 12, 12, 90),
-        itemCount: _questions.length,
+        itemCount: _questions.length + 1,
         itemBuilder: (_, index) {
-          final question = _questions[index];
+          if (index == 0) {
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 10, left: 4),
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  _statChip(
+                    icon: Icons.quiz_outlined,
+                    label: '${_questions.length} questions',
+                    color: _red,
+                  ),
+                  _statChip(
+                    icon: Icons.check_circle_outline,
+                    label: '$active active',
+                    color: Colors.green.shade700,
+                  ),
+                  if (_questions.length - active > 0)
+                    _statChip(
+                      icon: Icons.archive_outlined,
+                      label: '${_questions.length - active} archived',
+                      color: Colors.grey.shade600,
+                    ),
+                ],
+              ),
+            );
+          }
+          final question = _questions[index - 1];
           return Card(
+            elevation: 1.5,
+            margin: const EdgeInsets.only(bottom: 8),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+              side: BorderSide(
+                color: question.isActive
+                    ? Colors.green.withValues(alpha: 0.25)
+                    : Colors.grey.withValues(alpha: 0.3),
+              ),
+            ),
             child: ListTile(
               leading: CircleAvatar(
                 backgroundColor: question.isActive
@@ -337,11 +454,64 @@ class _LecturerScreenState extends State<LecturerScreen> {
                   color: question.isActive ? Colors.green : Colors.grey,
                 ),
               ),
-              title: Text(question.question),
-              subtitle: Text(
-                '${question.topic}\nAccepted: ${question.acceptedAnswers.join(', ')}',
+              title: Text(
+                question.question,
+                style: const TextStyle(fontWeight: FontWeight.w600),
               ),
-              isThreeLine: true,
+              subtitle: Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Wrap(
+                  spacing: 6,
+                  runSpacing: 4,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: _red.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        question.topic,
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: _red,
+                        ),
+                      ),
+                    ),
+                    if (question.level != null)
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 2,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.amber.withValues(alpha: 0.18),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Text(
+                          question.level!,
+                          style: TextStyle(
+                            fontSize: 11,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.amber.shade900,
+                          ),
+                        ),
+                      ),
+                    Text(
+                      question.acceptedAnswers.join(' | '),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey.shade700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
               onTap: () => _openEditor(question),
               trailing: question.isActive
                   ? IconButton(
@@ -361,23 +531,67 @@ class _LecturerScreenState extends State<LecturerScreen> {
     if (_responses.isEmpty) {
       return const Center(child: Text('No learner responses yet.'));
     }
+    final correct = _responses.where((r) => r.isCorrect).length;
+    final players = _responses.map((r) => r.playerName).toSet().length;
+    final rate = (correct / _responses.length * 100).round();
     return RefreshIndicator(
       onRefresh: _runRefresh,
       child: ListView.builder(
         padding: const EdgeInsets.all(12),
-        itemCount: _responses.length,
+        itemCount: _responses.length + 1,
         itemBuilder: (_, index) {
-          final response = _responses[index];
+          if (index == 0) {
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 10, left: 4),
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  _statChip(
+                    icon: Icons.assessment_outlined,
+                    label: '${_responses.length} answers',
+                    color: _red,
+                  ),
+                  _statChip(
+                    icon: Icons.percent,
+                    label: '$rate% correct',
+                    color: rate >= 50
+                        ? Colors.green.shade700
+                        : Colors.orange.shade800,
+                  ),
+                  _statChip(
+                    icon: Icons.people_outline,
+                    label: '$players player(s)',
+                    color: Colors.blueGrey.shade700,
+                  ),
+                ],
+              ),
+            );
+          }
+          final response = _responses[index - 1];
           return Card(
+            elevation: 1.5,
+            margin: const EdgeInsets.only(bottom: 8),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+              side: BorderSide(
+                color: (response.isCorrect ? Colors.green : Colors.red)
+                    .withValues(alpha: 0.25),
+              ),
+            ),
             child: ListTile(
               leading: Icon(
                 response.isCorrect ? Icons.check_circle : Icons.cancel,
                 color: response.isCorrect ? Colors.green : Colors.red,
               ),
-              title: Text('${response.playerName} - ${response.questionText}'),
+              title: Text(
+                response.playerName,
+                style: const TextStyle(fontWeight: FontWeight.w700),
+              ),
               subtitle: Text(
-                'Answer: ${response.submittedAnswer}\n'
-                'Correct: ${response.correctAnswer}\n'
+                '${response.questionText}\n'
+                'Answer: ${response.submittedAnswer}'
+                '${response.isCorrect ? '' : '  (correct: ${response.correctAnswer})'}\n'
                 '${response.topicName} | ${response.answeredAt}',
               ),
               isThreeLine: true,
@@ -400,9 +614,25 @@ class _LecturerScreenState extends State<LecturerScreen> {
         itemBuilder: (_, index) {
           final note = _notes[index];
           return Card(
+            elevation: 1.5,
+            margin: const EdgeInsets.only(bottom: 8),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+              side: BorderSide(
+                color: note.isActive
+                    ? _red.withValues(alpha: 0.18)
+                    : Colors.grey.withValues(alpha: 0.3),
+              ),
+            ),
             child: ListTile(
-              leading: CircleAvatar(child: Text(note.emoji)),
-              title: Text(note.title),
+              leading: CircleAvatar(
+                backgroundColor: _red.withValues(alpha: 0.08),
+                child: Text(note.emoji),
+              ),
+              title: Text(
+                note.title,
+                style: const TextStyle(fontWeight: FontWeight.w600),
+              ),
               subtitle: Text(
                 '${note.points.length} point(s)'
                 '${note.externalUrl == null ? '' : '\nExternal link added'}',

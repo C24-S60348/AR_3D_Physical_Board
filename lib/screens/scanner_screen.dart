@@ -11,63 +11,94 @@ import '../data/questions_data.dart';
 import '../services/ar3d_api.dart';
 import '../utils/emulator_check.dart';
 
-// Map from ARCore image name → (display name, asset path)
+// Server topic holding the Sejarah Melaka questions for the scanned landmarks.
+const _sejarahTopic = 'Tourism Melaka';
+
+// Map from ARCore image name → (display name, asset path, place code, level)
 const _placeInfo = <String, Map<String, String>>{
   'kotaafamosa-new': {
     'name': "Kota A'Famosa",
     'asset': 'assets/imagesscan/kotaafamosa-new.png',
+    'place': 'kota-a-famosa',
+    'topic': 'APLIKASI',
   },
   'kotaafamosa-new2': {
     'name': "Kota A'Famosa",
     'asset': 'assets/imagesscan/kotaafamosa-new2.png',
+    'place': 'kota-a-famosa',
+    'topic': 'APLIKASI',
   },
   'masjidcina-new': {
     'name': 'Masjid Cina Melaka',
     'asset': 'assets/imagesscan/masjidcina-new.png',
+    'place': 'masjid-cina',
+    'topic': 'ASAS',
   },
   'masjidcina-new2': {
     'name': 'Masjid Cina Melaka',
     'asset': 'assets/imagesscan/masjidcina-new2.png',
+    'place': 'masjid-cina',
+    'topic': 'ASAS',
   },
   'masjidselatmelaka-new': {
     'name': 'Masjid Selat Melaka',
     'asset': 'assets/imagesscan/masjidselatmelaka-new.png',
+    'place': 'masjid-selat',
+    'topic': 'SEDERHANA',
   },
   'masjidselatmelaka-new2': {
     'name': 'Masjid Selat Melaka',
     'asset': 'assets/imagesscan/masjidselatmelaka-new2.png',
+    'place': 'masjid-selat',
+    'topic': 'SEDERHANA',
   },
   'menaratamingsari-new': {
     'name': 'Menara Taming Sari',
     'asset': 'assets/imagesscan/menaratamingsari-new.png',
+    'place': 'menara-taming-sari',
+    'topic': 'APLIKASI',
   },
   'menaratamingsari-new2': {
     'name': 'Menara Taming Sari',
     'asset': 'assets/imagesscan/menaratamingsari-new2.png',
+    'place': 'menara-taming-sari',
+    'topic': 'APLIKASI',
   },
   'muziumsamudera-new': {
     'name': 'Muzium Samudera',
     'asset': 'assets/imagesscan/muziumsamudera-new.png',
+    'place': 'muzium-samudera',
+    'topic': 'ASAS',
   },
   'muziumsamudera-new2': {
     'name': 'Muzium Samudera',
     'asset': 'assets/imagesscan/muziumsamudera-new2.png',
+    'place': 'muzium-samudera',
+    'topic': 'ASAS',
   },
   'pantaiklebang-new': {
     'name': 'Pantai Klebang',
     'asset': 'assets/imagesscan/pantaiklebang-new.png',
+    'place': 'pantai-klebang',
+    'topic': 'ANALISIS',
   },
   'pantaiklebang-new2': {
     'name': 'Pantai Klebang',
     'asset': 'assets/imagesscan/pantaiklebang-new2.png',
+    'place': 'pantai-klebang',
+    'topic': 'ANALISIS',
   },
   'stadiumhangjebat-new': {
     'name': 'Stadium Hang Jebat',
     'asset': 'assets/imagesscan/stadiumhangjebat-new.png',
+    'place': 'stadium-hang-jebat',
+    'topic': 'CABARAN',
   },
   'stadiumhangjebat-new2': {
     'name': 'Stadium Hang Jebat',
     'asset': 'assets/imagesscan/stadiumhangjebat-new2.png',
+    'place': 'stadium-hang-jebat',
+    'topic': 'CABARAN',
   },
 };
 
@@ -107,6 +138,9 @@ class _ScannerScreenState extends State<ScannerScreen>
   final TextEditingController _answerController = TextEditingController();
   String? _submittedAnswer;
   bool? _answerCorrect;
+  // The public question API hides the answers, so the server tells us what the
+  // correct one was when it grades a submission.
+  String? _revealedAnswer;
   bool _answered = false;
   bool _submittingAnswer = false;
   ImageProvider? _frozenFrame;
@@ -217,14 +251,44 @@ class _ScannerScreenState extends State<ScannerScreen>
       _sessionManager = null;
     });
 
+    final normalizedName = imageName.toLowerCase().replaceAll(
+      RegExp(r'\.(png|jpg|jpeg)$'),
+      '',
+    );
+    final place = _placeInfo[normalizedName]?['place'];
+    final placeTopic = _placeInfo[normalizedName]?['topic'] ?? _topic;
+    // Level buckets (ASAS..CABARAN) live under the secondary-school topic on
+    // the server; other place topics map to a server topic directly.
+    final isLevel = questionsByLevel.containsKey(placeTopic);
+
     List<Question> questions = const [];
     try {
-      questions = await Ar3dApi.getQuestions(_topic);
+      // Landmarks carry their own Sejarah Melaka question bank; fall back to
+      // the topic bank when the server has none for this place yet.
+      if (place != null) {
+        final placeQuestions = await Ar3dApi.getQuestions(
+          _sejarahTopic,
+          place: place,
+        );
+        // An older server ignores the filter and returns the whole topic.
+        questions = placeQuestions.where((q) => q.place == place).toList();
+      }
+      if (questions.isEmpty) {
+        questions = isLevel
+            ? await Ar3dApi.getQuestions(
+                'Maths for Secondary Students',
+                level: placeTopic,
+              )
+            : await Ar3dApi.getQuestions(placeTopic);
+        if (isLevel) {
+          questions = questions.where((q) => q.level == placeTopic).toList();
+        }
+      }
     } catch (_) {
       // Keep scanning available when the configured server cannot be reached.
     }
     if (questions.isEmpty) {
-      questions = getQuestionsForTopic(_topic);
+      questions = getQuestionsForTopic(placeTopic);
     }
     if (questions.isEmpty) {
       if (mounted && generation == _detectionGeneration) {
@@ -244,15 +308,13 @@ class _ScannerScreenState extends State<ScannerScreen>
       return;
     }
     setState(() {
-      _detectedImageName = imageName.toLowerCase().replaceAll(
-        RegExp(r'\.(png|jpg|jpeg)$'),
-        '',
-      );
+      _detectedImageName = normalizedName;
       _showingFlipCard = true;
       _currentQuestion = q;
       _answerController.clear();
       _submittedAnswer = null;
       _answerCorrect = null;
+      _revealedAnswer = null;
       _answered = false;
       _submittingAnswer = false;
     });
@@ -288,6 +350,7 @@ class _ScannerScreenState extends State<ScannerScreen>
       _answerController.clear();
       _submittedAnswer = null;
       _answerCorrect = null;
+      _revealedAnswer = null;
       _answered = false;
       _submittingAnswer = false;
       _cameraActive = true;
@@ -302,6 +365,7 @@ class _ScannerScreenState extends State<ScannerScreen>
     setState(() => _submittingAnswer = true);
 
     var isCorrect = question.matchesAnswer(submitted);
+    var revealed = question.correctAnswer;
     try {
       final result = await Ar3dApi.submitAnswer(
         playerName: _playerName,
@@ -309,7 +373,10 @@ class _ScannerScreenState extends State<ScannerScreen>
         answer: submitted,
         detectedImageName: _detectedImageName,
       );
-      if (result != null) isCorrect = result.isCorrect;
+      if (result != null) {
+        isCorrect = result.isCorrect;
+        if (result.correctAnswer.isNotEmpty) revealed = result.correctAnswer;
+      }
     } catch (_) {
       // Use local grading if the server becomes unavailable mid-session.
     }
@@ -318,6 +385,7 @@ class _ScannerScreenState extends State<ScannerScreen>
     setState(() {
       _submittedAnswer = submitted;
       _answerCorrect = isCorrect;
+      _revealedAnswer = revealed;
       _answered = true;
       _submittingAnswer = false;
       if (isCorrect) _score++;
@@ -545,6 +613,7 @@ class _ScannerScreenState extends State<ScannerScreen>
                 answerController: _answerController,
                 submittedAnswer: _submittedAnswer,
                 answerCorrect: _answerCorrect,
+                revealedAnswer: _revealedAnswer,
                 answered: _answered,
                 submitting: _submittingAnswer,
                 score: _score,
@@ -938,6 +1007,7 @@ class _QuestionOverlay extends StatelessWidget {
   final TextEditingController answerController;
   final String? submittedAnswer;
   final bool? answerCorrect;
+  final String? revealedAnswer;
   final bool answered;
   final bool submitting;
   final int score;
@@ -950,6 +1020,7 @@ class _QuestionOverlay extends StatelessWidget {
     required this.answerController,
     required this.submittedAnswer,
     required this.answerCorrect,
+    required this.revealedAnswer,
     required this.answered,
     required this.submitting,
     required this.score,
@@ -1068,60 +1139,67 @@ class _QuestionOverlay extends StatelessWidget {
                 ),
               ),
 
-              // Typed answer
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                child: Column(
-                  children: [
-                    TextField(
-                      controller: answerController,
-                      enabled: !answered && !submitting,
-                      textInputAction: TextInputAction.done,
-                      onSubmitted: onSubmit,
-                      decoration: InputDecoration(
-                        labelText: 'Taip jawapan anda',
-                        hintText: 'Contoh: 0.5 atau 1/2',
-                        prefixIcon: const Icon(Icons.edit_outlined),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
+              if (question.isMultipleChoice)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                  child: Column(children: _buildChoices()),
+                )
+              else
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                  child: Column(
+                    children: [
+                      TextField(
+                        controller: answerController,
+                        enabled: !answered && !submitting,
+                        textInputAction: TextInputAction.done,
+                        onSubmitted: onSubmit,
+                        decoration: InputDecoration(
+                          labelText: 'Taip jawapan anda',
+                          hintText: 'Contoh: 0.5 atau 1/2',
+                          prefixIcon: const Icon(Icons.edit_outlined),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 10),
-                    if (!answered)
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton.icon(
-                          onPressed: submitting
-                              ? null
-                              : () => onSubmit(answerController.text),
-                          icon: submitting
-                              ? const SizedBox(
-                                  width: 18,
-                                  height: 18,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: Colors.white,
-                                  ),
-                                )
-                              : const Icon(Icons.send_rounded),
-                          label: Text(
-                            submitting ? 'Menyemak...' : 'Hantar Jawapan',
-                            style: const TextStyle(fontWeight: FontWeight.w700),
-                          ),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: _red,
-                            foregroundColor: Colors.white,
-                            padding: const EdgeInsets.symmetric(vertical: 12),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
+                      const SizedBox(height: 10),
+                      if (!answered)
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton.icon(
+                            onPressed: submitting
+                                ? null
+                                : () => onSubmit(answerController.text),
+                            icon: submitting
+                                ? const SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : const Icon(Icons.send_rounded),
+                            label: Text(
+                              submitting ? 'Menyemak...' : 'Hantar Jawapan',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: _red,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
 
               if (answered)
                 Padding(
@@ -1140,7 +1218,7 @@ class _QuestionOverlay extends StatelessWidget {
                         child: Text(
                           answerCorrect == true
                               ? 'Betul! Markah ditambah.'
-                              : 'Salah. Jawapan: ${question.correctAnswer}',
+                              : _wrongAnswerMessage(),
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontWeight: FontWeight.w700,
@@ -1186,6 +1264,97 @@ class _QuestionOverlay extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  String _wrongAnswerMessage() {
+    final answer = revealedAnswer?.trim().isNotEmpty == true
+        ? revealedAnswer!.trim()
+        : question.correctAnswer;
+    return answer.isEmpty ? 'Salah.' : 'Salah. Jawapan: $answer';
+  }
+
+  List<Widget> _buildChoices() {
+    const letters = ['A', 'B', 'C', 'D', 'E', 'F'];
+    final revealed = revealedAnswer?.trim() ?? '';
+
+    return List.generate(question.options.length, (index) {
+      final option = question.options[index];
+      final isChosen = submittedAnswer == option;
+      final isAnswer =
+          answered &&
+          revealed.isNotEmpty &&
+          answersAreEquivalent(option, revealed);
+
+      Color border = Colors.grey.shade300;
+      Color background = Colors.white;
+      Color badge = _red;
+      if (isAnswer) {
+        border = Colors.green;
+        background = Colors.green.shade50;
+        badge = Colors.green.shade700;
+      } else if (isChosen) {
+        border = Colors.red;
+        background = Colors.red.shade50;
+        badge = Colors.red.shade700;
+      }
+
+      return Padding(
+        padding: const EdgeInsets.only(bottom: 8),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(12),
+          onTap: answered || submitting ? null : () => onSubmit(option),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+            decoration: BoxDecoration(
+              color: background,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(
+                color: border,
+                width: isChosen || isAnswer ? 2 : 1,
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 26,
+                  height: 26,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: badge,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Text(
+                    index < letters.length ? letters[index] : '${index + 1}',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    option,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black87,
+                      height: 1.3,
+                    ),
+                  ),
+                ),
+                if (isAnswer)
+                  const Icon(Icons.check_circle, color: Colors.green, size: 20)
+                else if (isChosen)
+                  const Icon(Icons.cancel, color: Colors.red, size: 20),
+              ],
+            ),
+          ),
+        ),
+      );
+    });
   }
 }
 
