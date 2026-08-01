@@ -10,11 +10,13 @@ import 'package:ar_flutter_plugin/managers/ar_location_manager.dart';
 import 'package:ar_flutter_plugin/datatypes/config_planedetection.dart';
 import '../data/questions_data.dart';
 import '../services/ar3d_api.dart';
-import '../services/question_cache.dart';
 import '../utils/emulator_check.dart';
 
 // Server topic holding the Sejarah Melaka questions for the scanned landmarks.
 const _sejarahTopic = 'Tourism Melaka';
+
+// Difficulty buckets the cards map to, as stored on the server.
+const _levels = {'ASAS', 'SEDERHANA', 'APLIKASI', 'ANALISIS', 'CABARAN'};
 
 // The Soal Selidik button opens the shared i-GB questionnaire in the browser
 // rather than the in-app form; SurveyScreen is kept for the /survey route.
@@ -181,29 +183,6 @@ class _ScannerScreenState extends State<ScannerScreen>
     _checkIfEmulator();
   }
 
-  /// Reads the offline copy for this scan, preferring the exact request that
-  /// was cached and otherwise narrowing the whole-topic copy the loading
-  /// screen prefetched.
-  Future<List<Question>> _cachedQuestions({
-    String? place,
-    String? level,
-  }) async {
-    final topic = place != null ? _sejarahTopic : _topic;
-    if (place == null && level == null) {
-      return QuestionCache.load(topic);
-    }
-    final exact = await QuestionCache.load(topic, level: level, place: place);
-    if (exact.isNotEmpty) return exact;
-    final whole = await QuestionCache.load(topic);
-    return whole
-        .where(
-          (q) =>
-              (place == null || q.place == place) &&
-              (level == null || q.level == level),
-        )
-        .toList();
-  }
-
   Future<void> _checkIfEmulator() async {
     final emulator = await isRunningOnEmulator();
     if (mounted) {
@@ -296,9 +275,12 @@ class _ScannerScreenState extends State<ScannerScreen>
     final useLevel =
         _topic == 'Maths for Secondary Students' &&
         cardLevel != null &&
-        questionsByLevel.containsKey(cardLevel);
+        _levels.contains(cardLevel);
 
+    // Questions always come from the server, so a scan shows what the lecturer
+    // published right now. There is no offline copy to fall back to.
     List<Question> questions = const [];
+    String? failure;
     try {
       // Landmarks carry their own Sejarah Melaka question bank; fall back to
       // the topic bank when the server has none for this place yet.
@@ -318,23 +300,14 @@ class _ScannerScreenState extends State<ScannerScreen>
           questions = questions.where((q) => q.level == cardLevel).toList();
         }
       }
+      if (questions.isEmpty) {
+        failure = 'Tiada soalan untuk topik ini buat masa sekarang.';
+      }
     } catch (_) {
-      // Keep scanning available when the configured server cannot be reached.
+      failure = 'Tidak dapat menghubungi pelayan. Sila semak sambungan '
+          'internet anda, kemudian imbas semula.';
     }
-    if (questions.isEmpty) {
-      // Offline, replay the newest questions this device downloaded before
-      // falling back to the sample bundled with the app.
-      questions = await _cachedQuestions(
-        place: wantsSejarah ? place : null,
-        level: useLevel ? cardLevel : null,
-      );
-    }
-    if (questions.isEmpty) {
-      questions = useLevel
-          ? getQuestionsForTopic(cardLevel)
-          : getQuestionsForTopic(_topic);
-    }
-    if (questions.isEmpty) {
+    if (failure != null) {
       if (mounted && generation == _detectionGeneration) {
         setState(() {
           _isHandlingDetection = false;
@@ -342,6 +315,9 @@ class _ScannerScreenState extends State<ScannerScreen>
           _cameraActive = true;
           _cameraGeneration++;
         });
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(failure)));
       }
       return;
     }

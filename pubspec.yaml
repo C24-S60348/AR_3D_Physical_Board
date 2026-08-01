@@ -17,7 +17,6 @@ dependencies:
   audioplayers: ^6.1.0
   image_picker: ^1.2.2
   url_launcher: ^6.3.2
-  path_provider: ^2.1.5
 
 dependency_overrides:
   # permission_handler_android 10.x uses removed Flutter v1 embedding (PluginRegistry.Registrar).
