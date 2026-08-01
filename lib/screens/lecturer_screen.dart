@@ -394,16 +394,30 @@ class _LecturerScreenState extends State<LecturerScreen> {
     );
   }
 
+  Map<String, List<Question>> get _questionsByTopic {
+    final grouped = <String, List<Question>>{};
+    for (final topic in _topics) {
+      grouped[topic.name] = [];
+    }
+    for (final question in _questions) {
+      grouped.putIfAbsent(question.topic, () => []).add(question);
+    }
+    grouped.removeWhere((_, questions) => questions.isEmpty);
+    return grouped;
+  }
+
   Widget _buildQuestions() {
     if (_questions.isEmpty) {
       return const Center(child: Text('No questions yet.'));
     }
     final active = _questions.where((q) => q.isActive).length;
+    final grouped = _questionsByTopic;
+    final topicNames = grouped.keys.toList();
     return RefreshIndicator(
       onRefresh: _runRefresh,
       child: ListView.builder(
         padding: const EdgeInsets.fromLTRB(12, 12, 12, 90),
-        itemCount: _questions.length + 1,
+        itemCount: topicNames.length + 1,
         itemBuilder: (_, index) {
           if (index == 0) {
             return Padding(
@@ -432,97 +446,130 @@ class _LecturerScreenState extends State<LecturerScreen> {
               ),
             );
           }
-          final question = _questions[index - 1];
+          final topicName = topicNames[index - 1];
+          final topicQuestions = grouped[topicName]!;
+          final topicActive = topicQuestions.where((q) => q.isActive).length;
           return Card(
-            elevation: 1.5,
             margin: const EdgeInsets.only(bottom: 8),
+            elevation: 1,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(14),
-              side: BorderSide(
-                color: question.isActive
-                    ? Colors.green.withValues(alpha: 0.25)
-                    : Colors.grey.withValues(alpha: 0.3),
-              ),
             ),
-            child: ListTile(
-              leading: CircleAvatar(
-                backgroundColor: question.isActive
-                    ? Colors.green.shade100
-                    : Colors.grey.shade300,
-                child: Icon(
-                  question.isActive ? Icons.check : Icons.archive_outlined,
-                  color: question.isActive ? Colors.green : Colors.grey,
-                ),
-              ),
+            clipBehavior: Clip.antiAlias,
+            child: ExpansionTile(
+              initiallyExpanded: topicNames.length == 1,
               title: Text(
-                question.question,
-                style: const TextStyle(fontWeight: FontWeight.w600),
+                topicName,
+                style: const TextStyle(fontWeight: FontWeight.w700),
               ),
-              subtitle: Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: Wrap(
-                  spacing: 6,
-                  runSpacing: 4,
-                  crossAxisAlignment: WrapCrossAlignment.center,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: _red.withValues(alpha: 0.08),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Text(
-                        question.topic,
-                        style: const TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w700,
-                          color: _red,
-                        ),
-                      ),
-                    ),
-                    if (question.level != null)
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 2,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.amber.withValues(alpha: 0.18),
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Text(
-                          question.level!,
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.amber.shade900,
-                          ),
-                        ),
-                      ),
-                    Text(
-                      question.acceptedAnswers.join(' | '),
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey.shade700,
-                      ),
-                    ),
-                  ],
+              subtitle: Text(
+                '${topicQuestions.length} question(s) · $topicActive active',
+              ),
+              leading: CircleAvatar(
+                backgroundColor: _red.withValues(alpha: 0.1),
+                child: Text(
+                  '${topicQuestions.length}',
+                  style: const TextStyle(
+                    color: _red,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
               ),
-              onTap: () => _openEditor(question),
-              trailing: question.isActive
-                  ? IconButton(
-                      onPressed: () => _archive(question),
-                      icon: const Icon(Icons.archive_outlined),
-                      tooltip: 'Archive',
-                    )
-                  : null,
+              children: topicQuestions
+                  .map((question) => _questionCard(question))
+                  .toList(),
             ),
           );
         },
+      ),
+    );
+  }
+
+  Widget _questionCard(Question question) {
+    return Card(
+      elevation: 1.5,
+      margin: const EdgeInsets.only(bottom: 8),
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(14),
+        side: BorderSide(
+          color: question.isActive
+              ? Colors.green.withValues(alpha: 0.25)
+              : Colors.grey.withValues(alpha: 0.3),
+        ),
+      ),
+      child: ListTile(
+        leading: CircleAvatar(
+          backgroundColor: question.isActive
+              ? Colors.green.shade100
+              : Colors.grey.shade300,
+          child: Icon(
+            question.isActive ? Icons.check : Icons.archive_outlined,
+            color: question.isActive ? Colors.green : Colors.grey,
+          ),
+        ),
+        title: Text(
+          question.question,
+          style: const TextStyle(fontWeight: FontWeight.w600),
+        ),
+        subtitle: Padding(
+          padding: const EdgeInsets.only(top: 4),
+          child: Wrap(
+            spacing: 6,
+            runSpacing: 4,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 2,
+                ),
+                decoration: BoxDecoration(
+                  color: _red.withValues(alpha: 0.08),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Text(
+                  question.topic,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    color: _red,
+                  ),
+                ),
+              ),
+              if (question.level != null)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.withValues(alpha: 0.18),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text(
+                    question.level!,
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.amber.shade900,
+                    ),
+                  ),
+                ),
+              Text(
+                question.acceptedAnswers.join(' | '),
+                style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
+              ),
+            ],
+          ),
+        ),
+        onTap: () => _openEditor(question),
+        trailing: question.isActive
+            ? IconButton(
+                onPressed: () => _archive(question),
+                icon: const Icon(Icons.archive_outlined),
+                tooltip: 'Archive',
+              )
+            : null,
       ),
     );
   }
