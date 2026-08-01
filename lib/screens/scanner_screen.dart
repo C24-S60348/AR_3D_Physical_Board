@@ -262,16 +262,23 @@ class _ScannerScreenState extends State<ScannerScreen>
       '',
     );
     final place = _placeInfo[normalizedName]?['place'];
-    final placeTopic = _placeInfo[normalizedName]?['topic'] ?? _topic;
-    // Level buckets (ASAS..CABARAN) live under the secondary-school topic on
-    // the server; other place topics map to a server topic directly.
-    final isLevel = questionsByLevel.containsKey(placeTopic);
+    // The card sets the difficulty (ASAS..CABARAN); the topic picked on the
+    // home screen sets the subject. Only Tourism Melaka is answered from the
+    // landmark's own bank.
+    final cardLevel = _placeInfo[normalizedName]?['topic'];
+    final wantsSejarah = _topic == _sejarahTopic;
+    // Level buckets only exist under the secondary-school bank on the server;
+    // Primary and Higher Education are drawn whole.
+    final useLevel =
+        _topic == 'Maths for Secondary Students' &&
+        cardLevel != null &&
+        questionsByLevel.containsKey(cardLevel);
 
     List<Question> questions = const [];
     try {
       // Landmarks carry their own Sejarah Melaka question bank; fall back to
       // the topic bank when the server has none for this place yet.
-      if (place != null) {
+      if (wantsSejarah && place != null) {
         final placeQuestions = await Ar3dApi.getQuestions(
           _sejarahTopic,
           place: place,
@@ -280,21 +287,20 @@ class _ScannerScreenState extends State<ScannerScreen>
         questions = placeQuestions.where((q) => q.place == place).toList();
       }
       if (questions.isEmpty) {
-        questions = isLevel
-            ? await Ar3dApi.getQuestions(
-                'Maths for Secondary Students',
-                level: placeTopic,
-              )
-            : await Ar3dApi.getQuestions(placeTopic);
-        if (isLevel) {
-          questions = questions.where((q) => q.level == placeTopic).toList();
+        questions = useLevel
+            ? await Ar3dApi.getQuestions(_topic, level: cardLevel)
+            : await Ar3dApi.getQuestions(_topic);
+        if (useLevel) {
+          questions = questions.where((q) => q.level == cardLevel).toList();
         }
       }
     } catch (_) {
       // Keep scanning available when the configured server cannot be reached.
     }
     if (questions.isEmpty) {
-      questions = getQuestionsForTopic(placeTopic);
+      questions = useLevel
+          ? getQuestionsForTopic(cardLevel)
+          : getQuestionsForTopic(_topic);
     }
     if (questions.isEmpty) {
       if (mounted && generation == _detectionGeneration) {
