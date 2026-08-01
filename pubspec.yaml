@@ -1,7 +1,7 @@
 name: my_ar_app
 description: "i.-GB — Interactive Game Board with AR (Melaka Theme)"
 publish_to: 'none'
-version: 1.0.9+9
+version: 1.0.10+10
 
 environment:
   sdk: ^3.11.5
@@ -17,6 +17,7 @@ dependencies:
   audioplayers: ^6.1.0
   image_picker: ^1.2.2
   url_launcher: ^6.3.2
+  path_provider: ^2.1.5
 
 dependency_overrides:
   # permission_handler_android 10.x uses removed Flutter v1 embedding (PluginRegistry.Registrar).

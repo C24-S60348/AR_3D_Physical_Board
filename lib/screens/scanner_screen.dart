@@ -10,6 +10,7 @@ import 'package:ar_flutter_plugin/managers/ar_location_manager.dart';
 import 'package:ar_flutter_plugin/datatypes/config_planedetection.dart';
 import '../data/questions_data.dart';
 import '../services/ar3d_api.dart';
+import '../services/question_cache.dart';
 import '../utils/emulator_check.dart';
 
 // Server topic holding the Sejarah Melaka questions for the scanned landmarks.
@@ -180,6 +181,29 @@ class _ScannerScreenState extends State<ScannerScreen>
     _checkIfEmulator();
   }
 
+  /// Reads the offline copy for this scan, preferring the exact request that
+  /// was cached and otherwise narrowing the whole-topic copy the loading
+  /// screen prefetched.
+  Future<List<Question>> _cachedQuestions({
+    String? place,
+    String? level,
+  }) async {
+    final topic = place != null ? _sejarahTopic : _topic;
+    if (place == null && level == null) {
+      return QuestionCache.load(topic);
+    }
+    final exact = await QuestionCache.load(topic, level: level, place: place);
+    if (exact.isNotEmpty) return exact;
+    final whole = await QuestionCache.load(topic);
+    return whole
+        .where(
+          (q) =>
+              (place == null || q.place == place) &&
+              (level == null || q.level == level),
+        )
+        .toList();
+  }
+
   Future<void> _checkIfEmulator() async {
     final emulator = await isRunningOnEmulator();
     if (mounted) {
@@ -296,6 +320,14 @@ class _ScannerScreenState extends State<ScannerScreen>
       }
     } catch (_) {
       // Keep scanning available when the configured server cannot be reached.
+    }
+    if (questions.isEmpty) {
+      // Offline, replay the newest questions this device downloaded before
+      // falling back to the sample bundled with the app.
+      questions = await _cachedQuestions(
+        place: wantsSejarah ? place : null,
+        level: useLevel ? cardLevel : null,
+      );
     }
     if (questions.isEmpty) {
       questions = useLevel

@@ -5,6 +5,7 @@ import 'dart:math';
 import 'dart:typed_data';
 
 import '../data/questions_data.dart';
+import 'question_cache.dart';
 
 class Ar3dApi {
   static const String baseUrl = String.fromEnvironment(
@@ -79,7 +80,13 @@ class Ar3dApi {
         throw HttpException('Question API returned ${response.statusCode}');
       }
       final payload = jsonDecode(body) as Map<String, dynamic>;
-      return (payload['questions'] as List<dynamic>? ?? const [])
+      final raw = payload['questions'] as List<dynamic>? ?? const [];
+      // Every successful fetch refreshes the offline copy, so the cache is
+      // always the newest questions this device has seen.
+      if (raw.isNotEmpty) {
+        await QuestionCache.save(topic, raw, level: level, place: place);
+      }
+      return raw
           .map((item) => Question.fromApiJson(item as Map<String, dynamic>))
           .where((question) => question.id != null)
           .toList();

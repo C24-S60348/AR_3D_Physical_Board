@@ -1,5 +1,8 @@
+import 'dart:async';
 import 'dart:math';
 import 'package:flutter/material.dart';
+import '../data/questions_data.dart';
+import '../services/ar3d_api.dart';
 import 'splash_screen.dart';
 
 /// Topic image → asset path mapping (shared with home screen)
@@ -60,7 +63,16 @@ class _LoadingScreenState extends State<LoadingScreen>
       final destination = args?['destination'] as String? ?? '/home';
       final destArgs = args?['arguments'];
       // Read topic for flipping image
-      setState(() => _topic = args?['topic'] as String?);
+      final topic = args?['topic'] as String?;
+      setState(() => _topic = topic);
+
+      // Warm the offline copy while the animation plays, so a scan later in
+      // the game still has the lecturer's questions if the network drops.
+      if (topic != null) {
+        unawaited(
+          Ar3dApi.getQuestions(topic).catchError((_) => const <Question>[]),
+        );
+      }
 
       Future.delayed(const Duration(milliseconds: 1800), () {
         if (!mounted) return;
