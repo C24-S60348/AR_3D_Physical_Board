@@ -912,9 +912,13 @@ class _NoteEditorState extends State<_NoteEditor> {
         .toList();
     final url = _urlController.text.trim();
     final order = int.tryParse(_orderController.text.trim());
-    if (title.isEmpty || (points.isEmpty && url.isEmpty)) {
+    // A note made only of an image is valid, so the points are optional once
+    // one is attached — either newly picked or already stored.
+    final hasImage =
+        _selectedImageBytes != null || widget.note?.imageUrl != null;
+    if (title.isEmpty || (points.isEmpty && url.isEmpty && !hasImage)) {
       setState(() {
-        _error = 'Add a title and at least one point or external link.';
+        _error = 'Add a title, then at least one point, an image, or a link.';
       });
       return;
     }

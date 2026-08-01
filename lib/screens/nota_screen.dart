@@ -136,43 +136,43 @@ class _MelakaTabState extends State<_MelakaTab>
   static const _places = [
     _Place(
       name: "Kota A'Famosa",
-      asset: 'assets/imagesscan/kotaafamosa-new.png',
+      asset: 'assets/images/logoforeachnoteimage/afamosa.png',
       description:
           'Kubu Portugis yang dibina pada 1512 oleh Alfonso de Albuquerque. Salah satu tinggalan Eropah tertua di Asia Tenggara.',
     ),
     _Place(
       name: 'Masjid Cina Melaka',
-      asset: 'assets/imagesscan/masjidcina-new.png',
+      asset: 'assets/images/logoforeachnoteimage/masjidcina.png',
       description:
           'Masjid unik bergaya seni bina Cina, menggabungkan elemen budaya Melayu dan Tionghoa dalam satu binaan yang indah.',
     ),
     _Place(
       name: 'Masjid Selat Melaka',
-      asset: 'assets/imagesscan/masjidselatmelaka-new.png',
+      asset: 'assets/images/logoforeachnoteimage/masjidselat.png',
       description:
           'Masjid unik yang dibina di atas air, kelihatan terapung di Selat Melaka ketika air pasang.',
     ),
     _Place(
       name: 'Menara Taming Sari',
-      asset: 'assets/imagesscan/menaratamingsari-new.png',
+      asset: 'assets/images/logoforeachnoteimage/tamingsari.png',
       description:
           'Menara giroskop berputar 360° yang membawa pelancong ke ketinggian 80 meter untuk menikmati pemandangan Melaka.',
     ),
     _Place(
       name: 'Muzium Samudera',
-      asset: 'assets/imagesscan/muziumsamudera-new.png',
+      asset: 'assets/images/logoforeachnoteimage/muziumsamudera.png',
       description:
           'Muzium bertemakan kapal layar sejarah, memaparkan replika kapal dan kisah kegemilangan pelabuhan Melaka sebagai pusat perdagangan maritim.',
     ),
     _Place(
       name: 'Pantai Klebang',
-      asset: 'assets/imagesscan/pantaiklebang-new.png',
+      asset: 'assets/images/logoforeachnoteimage/pantaiklebang.png',
       description:
           'Pantai terkenal di Melaka dengan pemandangan matahari terbenam yang indah serta gerai makanan tepi pantai yang popular.',
     ),
     _Place(
       name: 'Stadium Hang Jebat',
-      asset: 'assets/imagesscan/stadiumhangjebat-new.png',
+      asset: 'assets/images/logoforeachnoteimage/stadiummelaka.png',
       description:
           'Stadium utama negeri Melaka, menjadi tuan rumah pelbagai acara sukan dan perlawanan bola sepak peringkat kebangsaan.',
     ),
@@ -265,17 +265,29 @@ class _PlaceCard extends StatelessWidget {
           // Image with gradient scrim, numbered badge, and name overlay
           Stack(
             children: [
-              AspectRatio(
-                aspectRatio: 16 / 9,
-                child: Image.asset(
-                  place.asset,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, _, _) => Container(
-                    color: Colors.grey.shade200,
-                    child: const Icon(
-                      Icons.image_not_supported,
-                      color: Colors.grey,
-                      size: 48,
+              GestureDetector(
+                onTap: () => _openImageViewer(
+                  context,
+                  AssetImage(place.asset),
+                  place.name,
+                ),
+                child: AspectRatio(
+                  aspectRatio: 16 / 9,
+                  child: Container(
+                    // The landmark art is a sticker cutout, not a photo, so it
+                    // is fitted whole rather than cropped to fill the card.
+                    color: const Color(0xFFF3EFE7),
+                    child: Image.asset(
+                      place.asset,
+                      fit: BoxFit.contain,
+                      errorBuilder: (_, _, _) => Container(
+                        color: Colors.grey.shade200,
+                        child: const Icon(
+                          Icons.image_not_supported,
+                          color: Colors.grey,
+                          size: 48,
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -536,10 +548,40 @@ class _NotaCard extends StatelessWidget {
             ),
           ),
           if (nota.imageUrl != null)
-            Image.network(
-              nota.imageUrl!,
-              fit: BoxFit.cover,
-              errorBuilder: (_, _, _) => const SizedBox.shrink(),
+            // Tapping opens the note image full screen, where it can be zoomed
+            // — uploaded notes are often screenshots too small to read inline.
+            GestureDetector(
+              onTap: () => _openImageViewer(
+                context,
+                NetworkImage(nota.imageUrl!),
+                nota.title,
+              ),
+              child: Stack(
+                children: [
+                  Image.network(
+                    nota.imageUrl!,
+                    fit: BoxFit.cover,
+                    width: double.infinity,
+                    errorBuilder: (_, _, _) => const SizedBox.shrink(),
+                  ),
+                  Positioned(
+                    right: 10,
+                    bottom: 10,
+                    child: Container(
+                      padding: const EdgeInsets.all(6),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.55),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.zoom_in,
+                        color: Colors.white,
+                        size: 18,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           Padding(
             padding: const EdgeInsets.all(16),
@@ -606,6 +648,51 @@ class _NotaCard extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+// ── Full-screen image viewer ──────────────────────────────────────────────────
+
+/// Opens [image] full screen so it can be pinched and panned.
+void _openImageViewer(BuildContext context, ImageProvider image, String title) {
+  Navigator.of(context).push(
+    MaterialPageRoute(
+      fullscreenDialog: true,
+      builder: (_) => _ImageViewerPage(image: image, title: title),
+    ),
+  );
+}
+
+class _ImageViewerPage extends StatelessWidget {
+  final ImageProvider image;
+  final String title;
+  const _ImageViewerPage({required this.image, required this.title});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.black,
+        foregroundColor: Colors.white,
+        title: Text(title, style: const TextStyle(fontSize: 15)),
+      ),
+      body: Center(
+        child: InteractiveViewer(
+          minScale: 1,
+          maxScale: 5,
+          child: Image(
+            image: image,
+            fit: BoxFit.contain,
+            errorBuilder: (_, _, _) => const Icon(
+              Icons.image_not_supported,
+              color: Colors.white54,
+              size: 64,
+            ),
+          ),
+        ),
       ),
     );
   }
