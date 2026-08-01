@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:ar_flutter_plugin/ar_flutter_plugin.dart';
 import 'package:ar_flutter_plugin/managers/ar_session_manager.dart';
 import 'package:ar_flutter_plugin/managers/ar_object_manager.dart';
@@ -13,6 +14,11 @@ import '../utils/emulator_check.dart';
 
 // Server topic holding the Sejarah Melaka questions for the scanned landmarks.
 const _sejarahTopic = 'Tourism Melaka';
+
+// The Soal Selidik button opens the shared i-GB questionnaire in the browser
+// rather than the in-app form; SurveyScreen is kept for the /survey route.
+const _surveyFormUrl =
+    'https://docs.google.com/document/d/1ChbU4IMW7VhZlvz1j5wR8oxkaac9YKgXy23pBwzAZAg/edit?usp=sharing';
 
 // Map from ARCore image name → (display name, asset path, place code, level)
 const _placeInfo = <String, Map<String, String>>{
@@ -396,24 +402,19 @@ class _ScannerScreenState extends State<ScannerScreen>
   Future<void> _openSurvey() async {
     if (_openingSurvey) return;
     _openingSurvey = true;
-
-    setState(() {
-      _cameraActive = false;
-      _sessionManager = null;
-    });
-
-    // Let Flutter remove the native AR view before opening the form page.
-    await WidgetsBinding.instance.endOfFrame;
-    if (!mounted) return;
-
-    await Navigator.pushNamed(context, '/survey');
-    if (!mounted) return;
-
-    setState(() {
-      _cameraActive = true;
-      _cameraGeneration++;
+    try {
+      final opened = await launchUrl(
+        Uri.parse(_surveyFormUrl),
+        mode: LaunchMode.externalApplication,
+      );
+      if (!opened && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Tidak dapat membuka borang soal selidik.')),
+        );
+      }
+    } finally {
       _openingSurvey = false;
-    });
+    }
   }
 
   void _dismissQuestion() {

@@ -24,7 +24,7 @@ from . import ar3d
 from .db import QUESTION_LEVELS, get_db
 
 ALLOWED_IMAGE_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
-AR3D_API_VERSION = "2026.08.01.1"
+AR3D_API_VERSION = "2026.08.01.2"
 
 
 def _admin_authorized():
