@@ -96,6 +96,43 @@ class Ar3dApi {
         .toList();
   }
 
+  static Future<void> submitSurvey({
+    required String status,
+    required String ageGroup,
+    required String easiness,
+    required String arExperience,
+    required String questionFit,
+    required int starRating,
+    String? comment,
+  }) async {
+    await _jsonRequest(
+      'POST',
+      '/api/ar3d/survey',
+      body: {
+        'status': status,
+        'age_group': ageGroup,
+        'easiness': easiness,
+        'ar_experience': arExperience,
+        'question_fit': questionFit,
+        'star_rating': starRating,
+        if (comment != null && comment.isNotEmpty) 'comment': comment,
+      },
+    );
+  }
+
+  static Future<List<SurveyResponse>> getAdminSurveyResponses(
+    String password,
+  ) async {
+    final payload = await _jsonRequest(
+      'GET',
+      '/api/ar3d/admin/survey-responses',
+      adminPassword: password,
+    );
+    return (payload['responses'] as List<dynamic>? ?? const [])
+        .map((item) => SurveyResponse.fromJson(item as Map<String, dynamic>))
+        .toList();
+  }
+
   static Future<AnswerSubmissionResult?> submitAnswer({
     required String playerName,
     required Question question,
@@ -536,4 +573,41 @@ class AdminResponse {
     isCorrect: json['is_correct'] as bool,
     answeredAt: json['answered_at'] as String,
   );
+}
+
+class SurveyResponse {
+  final int id;
+  final String status;
+  final String ageGroup;
+  final String easiness;
+  final String arExperience;
+  final String questionFit;
+  final int starRating;
+  final String? comment;
+  final String submittedAt;
+
+  const SurveyResponse({
+    required this.id,
+    required this.status,
+    required this.ageGroup,
+    required this.easiness,
+    required this.arExperience,
+    required this.questionFit,
+    required this.starRating,
+    this.comment,
+    required this.submittedAt,
+  });
+
+  factory SurveyResponse.fromJson(Map<String, dynamic> json) =>
+      SurveyResponse(
+        id: json['id'] as int,
+        status: json['status'] as String,
+        ageGroup: json['age_group'] as String,
+        easiness: json['easiness'] as String,
+        arExperience: json['ar_experience'] as String,
+        questionFit: json['question_fit'] as String,
+        starRating: json['star_rating'] as int,
+        comment: json['comment'] as String?,
+        submittedAt: json['submitted_at'] as String,
+      );
 }

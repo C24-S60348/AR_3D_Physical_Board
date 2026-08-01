@@ -502,6 +502,49 @@ class Ar3dApiTestCase(unittest.TestCase):
         self.assertIn(b"Aina", page.data)
         self.assertIn(b"Write one half as a number.", page.data)
 
+    def test_survey_submission_and_admin_listing(self):
+        rejected = self.client.post("/api/ar3d/survey", json={"status": "Pelajar"})
+        self.assertEqual(rejected.status_code, 400)
+
+        bad_rating = self.client.post(
+            "/api/ar3d/survey",
+            json={
+                "status": "Pelajar",
+                "age_group": "13 - 17 tahun",
+                "easiness": "Mudah",
+                "ar_experience": "Menarik",
+                "question_fit": "Sesuai",
+                "star_rating": 9,
+            },
+        )
+        self.assertEqual(bad_rating.status_code, 400)
+
+        submitted = self.client.post(
+            "/api/ar3d/survey",
+            json={
+                "status": "Pelajar",
+                "age_group": "13 - 17 tahun",
+                "easiness": "Mudah",
+                "ar_experience": "Menarik",
+                "question_fit": "Sesuai",
+                "star_rating": 5,
+                "comment": "Best app!",
+            },
+        )
+        self.assertEqual(submitted.status_code, 201)
+
+        unauthorized = self.client.get("/api/ar3d/admin/survey-responses")
+        self.assertEqual(unauthorized.status_code, 401)
+
+        listed = self.client.get(
+            "/api/ar3d/admin/survey-responses", headers=self.headers
+        )
+        self.assertEqual(listed.status_code, 200)
+        responses = listed.get_json()["responses"]
+        self.assertEqual(len(responses), 1)
+        self.assertEqual(responses[0]["comment"], "Best app!")
+        self.assertEqual(responses[0]["star_rating"], 5)
+
     def test_lecturer_login(self):
         response = self.client.post(
             "/admin/ar3d/login",

@@ -22,6 +22,7 @@ class _LecturerScreenState extends State<LecturerScreen> {
   List<Question> _questions = const [];
   List<GameNote> _notes = const [];
   List<AdminResponse> _responses = const [];
+  List<SurveyResponse> _surveyResponses = const [];
 
   @override
   void dispose() {
@@ -64,12 +65,19 @@ class _LecturerScreenState extends State<LecturerScreen> {
           'Questions and responses loaded, but notes are unavailable. '
           '${_message(error)}';
     }
+    List<SurveyResponse> surveyResponses = const [];
+    try {
+      surveyResponses = await Ar3dApi.getAdminSurveyResponses(password);
+    } catch (error) {
+      notesError ??= 'Survey responses are unavailable. ${_message(error)}';
+    }
     if (!mounted) return;
     setState(() {
       _topics = results[0] as List<ApiTopic>;
       _questions = results[1] as List<Question>;
       _responses = results[2] as List<AdminResponse>;
       _notes = notes;
+      _surveyResponses = surveyResponses;
       _error = notesError;
     });
   }
@@ -167,7 +175,7 @@ class _LecturerScreenState extends State<LecturerScreen> {
   Widget build(BuildContext context) {
     if (_password == null) return _buildLogin();
     return DefaultTabController(
-      length: 3,
+      length: 4,
       child: Scaffold(
         appBar: AppBar(
           title: const Text('Lecturer Admin'),
@@ -186,12 +194,14 @@ class _LecturerScreenState extends State<LecturerScreen> {
                 _questions = const [];
                 _notes = const [];
                 _responses = const [];
+                _surveyResponses = const [];
               }),
               icon: const Icon(Icons.logout),
               tooltip: 'Log out',
             ),
           ],
           bottom: const TabBar(
+            isScrollable: true,
             labelColor: Colors.white,
             unselectedLabelColor: Colors.white60,
             indicatorColor: Colors.amber,
@@ -199,26 +209,30 @@ class _LecturerScreenState extends State<LecturerScreen> {
               Tab(icon: Icon(Icons.quiz_outlined), text: 'Questions'),
               Tab(icon: Icon(Icons.notes_outlined), text: 'Notes'),
               Tab(icon: Icon(Icons.assessment_outlined), text: 'Responses'),
+              Tab(icon: Icon(Icons.poll_outlined), text: 'Survey'),
             ],
           ),
         ),
         floatingActionButton: Builder(
-          builder: (tabContext) => FloatingActionButton.extended(
-            onPressed: _busy
-                ? null
-                : () {
-                    final tab = DefaultTabController.of(tabContext).index;
-                    if (tab == 1) {
-                      _openNoteEditor();
-                    } else {
-                      _openEditor();
-                    }
-                  },
-            backgroundColor: _red,
-            foregroundColor: Colors.white,
-            icon: const Icon(Icons.add),
-            label: const Text('Add'),
-          ),
+          builder: (tabContext) {
+            final tab = DefaultTabController.of(tabContext).index;
+            if (tab >= 2) return const SizedBox.shrink();
+            return FloatingActionButton.extended(
+              onPressed: _busy
+                  ? null
+                  : () {
+                      if (tab == 1) {
+                        _openNoteEditor();
+                      } else {
+                        _openEditor();
+                      }
+                    },
+              backgroundColor: _red,
+              foregroundColor: Colors.white,
+              icon: const Icon(Icons.add),
+              label: const Text('Add'),
+            );
+          },
         ),
         body: Column(
           children: [
@@ -235,7 +249,12 @@ class _LecturerScreenState extends State<LecturerScreen> {
               ),
             Expanded(
               child: TabBarView(
-                children: [_buildQuestions(), _buildNotes(), _buildResponses()],
+                children: [
+                  _buildQuestions(),
+                  _buildNotes(),
+                  _buildResponses(),
+                  _buildSurvey(),
+                ],
               ),
             ),
           ],
@@ -640,6 +659,79 @@ class _LecturerScreenState extends State<LecturerScreen> {
                 'Answer: ${response.submittedAnswer}'
                 '${response.isCorrect ? '' : '  (correct: ${response.correctAnswer})'}\n'
                 '${response.topicName} | ${response.answeredAt}',
+              ),
+              isThreeLine: true,
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildSurvey() {
+    if (_surveyResponses.isEmpty) {
+      return const Center(child: Text('No survey responses yet.'));
+    }
+    final totalStars = _surveyResponses.fold<int>(
+      0,
+      (sum, r) => sum + r.starRating,
+    );
+    final average = totalStars / _surveyResponses.length;
+    return RefreshIndicator(
+      onRefresh: _runRefresh,
+      child: ListView.builder(
+        padding: const EdgeInsets.all(12),
+        itemCount: _surveyResponses.length + 1,
+        itemBuilder: (_, index) {
+          if (index == 0) {
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 10, left: 4),
+              child: Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  _statChip(
+                    icon: Icons.poll_outlined,
+                    label: '${_surveyResponses.length} response(s)',
+                    color: _red,
+                  ),
+                  _statChip(
+                    icon: Icons.star_rounded,
+                    label: '${average.toStringAsFixed(1)} avg rating',
+                    color: Colors.amber.shade800,
+                  ),
+                ],
+              ),
+            );
+          }
+          final response = _surveyResponses[index - 1];
+          return Card(
+            elevation: 1.5,
+            margin: const EdgeInsets.only(bottom: 8),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: ListTile(
+              leading: CircleAvatar(
+                backgroundColor: Colors.amber.withValues(alpha: 0.15),
+                child: Text(
+                  '${response.starRating}★',
+                  style: TextStyle(
+                    color: Colors.amber.shade900,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 11,
+                  ),
+                ),
+              ),
+              title: Text(
+                '${response.status} · ${response.ageGroup}',
+                style: const TextStyle(fontWeight: FontWeight.w700),
+              ),
+              subtitle: Text(
+                'Kemudahan: ${response.easiness} | AR: ${response.arExperience}\n'
+                'Kesesuaian soalan: ${response.questionFit}'
+                '${response.comment == null ? '' : '\n"${response.comment}"'}\n'
+                '${response.submittedAt}',
               ),
               isThreeLine: true,
             ),

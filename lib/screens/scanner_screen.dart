@@ -1370,20 +1370,48 @@ class SurveyScreen extends StatefulWidget {
 class _SurveyScreenState extends State<SurveyScreen> {
   static const _red = Color(0xFF8B1A1A);
 
+  static const _statusOptions = [
+    'Pelajar',
+    'Guru / Pendidik',
+    'Pelancong',
+    'Lain-lain',
+  ];
+  static const _ageGroupOptions = [
+    '7 – 12 tahun',
+    '13 – 17 tahun',
+    '18 – 25 tahun',
+    '26 tahun ke atas',
+  ];
+  static const _easinessOptions = ['Sangat Mudah', 'Mudah', 'Sederhana', 'Sukar'];
+  static const _arExperienceOptions = [
+    'Sangat Menarik',
+    'Menarik',
+    'Biasa-biasa Sahaja',
+    'Tidak Menarik',
+  ];
+  static const _questionFitOptions = [
+    'Sangat Sesuai',
+    'Sesuai',
+    'Kurang Sesuai',
+    'Tidak Sesuai',
+  ];
+
   // Section 1 — Maklumat Responden
-  int? _status; // 0=Pelajar 1=Guru 2=Pelancong 3=Lain-lain
-  int? _ageGroup; // 0=7-12  1=13-17  2=18-25  3=26+
+  int? _status; // index into _statusOptions
+  int? _ageGroup; // index into _ageGroupOptions
 
   // Section 2 — Pengalaman App
-  int? _easiness; // 0=Sangat Mudah … 3=Sukar
-  int? _arExperience; // 0=Sangat Menarik … 3=Tidak Menarik
-  int? _questionFit; // 0=Sangat Sesuai … 3=Tidak Sesuai
+  int? _easiness; // index into _easinessOptions
+  int? _arExperience; // index into _arExperienceOptions
+  int? _questionFit; // index into _questionFitOptions
 
   // Section 3 — Penilaian & Cadangan
   int _starRating = 0;
   final _commentCtrl = TextEditingController();
 
   bool _submitted = false;
+  bool _submitting = false;
+  String? _submitError;
 
   @override
   void dispose() {
@@ -1399,9 +1427,39 @@ class _SurveyScreenState extends State<SurveyScreen> {
       _questionFit != null &&
       _starRating > 0;
 
-  void _submit() {
-    if (!_canSubmit) return;
-    setState(() => _submitted = true);
+  Future<void> _submit() async {
+    if (!_canSubmit || _submitting) return;
+    setState(() {
+      _submitting = true;
+      _submitError = null;
+    });
+    try {
+      await Ar3dApi.submitSurvey(
+        status: _statusOptions[_status!],
+        ageGroup: _ageGroupOptions[_ageGroup!],
+        easiness: _easinessOptions[_easiness!],
+        arExperience: _arExperienceOptions[_arExperience!],
+        questionFit: _questionFitOptions[_questionFit!],
+        starRating: _starRating,
+        comment: _commentCtrl.text.trim().isEmpty
+            ? null
+            : _commentCtrl.text.trim(),
+      );
+    } catch (_) {
+      if (mounted) {
+        setState(() {
+          _submitError =
+              'Tidak dapat menghantar maklum balas ke pelayan. Sila cuba lagi.';
+          _submitting = false;
+        });
+      }
+      return;
+    }
+    if (!mounted) return;
+    setState(() {
+      _submitting = false;
+      _submitted = true;
+    });
   }
 
   @override
@@ -1466,19 +1524,14 @@ class _SurveyScreenState extends State<SurveyScreen> {
 
         _questionLabel('1. Apakah status anda?', required: true),
         _radioGroup(
-          options: ['Pelajar', 'Guru / Pendidik', 'Pelancong', 'Lain-lain'],
+          options: _statusOptions,
           selected: _status,
           onChanged: (v) => setState(() => _status = v),
         ),
 
         _questionLabel('2. Peringkat umur anda?', required: true),
         _radioGroup(
-          options: [
-            '7 – 12 tahun',
-            '13 – 17 tahun',
-            '18 – 25 tahun',
-            '26 tahun ke atas',
-          ],
+          options: _ageGroupOptions,
           selected: _ageGroup,
           onChanged: (v) => setState(() => _ageGroup = v),
         ),
@@ -1491,7 +1544,7 @@ class _SurveyScreenState extends State<SurveyScreen> {
 
         _questionLabel('3. Adakah app i.-GB mudah digunakan?', required: true),
         _radioGroup(
-          options: ['Sangat Mudah', 'Mudah', 'Sederhana', 'Sukar'],
+          options: _easinessOptions,
           selected: _easiness,
           onChanged: (v) => setState(() => _easiness = v),
         ),
@@ -1501,12 +1554,7 @@ class _SurveyScreenState extends State<SurveyScreen> {
           required: true,
         ),
         _radioGroup(
-          options: [
-            'Sangat Menarik',
-            'Menarik',
-            'Biasa-biasa Sahaja',
-            'Tidak Menarik',
-          ],
+          options: _arExperienceOptions,
           selected: _arExperience,
           onChanged: (v) => setState(() => _arExperience = v),
         ),
@@ -1516,7 +1564,7 @@ class _SurveyScreenState extends State<SurveyScreen> {
           required: true,
         ),
         _radioGroup(
-          options: ['Sangat Sesuai', 'Sesuai', 'Kurang Sesuai', 'Tidak Sesuai'],
+          options: _questionFitOptions,
           selected: _questionFit,
           onChanged: (v) => setState(() => _questionFit = v),
         ),
@@ -1592,13 +1640,22 @@ class _SurveyScreenState extends State<SurveyScreen> {
           ),
         ),
 
+        if (_submitError != null) ...[
+          const SizedBox(height: 12),
+          Text(
+            _submitError!,
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Colors.red.shade700, fontSize: 13),
+          ),
+        ],
+
         const SizedBox(height: 28),
 
         // Submit button
         SizedBox(
           width: double.infinity,
           child: ElevatedButton(
-            onPressed: _canSubmit ? _submit : null,
+            onPressed: _canSubmit && !_submitting ? _submit : null,
             style: ElevatedButton.styleFrom(
               backgroundColor: _red,
               disabledBackgroundColor: Colors.grey.shade300,
@@ -1608,12 +1665,23 @@ class _SurveyScreenState extends State<SurveyScreen> {
                 borderRadius: BorderRadius.circular(12),
               ),
             ),
-            child: Text(
-              _canSubmit
-                  ? 'Hantar Maklum Balas'
-                  : 'Sila lengkapkan semua soalan (★)',
-              style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
-            ),
+            child: _submitting
+                ? const SizedBox.square(
+                    dimension: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : Text(
+                    _canSubmit
+                        ? 'Hantar Maklum Balas'
+                        : 'Sila lengkapkan semua soalan (★)',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 14,
+                    ),
+                  ),
           ),
         ),
       ],
