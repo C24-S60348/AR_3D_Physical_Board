@@ -37,7 +37,9 @@ dev_dependencies:
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: "assets/images/icon_igb.png"
+  # The logo is transparent where the badge does not reach, which iOS renders
+  # as black, so the icon is pre-composited onto the app's red.
+  image_path: "assets/images/icon_igb_red.png"
   min_sdk_android: 21
   web:
     generate: false
