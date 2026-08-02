@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>My Ar App</string>
+	<string>i-GB</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -34,7 +34,7 @@
 	<key>NSCameraUsageDescription</key>
 	<string>i.-GB uses the camera to scan the AR game board and detect landmark cards.</string>
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>i.-GB connects to the lecturer's local AR3D question server.</string>
+	<string>i-GB connects to the question server that holds the quiz questions and notes.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>i.-GB lets lecturers select images for questions.</string>
 	<key>UIApplicationSceneManifest</key>
