@@ -32,11 +32,11 @@
 		<true/>
 	</dict>
 	<key>NSCameraUsageDescription</key>
-	<string>i.-GB uses the camera to scan the AR game board and detect landmark cards.</string>
+	<string>i-GB uses the camera to scan the AR game board and detect landmark cards.</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>i-GB connects to the question server that holds the quiz questions and notes.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>i.-GB lets lecturers select images for questions.</string>
+	<string>i-GB lets lecturers select images for questions.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
