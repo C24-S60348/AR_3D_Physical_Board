@@ -23,91 +23,109 @@ const _levels = {'ASAS', 'SEDERHANA', 'APLIKASI', 'ANALISIS', 'CABARAN'};
 const _surveyFormUrl =
     'https://docs.google.com/document/d/1ChbU4IMW7VhZlvz1j5wR8oxkaac9YKgXy23pBwzAZAg/edit?usp=sharing';
 
-// Map from ARCore image name → (display name, asset path, place code, level)
+// Map from ARCore image name → (display name, asset path, place code, level,
+// checkpoint square). Each landmark is printed twice on the board — once early,
+// once late — so the two scan images carry different square numbers, and the
+// square is what decides how hard the questions are. See CHECKPOINTS in
+// server/ar3d/db.py for the board layout.
 const _placeInfo = <String, Map<String, String>>{
   'kotaafamosa-new': {
     'name': "Kota A'Famosa",
     'asset': 'assets/imagesscan/kotaafamosa-new.png',
     'place': 'kota-a-famosa',
     'topic': 'APLIKASI',
+    'checkpoint': '39',
   },
   'kotaafamosa-new2': {
     'name': "Kota A'Famosa",
     'asset': 'assets/imagesscan/kotaafamosa-new2.png',
     'place': 'kota-a-famosa',
     'topic': 'APLIKASI',
+    'checkpoint': '67',
   },
   'masjidcina-new': {
     'name': 'Masjid Cina Melaka',
     'asset': 'assets/imagesscan/masjidcina-new.png',
     'place': 'masjid-cina',
     'topic': 'ASAS',
+    'checkpoint': '35',
   },
   'masjidcina-new2': {
     'name': 'Masjid Cina Melaka',
     'asset': 'assets/imagesscan/masjidcina-new2.png',
     'place': 'masjid-cina',
     'topic': 'ASAS',
+    'checkpoint': '85',
   },
   'masjidselatmelaka-new': {
     'name': 'Masjid Selat Melaka',
     'asset': 'assets/imagesscan/masjidselatmelaka-new.png',
     'place': 'masjid-selat',
     'topic': 'SEDERHANA',
+    'checkpoint': '49',
   },
   'masjidselatmelaka-new2': {
     'name': 'Masjid Selat Melaka',
     'asset': 'assets/imagesscan/masjidselatmelaka-new2.png',
     'place': 'masjid-selat',
     'topic': 'SEDERHANA',
+    'checkpoint': '81',
   },
   'menaratamingsari-new': {
     'name': 'Menara Taming Sari',
     'asset': 'assets/imagesscan/menaratamingsari-new.png',
     'place': 'menara-taming-sari',
     'topic': 'APLIKASI',
+    'checkpoint': '18',
   },
   'menaratamingsari-new2': {
     'name': 'Menara Taming Sari',
     'asset': 'assets/imagesscan/menaratamingsari-new2.png',
     'place': 'menara-taming-sari',
     'topic': 'APLIKASI',
+    'checkpoint': '55',
   },
   'muziumsamudera-new': {
     'name': 'Muzium Samudera',
     'asset': 'assets/imagesscan/muziumsamudera-new.png',
     'place': 'muzium-samudera',
     'topic': 'ASAS',
+    'checkpoint': '8',
   },
   'muziumsamudera-new2': {
     'name': 'Muzium Samudera',
     'asset': 'assets/imagesscan/muziumsamudera-new2.png',
     'place': 'muzium-samudera',
     'topic': 'ASAS',
+    'checkpoint': '79',
   },
   'pantaiklebang-new': {
     'name': 'Pantai Klebang',
     'asset': 'assets/imagesscan/pantaiklebang-new.png',
     'place': 'pantai-klebang',
     'topic': 'ANALISIS',
+    'checkpoint': '25',
   },
   'pantaiklebang-new2': {
     'name': 'Pantai Klebang',
     'asset': 'assets/imagesscan/pantaiklebang-new2.png',
     'place': 'pantai-klebang',
     'topic': 'ANALISIS',
+    'checkpoint': '93',
   },
   'stadiumhangjebat-new': {
     'name': 'Stadium Hang Jebat',
     'asset': 'assets/imagesscan/stadiumhangjebat-new.png',
     'place': 'stadium-hang-jebat',
     'topic': 'CABARAN',
+    'checkpoint': '71',
   },
   'stadiumhangjebat-new2': {
     'name': 'Stadium Hang Jebat',
     'asset': 'assets/imagesscan/stadiumhangjebat-new2.png',
     'place': 'stadium-hang-jebat',
     'topic': 'CABARAN',
+    'checkpoint': '98',
   },
 };
 
@@ -269,6 +287,9 @@ class _ScannerScreenState extends State<ScannerScreen>
     // home screen sets the subject. Only Tourism Melaka is answered from the
     // landmark's own bank.
     final cardLevel = _placeInfo[normalizedName]?['topic'];
+    final checkpoint = int.tryParse(
+      _placeInfo[normalizedName]?['checkpoint'] ?? '',
+    );
     final wantsSejarah = _topic == _sejarahTopic;
     // Level buckets only exist under the secondary-school bank on the server;
     // Primary and Higher Education are drawn whole.
@@ -282,9 +303,20 @@ class _ScannerScreenState extends State<ScannerScreen>
     List<Question> questions = const [];
     String? failure;
     try {
+      // Questions pinned to this square win: the same landmark is printed on
+      // two squares, and the later one is meant to be harder. Topics whose
+      // questions are not pinned yet fall through to the older behaviour.
+      if (checkpoint != null) {
+        final pinned = await Ar3dApi.getQuestions(
+          _topic,
+          checkpoint: checkpoint,
+        );
+        // An older server ignores the filter and returns the whole topic.
+        questions = pinned.where((q) => q.checkpoint == checkpoint).toList();
+      }
       // Landmarks carry their own Sejarah Melaka question bank; fall back to
       // the topic bank when the server has none for this place yet.
-      if (wantsSejarah && place != null) {
+      if (questions.isEmpty && wantsSejarah && place != null) {
         final placeQuestions = await Ar3dApi.getQuestions(
           _sejarahTopic,
           place: place,

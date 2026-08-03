@@ -56,6 +56,7 @@ class Ar3dApi {
     String topic, {
     String? level,
     String? place,
+    int? checkpoint,
   }) async {
     if (!isConfigured) return const [];
 
@@ -67,6 +68,7 @@ class Ar3dApi {
               'topic': topic,
               if (level != null && level.isNotEmpty) 'level': level,
               if (place != null && place.isNotEmpty) 'place': place,
+              if (checkpoint != null) 'checkpoint': '$checkpoint',
             }),
           )
           .timeout(const Duration(seconds: 5));
@@ -289,6 +291,7 @@ class Ar3dApi {
     required String prompt,
     required List<String> acceptedAnswers,
     required bool isActive,
+    int? checkpoint,
     AdminQuestionImage? image,
   }) async {
     if (image != null) {
@@ -303,6 +306,7 @@ class Ar3dApi {
           'prompt': prompt,
           'accepted_answers': jsonEncode(acceptedAnswers),
           'is_active': isActive.toString(),
+          if (checkpoint != null) 'checkpoint': checkpoint.toString(),
         },
         image: image,
       );
@@ -319,6 +323,7 @@ class Ar3dApi {
         'prompt': prompt,
         'accepted_answers': acceptedAnswers,
         'is_active': isActive,
+        'checkpoint': ?checkpoint,
       },
     );
   }

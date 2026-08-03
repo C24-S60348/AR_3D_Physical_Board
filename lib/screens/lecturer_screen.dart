@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../data/checkpoints.dart';
 import '../data/questions_data.dart';
 import '../services/ar3d_api.dart';
 
@@ -95,6 +96,7 @@ class _LecturerScreenState extends State<LecturerScreen> {
               required prompt,
               required acceptedAnswers,
               required isActive,
+              required checkpoint,
               image,
             }) => Ar3dApi.saveAdminQuestion(
               password: _password!,
@@ -103,6 +105,7 @@ class _LecturerScreenState extends State<LecturerScreen> {
               prompt: prompt,
               acceptedAnswers: acceptedAnswers,
               isActive: isActive,
+              checkpoint: checkpoint,
               image: image,
             ),
       ),
@@ -1128,6 +1131,7 @@ class _QuestionEditor extends StatefulWidget {
     required String prompt,
     required List<String> acceptedAnswers,
     required bool isActive,
+    required int? checkpoint,
     AdminQuestionImage? image,
   })
   onSave;
@@ -1146,6 +1150,7 @@ class _QuestionEditorState extends State<_QuestionEditor> {
   late final TextEditingController _promptController;
   late final TextEditingController _answersController;
   late int _topicId;
+  int? _checkpoint;
   late bool _isActive;
   Uint8List? _selectedImageBytes;
   String? _selectedImageName;
@@ -1162,6 +1167,7 @@ class _QuestionEditorState extends State<_QuestionEditor> {
       text: question?.acceptedAnswers.join('\n') ?? '',
     );
     _topicId = question?.topicId ?? widget.topics.first.id;
+    _checkpoint = question?.checkpoint;
     _isActive = question?.isActive ?? true;
   }
 
@@ -1235,6 +1241,10 @@ class _QuestionEditorState extends State<_QuestionEditor> {
       setState(() => _error = 'Question and at least one answer are required.');
       return;
     }
+    if (_checkpoint == null) {
+      setState(() => _error = 'Choose the checkpoint this question belongs to.');
+      return;
+    }
     setState(() {
       _saving = true;
       _error = null;
@@ -1245,6 +1255,7 @@ class _QuestionEditorState extends State<_QuestionEditor> {
         prompt: prompt,
         acceptedAnswers: answers,
         isActive: _isActive,
+        checkpoint: _checkpoint,
         image: _selectedImageBytes == null
             ? null
             : AdminQuestionImage(
@@ -1308,6 +1319,30 @@ class _QuestionEditorState extends State<_QuestionEditor> {
                 onChanged: _saving
                     ? null
                     : (value) => setState(() => _topicId = value!),
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<int>(
+                initialValue: _checkpoint,
+                isExpanded: true,
+                decoration: _fieldDecoration(
+                  'Checkpoint',
+                  helperText: 'The later the square, the harder the question',
+                ),
+                items: boardCheckpoints
+                    .map(
+                      (checkpoint) => DropdownMenuItem(
+                        value: checkpoint.square,
+                        child: Text(
+                          checkpoint.label,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    )
+                    .toList(),
+                onChanged: _saving
+                    ? null
+                    : (value) => setState(() => _checkpoint = value),
               ),
               const SizedBox(height: 16),
               TextField(

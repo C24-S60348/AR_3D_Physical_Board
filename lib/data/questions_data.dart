@@ -3,6 +3,10 @@ class Question {
   final int? topicId;
   final String? level;
   final String? place;
+
+  /// The square on the printed board this question belongs to, when the
+  /// lecturer has pinned it to one. See the checkpoint list in the admin.
+  final int? checkpoint;
   final String topic;
   final String question;
   final List<String> options;
@@ -18,6 +22,7 @@ class Question {
     this.topicId,
     this.level,
     this.place,
+    this.checkpoint,
     required this.topic,
     required this.question,
     required this.options,
@@ -70,6 +75,7 @@ class Question {
       topicId: json['topic_id'] as int?,
       level: json['level'] as String?,
       place: json['place'] as String?,
+      checkpoint: json['checkpoint'] as int?,
       topic: json['topic_name'] as String? ?? '',
       question: json['prompt'] as String? ?? '',
       options: options,
