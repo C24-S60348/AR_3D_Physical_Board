@@ -39,4 +39,4 @@ The generated bundle is:
 build/app/outputs/bundle/release/app-release.aab
 ```
 
-Current project version: `1.0.10+10`.
+Current project version: `1.0.10+11`.

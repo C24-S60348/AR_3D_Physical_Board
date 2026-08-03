@@ -33,6 +33,18 @@
 	</dict>
 	<key>NSCameraUsageDescription</key>
 	<string>i-GB uses the camera to scan the AR game board and detect landmark cards.</string>
+	<!-- ar_flutter_plugin bundles geolocator for its ARLocationManager, which
+	     i-GB never calls, so these prompts are never shown. App Store validation
+	     still requires a purpose string for every location API the binary
+	     references (ITMS-90683). -->
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>i-GB does not use your location. Its augmented reality library includes location features that i-GB leaves switched off.</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>i-GB does not use your location. Its augmented reality library includes location features that i-GB leaves switched off.</string>
+	<key>NSLocationUsageDescription</key>
+	<string>i-GB does not use your location. Its augmented reality library includes location features that i-GB leaves switched off.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>i-GB does not use your location. Its augmented reality library includes location features that i-GB leaves switched off.</string>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>i-GB connects to the question server that holds the quiz questions and notes.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
