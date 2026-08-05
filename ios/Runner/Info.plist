@@ -37,6 +37,8 @@
 	<string>i.-GB connects to the lecturer's local AR3D question server.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>i.-GB lets lecturers select images for questions.</string>
+	<key>NSPhotoLibraryAddUsageDescription</key>
+	<string>i.-GB saves note images to your photo library when you tap download.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

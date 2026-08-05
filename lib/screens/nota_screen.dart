@@ -1,4 +1,8 @@
+import 'dart:io';
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
+import 'package:gal/gal.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../services/ar3d_api.dart';
@@ -488,11 +492,64 @@ class _NotaPermainanTabState extends State<_NotaPermainanTab> {
   }
 }
 
-class _NotaCard extends StatelessWidget {
+class _NotaCard extends StatefulWidget {
   final GameNote nota;
   const _NotaCard({required this.nota});
 
+  @override
+  State<_NotaCard> createState() => _NotaCardState();
+}
+
+class _NotaCardState extends State<_NotaCard> {
   static const _red = Color(0xFF8B1A1A);
+  bool _downloading = false;
+
+  GameNote get nota => widget.nota;
+
+  Future<void> _downloadImage() async {
+    final url = nota.imageUrl;
+    if (url == null || _downloading) return;
+    setState(() => _downloading = true);
+    try {
+      final hasAccess = await Gal.hasAccess() || await Gal.requestAccess();
+      if (!hasAccess) {
+        throw StateError('Photo library access was not granted.');
+      }
+      final client = HttpClient();
+      Uint8List bytes;
+      try {
+        final request = await client.getUrl(Uri.parse(url));
+        final response = await request.close();
+        if (response.statusCode != HttpStatus.ok) {
+          throw HttpException(
+            'Failed to download image (${response.statusCode}).',
+          );
+        }
+        final builder = BytesBuilder(copy: false);
+        await response.forEach(builder.add);
+        bytes = builder.takeBytes();
+      } finally {
+        client.close(force: true);
+      }
+      await Gal.putImageBytes(
+        bytes,
+        name: 'nota_${DateTime.now().millisecondsSinceEpoch}',
+      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Imej disimpan ke galeri.')),
+        );
+      }
+    } catch (error) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal menyimpan imej: $error')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _downloading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -535,12 +592,35 @@ class _NotaCard extends StatelessWidget {
               ],
             ),
           ),
-          if (nota.imageUrl != null)
+          if (nota.imageUrl != null) ...[
             Image.network(
               nota.imageUrl!,
               fit: BoxFit.cover,
               errorBuilder: (_, _, _) => const SizedBox.shrink(),
             ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 10, 16, 0),
+              child: SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  onPressed: _downloading ? null : _downloadImage,
+                  icon: _downloading
+                      ? const SizedBox.square(
+                          dimension: 16,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.download_rounded),
+                  label: Text(
+                    _downloading ? 'Menyimpan...' : 'Muat Turun Imej',
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: _red,
+                    side: const BorderSide(color: _red),
+                  ),
+                ),
+              ),
+            ),
+          ],
           Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
