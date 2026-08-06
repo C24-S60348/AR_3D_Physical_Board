@@ -39,5 +39,15 @@ end
 post_install do |installer|
   installer.pods_project.targets.each do |target|
     flutter_additional_ios_build_settings(target)
+
+    # permission_handler_apple compiles every permission out unless its macro
+    # is defined, so without this the AR view's camera request returns denied
+    # without iOS ever prompting, and no Camera row appears in Settings.
+    target.build_configurations.each do |config|
+      defined = config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] || ['$(inherited)']
+      defined = [defined] unless defined.is_a?(Array)
+      config.build_settings['GCC_PREPROCESSOR_DEFINITIONS'] =
+        defined + ['PERMISSION_CAMERA=1']
+    end
   end
 end

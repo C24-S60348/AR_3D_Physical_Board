@@ -1,7 +1,7 @@
 name: my_ar_app
 description: "i.-GB — Interactive Game Board with AR (Melaka Theme)"
 publish_to: 'none'
-version: 1.0.8+8
+version: 1.0.10+11
 
 environment:
   sdk: ^3.11.5
@@ -38,7 +38,12 @@ dev_dependencies:
 flutter_launcher_icons:
   android: true
   ios: true
-  image_path: "assets/images/icon_igb.png"
+  # The logo is transparent where the badge does not reach, which iOS renders
+  # as black, so the icon is pre-composited onto the app's red.
+  image_path: "assets/images/icon_igb_red.png"
+  # iOS crops the icon to a rounded square, so the logo is inset to 72% to leave
+  # a visible red border instead of bleeding off every edge.
+  image_path_ios: "assets/images/icon_igb_red_ios.png"
   min_sdk_android: 21
   web:
     generate: false
@@ -51,4 +56,5 @@ flutter:
     - assets/models/
     - assets/images/
     - assets/images/topics/
+    - assets/images/logoforeachnoteimage/
     - assets/sounds/

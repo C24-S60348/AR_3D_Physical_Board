@@ -1,6 +1,7 @@
 import 'dart:math';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:ar_flutter_plugin/ar_flutter_plugin.dart';
 import 'package:ar_flutter_plugin/managers/ar_session_manager.dart';
 import 'package:ar_flutter_plugin/managers/ar_object_manager.dart';
@@ -14,91 +15,117 @@ import '../utils/emulator_check.dart';
 // Server topic holding the Sejarah Melaka questions for the scanned landmarks.
 const _sejarahTopic = 'Tourism Melaka';
 
-// Map from ARCore image name → (display name, asset path, place code, level)
+// Difficulty buckets the cards map to, as stored on the server.
+const _levels = {'ASAS', 'SEDERHANA', 'APLIKASI', 'ANALISIS', 'CABARAN'};
+
+// The Soal Selidik button opens the shared i-GB questionnaire in the browser
+// rather than the in-app form; SurveyScreen is kept for the /survey route.
+const _surveyFormUrl =
+    'https://docs.google.com/document/d/1ChbU4IMW7VhZlvz1j5wR8oxkaac9YKgXy23pBwzAZAg/edit?usp=sharing';
+
+// Map from ARCore image name → (display name, asset path, place code, level,
+// checkpoint square). Each landmark is printed twice on the board — once early,
+// once late — so the two scan images carry different square numbers, and the
+// square is what decides how hard the questions are. See CHECKPOINTS in
+// server/ar3d/db.py for the board layout.
 const _placeInfo = <String, Map<String, String>>{
   'kotaafamosa-new': {
     'name': "Kota A'Famosa",
     'asset': 'assets/imagesscan/kotaafamosa-new.png',
     'place': 'kota-a-famosa',
     'topic': 'APLIKASI',
+    'checkpoint': '39',
   },
   'kotaafamosa-new2': {
     'name': "Kota A'Famosa",
     'asset': 'assets/imagesscan/kotaafamosa-new2.png',
     'place': 'kota-a-famosa',
     'topic': 'APLIKASI',
+    'checkpoint': '67',
   },
   'masjidcina-new': {
     'name': 'Masjid Cina Melaka',
     'asset': 'assets/imagesscan/masjidcina-new.png',
     'place': 'masjid-cina',
     'topic': 'ASAS',
+    'checkpoint': '35',
   },
   'masjidcina-new2': {
     'name': 'Masjid Cina Melaka',
     'asset': 'assets/imagesscan/masjidcina-new2.png',
     'place': 'masjid-cina',
     'topic': 'ASAS',
+    'checkpoint': '85',
   },
   'masjidselatmelaka-new': {
     'name': 'Masjid Selat Melaka',
     'asset': 'assets/imagesscan/masjidselatmelaka-new.png',
     'place': 'masjid-selat',
     'topic': 'SEDERHANA',
+    'checkpoint': '49',
   },
   'masjidselatmelaka-new2': {
     'name': 'Masjid Selat Melaka',
     'asset': 'assets/imagesscan/masjidselatmelaka-new2.png',
     'place': 'masjid-selat',
     'topic': 'SEDERHANA',
+    'checkpoint': '81',
   },
   'menaratamingsari-new': {
     'name': 'Menara Taming Sari',
     'asset': 'assets/imagesscan/menaratamingsari-new.png',
     'place': 'menara-taming-sari',
     'topic': 'APLIKASI',
+    'checkpoint': '18',
   },
   'menaratamingsari-new2': {
     'name': 'Menara Taming Sari',
     'asset': 'assets/imagesscan/menaratamingsari-new2.png',
     'place': 'menara-taming-sari',
     'topic': 'APLIKASI',
+    'checkpoint': '55',
   },
   'muziumsamudera-new': {
     'name': 'Muzium Samudera',
     'asset': 'assets/imagesscan/muziumsamudera-new.png',
     'place': 'muzium-samudera',
     'topic': 'ASAS',
+    'checkpoint': '8',
   },
   'muziumsamudera-new2': {
     'name': 'Muzium Samudera',
     'asset': 'assets/imagesscan/muziumsamudera-new2.png',
     'place': 'muzium-samudera',
     'topic': 'ASAS',
+    'checkpoint': '79',
   },
   'pantaiklebang-new': {
     'name': 'Pantai Klebang',
     'asset': 'assets/imagesscan/pantaiklebang-new.png',
     'place': 'pantai-klebang',
     'topic': 'ANALISIS',
+    'checkpoint': '25',
   },
   'pantaiklebang-new2': {
     'name': 'Pantai Klebang',
     'asset': 'assets/imagesscan/pantaiklebang-new2.png',
     'place': 'pantai-klebang',
     'topic': 'ANALISIS',
+    'checkpoint': '93',
   },
   'stadiumhangjebat-new': {
     'name': 'Stadium Hang Jebat',
     'asset': 'assets/imagesscan/stadiumhangjebat-new.png',
     'place': 'stadium-hang-jebat',
     'topic': 'CABARAN',
+    'checkpoint': '71',
   },
   'stadiumhangjebat-new2': {
     'name': 'Stadium Hang Jebat',
     'asset': 'assets/imagesscan/stadiumhangjebat-new2.png',
     'place': 'stadium-hang-jebat',
     'topic': 'CABARAN',
+    'checkpoint': '98',
   },
 };
 
@@ -256,16 +283,40 @@ class _ScannerScreenState extends State<ScannerScreen>
       '',
     );
     final place = _placeInfo[normalizedName]?['place'];
-    final placeTopic = _placeInfo[normalizedName]?['topic'] ?? _topic;
-    // Level buckets (ASAS..CABARAN) live under the secondary-school topic on
-    // the server; other place topics map to a server topic directly.
-    final isLevel = questionsByLevel.containsKey(placeTopic);
+    // The card sets the difficulty (ASAS..CABARAN); the topic picked on the
+    // home screen sets the subject. Only Tourism Melaka is answered from the
+    // landmark's own bank.
+    final cardLevel = _placeInfo[normalizedName]?['topic'];
+    final checkpoint = int.tryParse(
+      _placeInfo[normalizedName]?['checkpoint'] ?? '',
+    );
+    final wantsSejarah = _topic == _sejarahTopic;
+    // Level buckets only exist under the secondary-school bank on the server;
+    // Primary and Higher Education are drawn whole.
+    final useLevel =
+        _topic == 'Maths for Secondary Students' &&
+        cardLevel != null &&
+        _levels.contains(cardLevel);
 
+    // Questions always come from the server, so a scan shows what the lecturer
+    // published right now. There is no offline copy to fall back to.
     List<Question> questions = const [];
+    String? failure;
     try {
+      // Questions pinned to this square win: the same landmark is printed on
+      // two squares, and the later one is meant to be harder. Topics whose
+      // questions are not pinned yet fall through to the older behaviour.
+      if (checkpoint != null) {
+        final pinned = await Ar3dApi.getQuestions(
+          _topic,
+          checkpoint: checkpoint,
+        );
+        // An older server ignores the filter and returns the whole topic.
+        questions = pinned.where((q) => q.checkpoint == checkpoint).toList();
+      }
       // Landmarks carry their own Sejarah Melaka question bank; fall back to
       // the topic bank when the server has none for this place yet.
-      if (place != null) {
+      if (questions.isEmpty && wantsSejarah && place != null) {
         final placeQuestions = await Ar3dApi.getQuestions(
           _sejarahTopic,
           place: place,
@@ -274,23 +325,21 @@ class _ScannerScreenState extends State<ScannerScreen>
         questions = placeQuestions.where((q) => q.place == place).toList();
       }
       if (questions.isEmpty) {
-        questions = isLevel
-            ? await Ar3dApi.getQuestions(
-                'Maths for Secondary Students',
-                level: placeTopic,
-              )
-            : await Ar3dApi.getQuestions(placeTopic);
-        if (isLevel) {
-          questions = questions.where((q) => q.level == placeTopic).toList();
+        questions = useLevel
+            ? await Ar3dApi.getQuestions(_topic, level: cardLevel)
+            : await Ar3dApi.getQuestions(_topic);
+        if (useLevel) {
+          questions = questions.where((q) => q.level == cardLevel).toList();
         }
       }
+      if (questions.isEmpty) {
+        failure = 'Tiada soalan untuk topik ini buat masa sekarang.';
+      }
     } catch (_) {
-      // Keep scanning available when the configured server cannot be reached.
+      failure = 'Tidak dapat menghubungi pelayan. Sila semak sambungan '
+          'internet anda, kemudian imbas semula.';
     }
-    if (questions.isEmpty) {
-      questions = getQuestionsForTopic(placeTopic);
-    }
-    if (questions.isEmpty) {
+    if (failure != null) {
       if (mounted && generation == _detectionGeneration) {
         setState(() {
           _isHandlingDetection = false;
@@ -298,6 +347,9 @@ class _ScannerScreenState extends State<ScannerScreen>
           _cameraActive = true;
           _cameraGeneration++;
         });
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(failure)));
       }
       return;
     }
@@ -396,24 +448,19 @@ class _ScannerScreenState extends State<ScannerScreen>
   Future<void> _openSurvey() async {
     if (_openingSurvey) return;
     _openingSurvey = true;
-
-    setState(() {
-      _cameraActive = false;
-      _sessionManager = null;
-    });
-
-    // Let Flutter remove the native AR view before opening the form page.
-    await WidgetsBinding.instance.endOfFrame;
-    if (!mounted) return;
-
-    await Navigator.pushNamed(context, '/survey');
-    if (!mounted) return;
-
-    setState(() {
-      _cameraActive = true;
-      _cameraGeneration++;
+    try {
+      final opened = await launchUrl(
+        Uri.parse(_surveyFormUrl),
+        mode: LaunchMode.externalApplication,
+      );
+      if (!opened && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Tidak dapat membuka borang soal selidik.')),
+        );
+      }
+    } finally {
       _openingSurvey = false;
-    });
+    }
   }
 
   void _dismissQuestion() {

@@ -2,6 +2,9 @@
 
 Tooling for the 66 landmark questions in `docs/sejarahmelakaquestions/`.
 
+Background on how the pipeline works and why:
+[`devnotes/sejarah-docx-to-api.md`](../../devnotes/sejarah-docx-to-api.md).
+
 ## Parse
 
 ```bash
