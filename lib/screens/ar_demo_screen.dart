@@ -10,6 +10,7 @@ import 'package:ar_flutter_plugin/models/ar_node.dart';
 import 'package:ar_flutter_plugin/models/ar_anchor.dart';
 import 'package:ar_flutter_plugin/datatypes/node_types.dart';
 import 'package:vector_math/vector_math_64.dart' as vector;
+import '../utils/ar_support.dart';
 import '../utils/emulator_check.dart';
 
 class ARDemoScreen extends StatefulWidget {
@@ -32,6 +33,7 @@ class _ARDemoScreenState extends State<ARDemoScreen> {
   int _objectCount = 0;
   bool _isReady = false;
   bool _isEmulator = false;
+  ArSupport _arSupport = ArSupport.ready;
   bool _deviceChecked = false;
 
   @override
@@ -42,7 +44,16 @@ class _ARDemoScreenState extends State<ARDemoScreen> {
 
   Future<void> _checkIfEmulator() async {
     final emulator = await isRunningOnEmulator();
-    if (mounted) setState(() { _isEmulator = emulator; _deviceChecked = true; });
+    // The app installs on phones without ARCore, so this screen must not build
+    // an ARView there either.
+    final support = emulator ? ArSupport.unsupported : await checkArSupport();
+    if (mounted) {
+      setState(() {
+        _isEmulator = emulator;
+        _arSupport = support;
+        _deviceChecked = true;
+      });
+    }
   }
 
   // Asset paths for bundled GLB models (loaded directly from flutter_assets/)
@@ -60,7 +71,7 @@ class _ARDemoScreenState extends State<ARDemoScreen> {
     if (!_deviceChecked) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
-    if (_isEmulator) {
+    if (_isEmulator || !_arSupport.canScan) {
       return _buildEmulatorPlaceholder(context);
     }
     return Scaffold(

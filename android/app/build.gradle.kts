@@ -56,6 +56,13 @@ android {
     }
 }
 
+dependencies {
+    // MainActivity calls ArCoreApk directly to answer the Dart-side support
+    // check. ar_flutter_plugin already pulls this in transitively; naming the
+    // same version keeps it on the app module's own compile classpath.
+    implementation("com.google.ar:core:1.52.0")
+}
+
 flutter {
     source = "../.."
 }

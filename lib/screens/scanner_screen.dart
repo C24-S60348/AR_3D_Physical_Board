@@ -10,6 +10,7 @@ import 'package:ar_flutter_plugin/managers/ar_location_manager.dart';
 import 'package:ar_flutter_plugin/datatypes/config_planedetection.dart';
 import '../data/questions_data.dart';
 import '../services/ar3d_api.dart';
+import '../utils/ar_support.dart';
 import '../utils/emulator_check.dart';
 
 // Server topic holding the Sejarah Melaka questions for the scanned landmarks.
@@ -144,6 +145,7 @@ class _ScannerScreenState extends State<ScannerScreen>
   String _topic = 'Sejarah Melaka';
 
   bool _isEmulator = false;
+  ArSupport _arSupport = ArSupport.ready;
   bool _deviceChecked = false;
 
   // Flip card state
@@ -198,14 +200,18 @@ class _ScannerScreenState extends State<ScannerScreen>
       curve: Curves.elasticOut,
     );
 
-    _checkIfEmulator();
+    _checkDeviceSupport();
   }
 
-  Future<void> _checkIfEmulator() async {
+  Future<void> _checkDeviceSupport() async {
     final emulator = await isRunningOnEmulator();
+    // The app installs on phones ARCore does not support, so ask before
+    // building an ARView that would never detect a card.
+    final support = emulator ? ArSupport.unsupported : await checkArSupport();
     if (mounted) {
       setState(() {
         _isEmulator = emulator;
+        _arSupport = support;
         _deviceChecked = true;
       });
     }
@@ -482,8 +488,8 @@ class _ScannerScreenState extends State<ScannerScreen>
     if (!_deviceChecked) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
     }
-    if (_isEmulator) {
-      return _buildEmulatorPlaceholder(context);
+    if (_isEmulator || !_arSupport.canScan) {
+      return _buildUnsupportedPlaceholder(context);
     }
     return Scaffold(
       body: Stack(
@@ -674,7 +680,31 @@ class _ScannerScreenState extends State<ScannerScreen>
     );
   }
 
-  Widget _buildEmulatorPlaceholder(BuildContext context) {
+  /// Shown instead of the camera when this device cannot run the AR scanner —
+  /// either an emulator, or a phone Google does not support with ARCore.
+  Widget _buildUnsupportedPlaceholder(BuildContext context) {
+    final needsInstall =
+        !_isEmulator && _arSupport == ArSupport.needsArCoreInstall;
+    final String body;
+    final String badge;
+    if (_isEmulator) {
+      body =
+          'Ciri pengimbas memerlukan kamera peranti fizikal.\n\nSila gunakan telefon sebenar untuk mengimbas papan permainan.';
+      badge = '🖥️ Emulator dikesan — Kamera tidak tersedia';
+    } else if (needsInstall) {
+      body =
+          'Telefon ini menyokong AR, tetapi aplikasi "Google Play Services '
+          'for AR" belum dipasang atau perlu dikemas kini.\n\n'
+          'Pasang aplikasi tersebut, kemudian buka semula pengimbas.';
+      badge = '⬇️ Google Play Services for AR diperlukan';
+    } else {
+      body =
+          'Telefon ini tidak menyokong ARCore, teknologi Google yang '
+          'diperlukan untuk mengimbas kad papan permainan.\n\n'
+          'Anda masih boleh menggunakan Nota, Papan Permainan dan Soal '
+          'Selidik seperti biasa.';
+      badge = '📵 ARCore tidak disokong pada peranti ini';
+    }
     return Scaffold(
       backgroundColor: const Color(0xFF1A1A2E),
       body: SafeArea(
@@ -724,10 +754,10 @@ class _ScannerScreenState extends State<ScannerScreen>
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 12),
-                      const Text(
-                        'Ciri pengimbas memerlukan kamera peranti fizikal.\n\nSila gunakan telefon sebenar untuk mengimbas papan permainan.',
+                      Text(
+                        body,
                         textAlign: TextAlign.center,
-                        style: TextStyle(
+                        style: const TextStyle(
                           color: Colors.white60,
                           fontSize: 14,
                           height: 1.5,
@@ -744,14 +774,33 @@ class _ScannerScreenState extends State<ScannerScreen>
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(color: Colors.white24),
                         ),
-                        child: const Text(
-                          '🖥️ Emulator dikesan — Kamera tidak tersedia',
-                          style: TextStyle(
+                        child: Text(
+                          badge,
+                          style: const TextStyle(
                             color: Colors.yellowAccent,
                             fontSize: 12,
                           ),
                         ),
                       ),
+                      if (needsInstall) ...[
+                        const SizedBox(height: 20),
+                        ElevatedButton.icon(
+                          onPressed: () => launchUrl(
+                            Uri.parse(arCoreStoreUrl),
+                            mode: LaunchMode.externalApplication,
+                          ),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: _red,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 20,
+                              vertical: 12,
+                            ),
+                          ),
+                          icon: const Icon(Icons.download, size: 18),
+                          label: const Text('Pasang Google Play Services for AR'),
+                        ),
+                      ],
                     ],
                   ),
                 ),

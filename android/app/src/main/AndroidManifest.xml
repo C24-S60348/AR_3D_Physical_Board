@@ -6,15 +6,19 @@
     <!-- Internet for loading remote GLB models -->
     <uses-permission android:name="android.permission.INTERNET"/>
 
-    <!-- ARCore requires camera hardware.
+    <!-- i-GB is an "AR Optional" app.
 
-         Deliberately NOT declaring android.hardware.camera.ar. That is a system
-         feature flag the manufacturer bakes into the device image, and plenty of
-         ARCore-certified phones never declare it, so requiring it hides the app
-         from devices ARCore genuinely supports (the Oppo A3 Pro among them).
-         Play still restricts the app to certified devices through the
-         com.google.ar.core "required" meta-data below, which filters against
-         Google's own ARCore device list. -->
+         Marking AR as required makes Google Play refuse to install on any device
+         that does not declare the android.hardware.camera.ar system feature, and
+         plenty of phones never declare it — the Oppo A3 Pro reported "Your device
+         isn't compatible with this version" even though it is on Google's ARCore
+         device list. Play also rejects a bundle that asks for com.google.ar.core
+         "required" without this uses-feature, so the two must agree.
+
+         Declaring both as optional lets every phone install the app and use the
+         notes, the board, and the quiz. ArCoreSupport checks availability at
+         runtime and the scanner explains itself when AR is unavailable. -->
+    <uses-feature android:name="android.hardware.camera.ar" android:required="false"/>
     <uses-feature android:name="android.hardware.camera" android:required="true"/>
 
     <application
@@ -22,10 +26,12 @@
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
 
-        <!-- Override plugin's "optional" to "required" — ARCore must be present -->
+        <!-- "optional" matches the plugin's own default and the uses-feature above.
+             Google Play Services for AR is then installed on demand, only on the
+             devices that support it. -->
         <meta-data
             android:name="com.google.ar.core"
-            android:value="required"
+            android:value="optional"
             tools:replace="android:value"/>
 
         <activity
