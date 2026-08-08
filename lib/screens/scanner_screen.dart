@@ -156,6 +156,10 @@ class _ScannerScreenState extends State<ScannerScreen>
   int _cameraGeneration = 0;
   int _detectionGeneration = 0;
   String? _detectedImageName;
+  // The image the user just dismissed with "Bukan, Imbas Semula" — ignored
+  // until a different image is detected, so aiming at the same card the
+  // camera is still pointed at doesn't immediately re-trigger it.
+  String? _ignoredImageName;
   late AnimationController _flipController;
   late Animation<double> _flipAnim;
 
@@ -257,10 +261,36 @@ class _ScannerScreenState extends State<ScannerScreen>
       if (!_isHandlingDetection &&
           !_showingFlipCard &&
           !_showingQuestion &&
-          mounted) {
-        _triggerFlipCard(imageName);
+          mounted &&
+          _normalizeImageName(imageName) != _ignoredImageName) {
+        _scheduleFlipCard(imageName);
       }
     };
+  }
+
+  static String _normalizeImageName(String raw) =>
+      raw.toLowerCase().replaceAll(RegExp(r'\.(png|jpg|jpeg)$'), '');
+
+  // A raw detection just means the camera glimpsed the card; give the user a
+  // moment to actually aim at it before locking on and freezing the camera.
+  static const _aimDelay = Duration(milliseconds: 700);
+
+  void _scheduleFlipCard(String imageName) {
+    // A different card is being aimed at, so the last dismissed one no
+    // longer needs to be ignored.
+    _ignoredImageName = null;
+    _isHandlingDetection = true;
+    final cameraGeneration = _cameraGeneration;
+    Future.delayed(_aimDelay, () {
+      if (!mounted ||
+          cameraGeneration != _cameraGeneration ||
+          _showingFlipCard ||
+          _showingQuestion) {
+        _isHandlingDetection = false;
+        return;
+      }
+      _triggerFlipCard(imageName);
+    });
   }
 
   Future<void> _triggerFlipCard(String imageName) async {
@@ -284,10 +314,7 @@ class _ScannerScreenState extends State<ScannerScreen>
       _sessionManager = null;
     });
 
-    final normalizedName = imageName.toLowerCase().replaceAll(
-      RegExp(r'\.(png|jpg|jpeg)$'),
-      '',
-    );
+    final normalizedName = _normalizeImageName(imageName);
     final place = _placeInfo[normalizedName]?['place'];
     // The card sets the difficulty (ASAS..CABARAN); the topic picked on the
     // home screen sets the subject. Only Tourism Melaka is answered from the
@@ -396,6 +423,10 @@ class _ScannerScreenState extends State<ScannerScreen>
   }
 
   void _scanAgain() {
+    // "Bukan, Imbas Semula" means this specific card was wrong — remember it
+    // so the scanner doesn't immediately re-detect the same card the camera
+    // is still pointed at.
+    _ignoredImageName = _detectedImageName;
     _detectionGeneration++;
     _isHandlingDetection = false;
     _flipController.reset();

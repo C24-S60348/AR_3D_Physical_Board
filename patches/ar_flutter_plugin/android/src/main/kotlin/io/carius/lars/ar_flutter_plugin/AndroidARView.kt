@@ -5,6 +5,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Rect
+import android.opengl.Matrix
 import android.os.Handler
 import android.os.HandlerThread
 import android.util.Log
@@ -43,8 +44,22 @@ internal class AndroidARView(
 
     private val arSceneView: ARSceneView
 
-    // Image-based AR tracking
-    private val detectedImages = mutableSetOf<String>()
+    // Image-based AR tracking. Currently-tracking images, keyed by name and
+    // refreshed with their latest pose every frame they update.
+    private val trackedImages = mutableMapOf<String, AugmentedImage>()
+
+    // The image this AR session has already reported to Flutter. Only one
+    // detection is ever reported per session — Flutter tears down and
+    // recreates this whole view to scan again.
+    private var reportedImageName: String? = null
+
+    // The best-centred tracked image right now, and how long it has held
+    // that spot. A card is only reported once it has been the most-centred
+    // tracked image continuously for aimDwellMs, giving the user a moment to
+    // aim instead of triggering on whatever the camera first glimpses.
+    private var aimCandidateName: String? = null
+    private var aimCandidateSinceMs: Long = 0L
+    private val aimDwellMs = 700L
 
     // Plane-tap anchor tracking (AR 3D demo)
     private val planeAnchorNodes = mutableMapOf<String, AnchorNode>()
@@ -136,21 +151,67 @@ internal class AndroidARView(
     private fun processAugmentedImages(frame: Frame) {
         frame.getUpdatedTrackables(AugmentedImage::class.java).forEach { img ->
             when (img.trackingState) {
-                TrackingState.TRACKING -> {
-                    if (detectedImages.add(img.name)) {
-                        activity.runOnUiThread {
-                            sessionManagerChannel.invokeMethod(
-                                "onImageDetected", mapOf("name" to img.name)
-                            )
-                        }
-                    }
-                }
-                TrackingState.PAUSED, TrackingState.STOPPED -> {
-                    detectedImages.remove(img.name)
-                }
+                TrackingState.TRACKING -> trackedImages[img.name] = img
+                TrackingState.PAUSED, TrackingState.STOPPED -> trackedImages.remove(img.name)
                 else -> {}
             }
         }
+
+        if (reportedImageName != null || trackedImages.isEmpty()) {
+            aimCandidateName = null
+            return
+        }
+
+        val centeredName = try {
+            mostCenteredImageName(frame)
+        } catch (e: Exception) {
+            Log.w(TAG, "Centring check failed: ${e.message}")
+            null
+        } ?: trackedImages.keys.first()
+
+        val now = System.currentTimeMillis()
+        if (aimCandidateName != centeredName) {
+            aimCandidateName = centeredName
+            aimCandidateSinceMs = now
+            return
+        }
+        if (now - aimCandidateSinceMs < aimDwellMs) return
+
+        reportedImageName = centeredName
+        activity.runOnUiThread {
+            sessionManagerChannel.invokeMethod("onImageDetected", mapOf("name" to centeredName))
+        }
+    }
+
+    /** Picks whichever tracked image's centre sits closest to the middle of the screen. */
+    private fun mostCenteredImageName(frame: Frame): String? {
+        val camera = frame.camera
+        if (camera.trackingState != TrackingState.TRACKING) return null
+
+        val viewMatrix = FloatArray(16)
+        val projMatrix = FloatArray(16)
+        camera.getViewMatrix(viewMatrix, 0)
+        camera.getProjectionMatrix(projMatrix, 0, 0.1f, 100f)
+        val viewProjMatrix = FloatArray(16)
+        Matrix.multiplyMM(viewProjMatrix, 0, projMatrix, 0, viewMatrix, 0)
+
+        var bestName: String? = null
+        var bestDistance = Float.MAX_VALUE
+        for ((name, img) in trackedImages) {
+            val pose = img.centerPose
+            val world = floatArrayOf(pose.tx(), pose.ty(), pose.tz(), 1f)
+            val clip = FloatArray(4)
+            Matrix.multiplyMV(clip, 0, viewProjMatrix, 0, world, 0)
+            if (clip[3] <= 0.0001f) continue // behind the camera
+            val ndcX = clip[0] / clip[3]
+            val ndcY = clip[1] / clip[3]
+            val distance = ndcX * ndcX + ndcY * ndcY
+            if (distance < bestDistance) {
+                bestDistance = distance
+                bestName = name
+            }
+        }
+        return bestName
     }
 
     // ──────────────────────────────────────────────────────────────
@@ -395,7 +456,7 @@ internal class AndroidARView(
         try {
             planeAnchorNodes.values.forEach { it.anchor?.detach() }
             planeAnchorNodes.clear()
-            detectedImages.clear()
+            trackedImages.clear()
             arSceneView.destroy()
         } catch (e: Exception) {
             e.printStackTrace()
