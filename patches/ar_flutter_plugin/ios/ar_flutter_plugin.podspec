@@ -26,7 +26,7 @@ A Flutter plugin for shared AR experiences supporting Android and iOS.
   # GoogleToolboxForMac altogether, and moves nanopb, GTMSessionFetcher and
   # GoogleDataTransport to versions that ship manifests.
   s.dependency 'ARCore/CloudAnchors', '~> 1.49.0'
-  s.platform = :ios, '13.0'
+  s.platform = :ios, '15.0'
 
 
   # Flutter.framework does not contain a i386 slice.
