@@ -19,11 +19,6 @@ const _sejarahTopic = 'Tourism Melaka';
 // Difficulty buckets the cards map to, as stored on the server.
 const _levels = {'ASAS', 'SEDERHANA', 'APLIKASI', 'ANALISIS', 'CABARAN'};
 
-// The Soal Selidik button opens the shared i-GB questionnaire in the browser
-// rather than the in-app form; SurveyScreen is kept for the /survey route.
-const _surveyFormUrl =
-    'https://docs.google.com/document/d/1ChbU4IMW7VhZlvz1j5wR8oxkaac9YKgXy23pBwzAZAg/edit?usp=sharing';
-
 // Map from ARCore image name → (display name, asset path, place code, level,
 // checkpoint square). Each landmark is printed twice on the board — once early,
 // once late — so the two scan images carry different square numbers, and the
@@ -209,8 +204,9 @@ class _ScannerScreenState extends State<ScannerScreen>
 
   Future<void> _checkDeviceSupport() async {
     final emulator = await isRunningOnEmulator();
-    // The app installs on phones ARCore does not support, so ask before
-    // building an ARView that would never detect a card.
+    // Play only installs the app on ARCore devices, but sideloads and a missing
+    // Play Services for AR still happen, so confirm before building an ARView
+    // that would never detect a card.
     final support = emulator ? ArSupport.unsupported : await checkArSupport();
     if (mounted) {
       setState(() {
@@ -486,15 +482,10 @@ class _ScannerScreenState extends State<ScannerScreen>
     if (_openingSurvey) return;
     _openingSurvey = true;
     try {
-      final opened = await launchUrl(
-        Uri.parse(_surveyFormUrl),
-        mode: LaunchMode.externalApplication,
-      );
-      if (!opened && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Tidak dapat membuka borang soal selidik.')),
-        );
-      }
+      // The in-app form posts to /api/ar3d/survey, so the answers land in the
+      // database and show up under Survey in the Lecturer Admin screen. A
+      // Google Form would put them somewhere the admin panel cannot read.
+      await Navigator.pushNamed(context, '/survey');
     } finally {
       _openingSurvey = false;
     }

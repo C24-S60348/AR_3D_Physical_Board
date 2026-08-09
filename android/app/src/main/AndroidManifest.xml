@@ -6,20 +6,16 @@
     <!-- Internet for loading remote GLB models -->
     <uses-permission android:name="android.permission.INTERNET"/>
 
-    <!-- i-GB is an "AR Optional" app.
+    <!-- i-GB requires ARCore. Scanning the printed cards is the point of the
+         app, so Google Play should say "Your device isn't compatible with this
+         version" on the listing rather than let someone install it and find the
+         scanner dead. That is why an Oppo A3 Pro and a Realme tablet cannot
+         install: ARCore does not support them.
 
-         Requiring ARCore makes Google Play hide the app from any device that
-         does not declare the android.hardware.camera.ar system feature, which
-         is how an Oppo A3 Pro and a Realme tablet ended up reporting "Your
-         device isn't compatible with this version". Play also rejects a bundle
-         that asks for com.google.ar.core "required" without this uses-feature,
-         so the two must agree.
-
-         Declaring both optional lets every phone install the app and use the
-         notes, the board, and the quiz. checkArSupport() in lib/utils/ar_support.dart
-         asks ARCore at runtime and the scanner explains itself when AR is
-         unavailable, rather than opening a camera that cannot track. -->
-    <uses-feature android:name="android.hardware.camera.ar" android:required="false"/>
+         Play rejects a bundle whose com.google.ar.core meta-data disagrees with
+         this flag, so the two below must stay in step. checkArSupport() still
+         guards the scanner at runtime as a safety net. -->
+    <uses-feature android:name="android.hardware.camera.ar" android:required="true"/>
     <uses-feature android:name="android.hardware.camera" android:required="true"/>
 
     <application
@@ -27,12 +23,12 @@
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
 
-        <!-- "optional" matches the plugin's own default and the uses-feature
-             above. Google Play Services for AR is then installed on demand,
-             only on the devices that support it. -->
+        <!-- "required" matches the uses-feature above, so Play's device filter
+             and the ARCore installability check agree. Play then also installs
+             Google Play Services for AR alongside the app. -->
         <meta-data
             android:name="com.google.ar.core"
-            android:value="optional"
+            android:value="required"
             tools:replace="android:value"/>
 
         <activity
