@@ -20,7 +20,12 @@ A Flutter plugin for shared AR experiences supporting Android and iOS.
   s.static_framework = true
   #s.dependency 'ARCore/CloudAnchors', '~> 1.12.0'
   #s.dependency 'ARCore', '~> 1.2.0'
-  s.dependency 'ARCore/CloudAnchors', '~> 1.32.0'
+  # ARCore 1.32 pinned Firebase below 10.0, and Firebase 9.x predates Apple's
+  # privacy manifest requirement, so App Store review rejected the build with
+  # nine ITMS-91061 errors. ARCore 1.49 requires Firebase 11+, drops
+  # GoogleToolboxForMac altogether, and moves nanopb, GTMSessionFetcher and
+  # GoogleDataTransport to versions that ship manifests.
+  s.dependency 'ARCore/CloudAnchors', '~> 1.49.0'
   s.platform = :ios, '13.0'
 
 
