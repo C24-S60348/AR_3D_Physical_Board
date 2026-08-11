@@ -103,6 +103,8 @@ class _LecturerScreenState extends State<LecturerScreen> {
               required acceptedAnswers,
               required isActive,
               required checkpoint,
+              required level,
+              required options,
               image,
             }) => Ar3dApi.saveAdminQuestion(
               password: _password!,
@@ -112,6 +114,8 @@ class _LecturerScreenState extends State<LecturerScreen> {
               acceptedAnswers: acceptedAnswers,
               isActive: isActive,
               checkpoint: checkpoint,
+              level: level,
+              options: options,
               image: image,
             ),
       ),
@@ -1459,6 +1463,8 @@ class _QuestionEditor extends StatefulWidget {
     required List<String> acceptedAnswers,
     required bool isActive,
     required int? checkpoint,
+    required String? level,
+    required List<String> options,
     AdminQuestionImage? image,
   })
   onSave;
@@ -1479,6 +1485,16 @@ class _QuestionEditorState extends State<_QuestionEditor> {
   late int _topicId;
   int? _checkpoint;
   String? _place;
+  String? _level;
+  late final TextEditingController _optionsController;
+
+  /// Every bucket the server accepts. Secondary uses ASAS-CABARAN and primary
+  /// uses the card colours, but the editor does not police which topic gets
+  /// which — the lecturer knows better than a hardcoded rule.
+  static const _levels = <String>[
+    'ASAS', 'SEDERHANA', 'APLIKASI', 'ANALISIS', 'CABARAN',
+    'HIJAU', 'BIRU', 'UNGU', 'EMAS',
+  ];
 
   /// Squares for this question's own landmark first.
   ///
@@ -1525,12 +1541,17 @@ class _QuestionEditorState extends State<_QuestionEditor> {
     _topicId = question?.topicId ?? widget.topics.first.id;
     _checkpoint = question?.checkpoint;
     _place = question?.place;
+    _level = question?.level;
+    _optionsController = TextEditingController(
+      text: (question?.options ?? const []).join('\n'),
+    );
     _isActive = question?.isActive ?? true;
   }
 
   @override
   void dispose() {
     _promptController.dispose();
+    _optionsController.dispose();
     _answersController.dispose();
     super.dispose();
   }
@@ -1609,6 +1630,12 @@ class _QuestionEditorState extends State<_QuestionEditor> {
         acceptedAnswers: answers,
         isActive: _isActive,
         checkpoint: _checkpoint,
+        level: _level,
+        options: _optionsController.text
+            .split('\n')
+            .map((option) => option.trim())
+            .where((option) => option.isNotEmpty)
+            .toList(),
         image: _selectedImageBytes == null
             ? null
             : AdminQuestionImage(
@@ -1705,6 +1732,31 @@ class _QuestionEditorState extends State<_QuestionEditor> {
                     : (value) => setState(() => _checkpoint = value),
               ),
               const SizedBox(height: 16),
+              DropdownButtonFormField<String?>(
+                initialValue: _level,
+                isExpanded: true,
+                decoration: _fieldDecoration(
+                  'Level',
+                  helperText:
+                      'Secondary draws by level; other topics can leave this empty',
+                ),
+                items: [
+                  const DropdownMenuItem<String?>(
+                    value: null,
+                    child: Text('Tiada'),
+                  ),
+                  ..._levels.map(
+                    (level) => DropdownMenuItem<String?>(
+                      value: level,
+                      child: Text(level),
+                    ),
+                  ),
+                ],
+                onChanged: _saving
+                    ? null
+                    : (value) => setState(() => _level = value),
+              ),
+              const SizedBox(height: 16),
               TextField(
                 controller: _promptController,
                 enabled: !_saving,
@@ -1732,6 +1784,25 @@ class _QuestionEditorState extends State<_QuestionEditor> {
                 alignment: Alignment.centerLeft,
                 child: Text(
                   'Example: 0.5, 0.50, and 1/2 can be entered on separate lines.',
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _optionsController,
+                enabled: !_saving,
+                maxLines: 4,
+                decoration: _fieldDecoration(
+                  'Multiple-choice options, one per line',
+                  hintText: 'Belanda\nPortugis\nBritish\nJepun',
+                ),
+              ),
+              const SizedBox(height: 6),
+              const Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Leave empty for a typed answer. Two or more lines make it '
+                  'an A/B/C/D question, and the accepted answer above must '
+                  'match one of them.',
                 ),
               ),
               SwitchListTile(

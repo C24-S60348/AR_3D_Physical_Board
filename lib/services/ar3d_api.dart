@@ -293,6 +293,8 @@ class Ar3dApi {
     required List<String> acceptedAnswers,
     required bool isActive,
     int? checkpoint,
+    String? level,
+    List<String>? options,
     AdminQuestionImage? image,
   }) async {
     if (image != null) {
@@ -310,6 +312,9 @@ class Ar3dApi {
           // Always sent, empty when cleared, so the server can tell a
           // deliberate "no checkpoint" from a field left out.
           'checkpoint': checkpoint?.toString() ?? '',
+          // Sent even when empty so the editor can clear them.
+          'level': level ?? '',
+          'options': jsonEncode(options ?? const <String>[]),
         },
         image: image,
       );
@@ -328,6 +333,8 @@ class Ar3dApi {
         'is_active': isActive,
         // Sent even when null so clearing a checkpoint actually clears it.
         'checkpoint': checkpoint?.toString() ?? '',
+        'level': level ?? '',
+        'options': options ?? const <String>[],
       },
     );
   }
