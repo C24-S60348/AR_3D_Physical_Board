@@ -98,12 +98,14 @@ class Ar3dApi {
         .toList();
   }
 
+  /// Posts the Borang Soal Selidik. [ratings] maps every item code in
+  /// lib/data/survey_items.dart to its 1-4 score; the server rejects the
+  /// submission if any is missing.
   static Future<void> submitSurvey({
-    required String status,
+    required String gender,
     required String ageGroup,
-    required String easiness,
-    required String arExperience,
-    required String questionFit,
+    required String status,
+    required Map<String, int> ratings,
     required int starRating,
     String? comment,
   }) async {
@@ -111,11 +113,10 @@ class Ar3dApi {
       'POST',
       '/api/ar3d/survey',
       body: {
-        'status': status,
+        'gender': gender,
         'age_group': ageGroup,
-        'easiness': easiness,
-        'ar_experience': arExperience,
-        'question_fit': questionFit,
+        'status': status,
+        'ratings': ratings,
         'star_rating': starRating,
         if (comment != null && comment.isNotEmpty) 'comment': comment,
       },
@@ -584,9 +585,11 @@ class SurveyResponse {
   final int id;
   final String status;
   final String ageGroup;
-  final String easiness;
-  final String arExperience;
-  final String questionFit;
+  /// Empty on responses collected before the TAM questionnaire replaced the
+  /// original short form.
+  final String gender;
+  /// Item code to score 1-4. Empty for those same older responses.
+  final Map<String, int> ratings;
   final int starRating;
   final String? comment;
   final String submittedAt;
@@ -595,22 +598,29 @@ class SurveyResponse {
     required this.id,
     required this.status,
     required this.ageGroup,
-    required this.easiness,
-    required this.arExperience,
-    required this.questionFit,
+    required this.gender,
+    required this.ratings,
     required this.starRating,
     this.comment,
     required this.submittedAt,
   });
 
+  bool get isDetailed => ratings.isNotEmpty;
+
+  /// Mean score across every answered item, or null when there are none.
+  double? get averageScore => ratings.isEmpty
+      ? null
+      : ratings.values.reduce((a, b) => a + b) / ratings.length;
+
   factory SurveyResponse.fromJson(Map<String, dynamic> json) =>
       SurveyResponse(
         id: json['id'] as int,
-        status: json['status'] as String,
-        ageGroup: json['age_group'] as String,
-        easiness: json['easiness'] as String,
-        arExperience: json['ar_experience'] as String,
-        questionFit: json['question_fit'] as String,
+        status: json['status'] as String? ?? '',
+        ageGroup: json['age_group'] as String? ?? '',
+        gender: json['gender'] as String? ?? '',
+        ratings: ((json['ratings'] as Map<dynamic, dynamic>?) ?? const {}).map(
+          (key, value) => MapEntry('$key', (value as num).toInt()),
+        ),
         starRating: json['star_rating'] as int,
         comment: json['comment'] as String?,
         submittedAt: json['submitted_at'] as String,

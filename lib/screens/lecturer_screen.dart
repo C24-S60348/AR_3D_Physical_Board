@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../data/checkpoints.dart';
 import '../data/questions_data.dart';
+import '../data/survey_items.dart';
 import '../services/ar3d_api.dart';
 
 class LecturerScreen extends StatefulWidget {
@@ -577,6 +578,48 @@ class _LecturerScreenState extends State<LecturerScreen> {
                     ),
                   ),
                 ),
+              // Whether the learner picks A/B/C/D or types the answer is not
+              // otherwise visible from the list, and it changes how the
+              // question has to be written.
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 2,
+                ),
+                decoration: BoxDecoration(
+                  color: question.isMultipleChoice
+                      ? Colors.indigo.withValues(alpha: 0.12)
+                      : Colors.teal.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      question.isMultipleChoice
+                          ? Icons.list_alt
+                          : Icons.keyboard_alt_outlined,
+                      size: 12,
+                      color: question.isMultipleChoice
+                          ? Colors.indigo.shade700
+                          : Colors.teal.shade700,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      question.isMultipleChoice
+                          ? '${question.options.length} pilihan'
+                          : 'Jawapan taip',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: question.isMultipleChoice
+                            ? Colors.indigo.shade700
+                            : Colors.teal.shade700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
               Text(
                 question.acceptedAnswers.join(' | '),
                 style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
@@ -671,6 +714,130 @@ class _LecturerScreenState extends State<LecturerScreen> {
     );
   }
 
+  /// The full 28-item breakdown for one response, grouped as the form is.
+  void _showSurveyDetail(SurveyResponse response) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
+      ),
+      builder: (sheetContext) => DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.85,
+        builder: (_, controller) => ListView(
+          controller: controller,
+          padding: const EdgeInsets.fromLTRB(18, 18, 18, 32),
+          children: [
+            Text(
+              [
+                response.status,
+                response.ageGroup,
+                if (response.gender.isNotEmpty) response.gender,
+              ].join(' · '),
+              style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              '${response.starRating}★  ·  purata '
+              '${response.averageScore!.toStringAsFixed(2)}/4  ·  '
+              '${response.submittedAt}',
+              style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
+            ),
+            const Divider(height: 24),
+            for (final section in surveySections) ...[
+              Text(
+                section.title,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w900,
+                  color: _red,
+                ),
+              ),
+              const SizedBox(height: 6),
+              for (final construct in section.constructs) ...[
+                Padding(
+                  padding: const EdgeInsets.only(top: 8, bottom: 2),
+                  child: Text(
+                    construct.name,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                for (final item in construct.items)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 3),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          width: 26,
+                          height: 26,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: _scoreColour(response.ratings[item.code]),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            '${response.ratings[item.code] ?? '-'}',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            item.text,
+                            style: const TextStyle(fontSize: 12.5, height: 1.35),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+              const SizedBox(height: 14),
+            ],
+            if (response.comment != null) ...[
+              const Text(
+                'Komen',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w900,
+                  color: _red,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                response.comment!,
+                style: const TextStyle(fontSize: 13, height: 1.4),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  static Color _scoreColour(int? score) {
+    switch (score) {
+      case 1:
+        return Colors.red.shade400;
+      case 2:
+        return Colors.orange.shade400;
+      case 3:
+        return Colors.lightGreen.shade600;
+      case 4:
+        return Colors.green.shade600;
+      default:
+        return Colors.grey;
+    }
+  }
+
   Widget _buildSurvey() {
     if (_surveyResponses.isEmpty) {
       return const Center(child: Text('No survey responses yet.'));
@@ -727,16 +894,32 @@ class _LecturerScreenState extends State<LecturerScreen> {
                 ),
               ),
               title: Text(
-                '${response.status} · ${response.ageGroup}',
+                [
+                  response.status,
+                  response.ageGroup,
+                  if (response.gender.isNotEmpty) response.gender,
+                ].join(' · '),
                 style: const TextStyle(fontWeight: FontWeight.w700),
               ),
               subtitle: Text(
-                'Kemudahan: ${response.easiness} | AR: ${response.arExperience}\n'
-                'Kesesuaian soalan: ${response.questionFit}'
-                '${response.comment == null ? '' : '\n"${response.comment}"'}\n'
-                '${response.submittedAt}',
+                [
+                  // Older responses predate the TAM form and carry no items.
+                  if (response.isDetailed)
+                    '${response.ratings.length} item dijawab · '
+                        'purata ${response.averageScore!.toStringAsFixed(2)}/4'
+                  else
+                    'Borang lama — tiada skor item',
+                  if (response.comment != null) '"${response.comment}"',
+                  response.submittedAt,
+                ].join('\n'),
               ),
               isThreeLine: true,
+              onTap: response.isDetailed
+                  ? () => _showSurveyDetail(response)
+                  : null,
+              trailing: response.isDetailed
+                  ? const Icon(Icons.chevron_right)
+                  : null,
             ),
           );
         },
