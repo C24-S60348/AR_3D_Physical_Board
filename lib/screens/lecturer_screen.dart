@@ -508,6 +508,16 @@ class _LecturerScreenState extends State<LecturerScreen> {
     );
   }
 
+  /// "Square 39 — Kota A'Famosa", or just the number if it is not on the board.
+  static String _checkpointLabel(int square) {
+    for (final checkpoint in boardCheckpoints) {
+      if (checkpoint.square == square) {
+        return 'Sq $square · ${checkpoint.name}';
+      }
+    }
+    return 'Sq $square';
+  }
+
   Widget _questionCard(Question question) {
     return Card(
       elevation: 1.5,
@@ -576,6 +586,39 @@ class _LecturerScreenState extends State<LecturerScreen> {
                       fontWeight: FontWeight.w700,
                       color: Colors.amber.shade900,
                     ),
+                  ),
+                ),
+              // Which square a question is pinned to was invisible here, so
+              // there was no way to tell a pinned question from a loose one
+              // without opening it.
+              if (question.checkpoint != null)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.place_outlined,
+                        size: 12,
+                        color: Colors.blue.shade800,
+                      ),
+                      const SizedBox(width: 3),
+                      Text(
+                        _checkpointLabel(question.checkpoint!),
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.blue.shade800,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               // Whether the learner picks A/B/C/D or types the answer is not
@@ -1334,6 +1377,35 @@ class _QuestionEditorState extends State<_QuestionEditor> {
   late final TextEditingController _answersController;
   late int _topicId;
   int? _checkpoint;
+  String? _place;
+
+  /// Squares for this question's own landmark first.
+  ///
+  /// A landmark is printed on the board twice, so a Kota A'Famosa question
+  /// belongs on one of Kota A'Famosa's two squares — 39 or 67 — and scrolling
+  /// past the other twelve to find them is needless work.
+  List<BoardCheckpoint> get _orderedCheckpoints {
+    final place = _place;
+    if (place == null || place.isEmpty) return boardCheckpoints;
+    final matching = boardCheckpoints.where((c) => c.place == place).toList();
+    if (matching.isEmpty) return boardCheckpoints;
+    return [
+      ...matching,
+      ...boardCheckpoints.where((c) => c.place != place),
+    ];
+  }
+
+  String get _checkpointHelperText {
+    final place = _place;
+    if (place != null && place.isNotEmpty) {
+      final matching = boardCheckpoints.where((c) => c.place == place);
+      if (matching.isNotEmpty) {
+        final squares = matching.map((c) => c.square).join(' or ');
+        return 'This card is printed on square $squares — listed first';
+      }
+    }
+    return 'Optional. The later the square, the harder the question';
+  }
   late bool _isActive;
   Uint8List? _selectedImageBytes;
   String? _selectedImageName;
@@ -1351,6 +1423,7 @@ class _QuestionEditorState extends State<_QuestionEditor> {
     );
     _topicId = question?.topicId ?? widget.topics.first.id;
     _checkpoint = question?.checkpoint;
+    _place = question?.place;
     _isActive = question?.isActive ?? true;
   }
 
@@ -1422,10 +1495,6 @@ class _QuestionEditorState extends State<_QuestionEditor> {
         .toList();
     if (prompt.isEmpty || answers.isEmpty) {
       setState(() => _error = 'Question and at least one answer are required.');
-      return;
-    }
-    if (_checkpoint == null) {
-      setState(() => _error = 'Choose the checkpoint this question belongs to.');
       return;
     }
     setState(() {
@@ -1504,25 +1573,32 @@ class _QuestionEditorState extends State<_QuestionEditor> {
                     : (value) => setState(() => _topicId = value!),
               ),
               const SizedBox(height: 16),
-              DropdownButtonFormField<int>(
+              DropdownButtonFormField<int?>(
                 initialValue: _checkpoint,
                 isExpanded: true,
                 decoration: _fieldDecoration(
                   'Checkpoint',
-                  helperText: 'The later the square, the harder the question',
+                  helperText: _checkpointHelperText,
                 ),
-                items: boardCheckpoints
-                    .map(
-                      (checkpoint) => DropdownMenuItem(
-                        value: checkpoint.square,
-                        child: Text(
-                          checkpoint.label,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                items: [
+                  // Only the primary bank pins questions to squares. Secondary
+                  // sorts by level and Higher Education is drawn whole, so
+                  // leaving this empty has to stay possible.
+                  const DropdownMenuItem<int?>(
+                    value: null,
+                    child: Text('Tiada — soalan untuk seluruh topik'),
+                  ),
+                  ..._orderedCheckpoints.map(
+                    (checkpoint) => DropdownMenuItem<int?>(
+                      value: checkpoint.square,
+                      child: Text(
+                        checkpoint.label,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    )
-                    .toList(),
+                    ),
+                  ),
+                ],
                 onChanged: _saving
                     ? null
                     : (value) => setState(() => _checkpoint = value),

@@ -307,7 +307,9 @@ class Ar3dApi {
           'prompt': prompt,
           'accepted_answers': jsonEncode(acceptedAnswers),
           'is_active': isActive.toString(),
-          if (checkpoint != null) 'checkpoint': checkpoint.toString(),
+          // Always sent, empty when cleared, so the server can tell a
+          // deliberate "no checkpoint" from a field left out.
+          'checkpoint': checkpoint?.toString() ?? '',
         },
         image: image,
       );
@@ -324,7 +326,8 @@ class Ar3dApi {
         'prompt': prompt,
         'accepted_answers': acceptedAnswers,
         'is_active': isActive,
-        'checkpoint': ?checkpoint,
+        // Sent even when null so clearing a checkpoint actually clears it.
+        'checkpoint': checkpoint?.toString() ?? '',
       },
     );
   }
