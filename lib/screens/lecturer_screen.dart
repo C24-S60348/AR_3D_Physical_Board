@@ -26,6 +26,11 @@ class _LecturerScreenState extends State<LecturerScreen> {
   List<AdminResponse> _responses = const [];
   List<SurveyResponse> _surveyResponses = const [];
 
+  /// Questions tab filter. null shows everything; _noCheckpoint shows only the
+  /// questions that are not pinned to a square.
+  int? _checkpointFilter;
+  static const _noCheckpoint = -1;
+
   @override
   void dispose() {
     _passwordController.dispose();
@@ -417,16 +422,95 @@ class _LecturerScreenState extends State<LecturerScreen> {
     );
   }
 
+  List<Question> get _filteredQuestions {
+    final filter = _checkpointFilter;
+    if (filter == null) return _questions;
+    if (filter == _noCheckpoint) {
+      return _questions.where((q) => q.checkpoint == null).toList();
+    }
+    return _questions.where((q) => q.checkpoint == filter).toList();
+  }
+
+  /// How many questions sit on each square, so the filter can show its counts
+  /// without opening anything.
+  Map<int, int> get _countsByCheckpoint {
+    final counts = <int, int>{};
+    for (final question in _questions) {
+      final square = question.checkpoint;
+      if (square != null) counts[square] = (counts[square] ?? 0) + 1;
+    }
+    return counts;
+  }
+
   Map<String, List<Question>> get _questionsByTopic {
     final grouped = <String, List<Question>>{};
     for (final topic in _topics) {
       grouped[topic.name] = [];
     }
-    for (final question in _questions) {
+    for (final question in _filteredQuestions) {
       grouped.putIfAbsent(question.topic, () => []).add(question);
     }
     grouped.removeWhere((_, questions) => questions.isEmpty);
     return grouped;
+  }
+
+  /// Lets a lecturer see one square at a time, to check every checkpoint has
+  /// questions of its own.
+  Widget _checkpointFilterBar() {
+    final counts = _countsByCheckpoint;
+    final unpinned = _questions.where((q) => q.checkpoint == null).length;
+    return SizedBox(
+      height: 40,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        children: [
+          _filterChip('Semua', null, _questions.length),
+          _filterChip('Tiada checkpoint', _noCheckpoint, unpinned),
+          for (final checkpoint in boardCheckpoints)
+            _filterChip(
+              'Sq ${checkpoint.square} · ${checkpoint.name}',
+              checkpoint.square,
+              counts[checkpoint.square] ?? 0,
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _filterChip(String label, int? value, int count) {
+    final selected = _checkpointFilter == value;
+    // A square with nothing on it is the thing worth spotting, so it is shown
+    // rather than hidden.
+    final empty = count == 0;
+    return Padding(
+      padding: const EdgeInsets.only(right: 6),
+      child: FilterChip(
+        selected: selected,
+        onSelected: (_) => setState(() => _checkpointFilter = value),
+        label: Text('$label  ($count)'),
+        labelStyle: TextStyle(
+          fontSize: 11.5,
+          fontWeight: selected ? FontWeight.w800 : FontWeight.w500,
+          color: selected
+              ? _red
+              : (empty ? Colors.red.shade400 : Colors.black87),
+        ),
+        selectedColor: _red.withValues(alpha: 0.14),
+        backgroundColor: Colors.white,
+        showCheckmark: false,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(
+            color: selected
+                ? _red
+                : (empty
+                      ? Colors.red.withValues(alpha: 0.4)
+                      : Colors.grey.withValues(alpha: 0.35)),
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _buildQuestions() {
@@ -436,11 +520,22 @@ class _LecturerScreenState extends State<LecturerScreen> {
     final active = _questions.where((q) => q.isActive).length;
     final grouped = _questionsByTopic;
     final topicNames = grouped.keys.toList();
+    if (topicNames.isEmpty) {
+      return Column(
+        children: [
+          const SizedBox(height: 8),
+          _checkpointFilterBar(),
+          const Expanded(
+            child: Center(child: Text('Tiada soalan untuk checkpoint ini.')),
+          ),
+        ],
+      );
+    }
     return RefreshIndicator(
       onRefresh: _runRefresh,
       child: ListView.builder(
         padding: const EdgeInsets.fromLTRB(12, 12, 12, 90),
-        itemCount: topicNames.length + 1,
+        itemCount: topicNames.length + 2,
         itemBuilder: (_, index) {
           if (index == 0) {
             return Padding(
@@ -469,7 +564,13 @@ class _LecturerScreenState extends State<LecturerScreen> {
               ),
             );
           }
-          final topicName = topicNames[index - 1];
+          if (index == 1) {
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: _checkpointFilterBar(),
+            );
+          }
+          final topicName = topicNames[index - 2];
           final topicQuestions = grouped[topicName]!;
           final topicActive = topicQuestions.where((q) => q.isActive).length;
           return Card(
