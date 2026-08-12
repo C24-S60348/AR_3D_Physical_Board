@@ -47,7 +47,7 @@ class Ar3dApiTestCase(unittest.TestCase):
     def test_health_and_topics(self):
         health = self.client.get("/api/ar3d/health")
         self.assertEqual(health.status_code, 200)
-        self.assertEqual(health.get_json()["version"], "2026.08.03.1")
+        self.assertEqual(health.get_json()["version"], "2026.08.11.2")
         response = self.client.get("/api/ar3d/topics")
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(response.get_json()["topics"]), 4)

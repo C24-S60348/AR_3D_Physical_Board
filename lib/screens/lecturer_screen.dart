@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 
 import '../data/checkpoints.dart';
 import '../data/questions_data.dart';
+import '../data/survey_items.dart';
 import '../services/ar3d_api.dart';
 
 class LecturerScreen extends StatefulWidget {
@@ -24,6 +25,11 @@ class _LecturerScreenState extends State<LecturerScreen> {
   List<GameNote> _notes = const [];
   List<AdminResponse> _responses = const [];
   List<SurveyResponse> _surveyResponses = const [];
+
+  /// Questions tab filter. null shows everything; _noCheckpoint shows only the
+  /// questions that are not pinned to a square.
+  int? _checkpointFilter;
+  static const _noCheckpoint = -1;
 
   @override
   void dispose() {
@@ -97,6 +103,8 @@ class _LecturerScreenState extends State<LecturerScreen> {
               required acceptedAnswers,
               required isActive,
               required checkpoint,
+              required level,
+              required options,
               image,
             }) => Ar3dApi.saveAdminQuestion(
               password: _password!,
@@ -106,6 +114,8 @@ class _LecturerScreenState extends State<LecturerScreen> {
               acceptedAnswers: acceptedAnswers,
               isActive: isActive,
               checkpoint: checkpoint,
+              level: level,
+              options: options,
               image: image,
             ),
       ),
@@ -416,16 +426,95 @@ class _LecturerScreenState extends State<LecturerScreen> {
     );
   }
 
+  List<Question> get _filteredQuestions {
+    final filter = _checkpointFilter;
+    if (filter == null) return _questions;
+    if (filter == _noCheckpoint) {
+      return _questions.where((q) => q.checkpoint == null).toList();
+    }
+    return _questions.where((q) => q.checkpoint == filter).toList();
+  }
+
+  /// How many questions sit on each square, so the filter can show its counts
+  /// without opening anything.
+  Map<int, int> get _countsByCheckpoint {
+    final counts = <int, int>{};
+    for (final question in _questions) {
+      final square = question.checkpoint;
+      if (square != null) counts[square] = (counts[square] ?? 0) + 1;
+    }
+    return counts;
+  }
+
   Map<String, List<Question>> get _questionsByTopic {
     final grouped = <String, List<Question>>{};
     for (final topic in _topics) {
       grouped[topic.name] = [];
     }
-    for (final question in _questions) {
+    for (final question in _filteredQuestions) {
       grouped.putIfAbsent(question.topic, () => []).add(question);
     }
     grouped.removeWhere((_, questions) => questions.isEmpty);
     return grouped;
+  }
+
+  /// Lets a lecturer see one square at a time, to check every checkpoint has
+  /// questions of its own.
+  Widget _checkpointFilterBar() {
+    final counts = _countsByCheckpoint;
+    final unpinned = _questions.where((q) => q.checkpoint == null).length;
+    return SizedBox(
+      height: 40,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        children: [
+          _filterChip('Semua', null, _questions.length),
+          _filterChip('Tiada checkpoint', _noCheckpoint, unpinned),
+          for (final checkpoint in boardCheckpoints)
+            _filterChip(
+              'Sq ${checkpoint.square} · ${checkpoint.name}',
+              checkpoint.square,
+              counts[checkpoint.square] ?? 0,
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _filterChip(String label, int? value, int count) {
+    final selected = _checkpointFilter == value;
+    // A square with nothing on it is the thing worth spotting, so it is shown
+    // rather than hidden.
+    final empty = count == 0;
+    return Padding(
+      padding: const EdgeInsets.only(right: 6),
+      child: FilterChip(
+        selected: selected,
+        onSelected: (_) => setState(() => _checkpointFilter = value),
+        label: Text('$label  ($count)'),
+        labelStyle: TextStyle(
+          fontSize: 11.5,
+          fontWeight: selected ? FontWeight.w800 : FontWeight.w500,
+          color: selected
+              ? _red
+              : (empty ? Colors.red.shade400 : Colors.black87),
+        ),
+        selectedColor: _red.withValues(alpha: 0.14),
+        backgroundColor: Colors.white,
+        showCheckmark: false,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+          side: BorderSide(
+            color: selected
+                ? _red
+                : (empty
+                      ? Colors.red.withValues(alpha: 0.4)
+                      : Colors.grey.withValues(alpha: 0.35)),
+          ),
+        ),
+      ),
+    );
   }
 
   Widget _buildQuestions() {
@@ -435,11 +524,22 @@ class _LecturerScreenState extends State<LecturerScreen> {
     final active = _questions.where((q) => q.isActive).length;
     final grouped = _questionsByTopic;
     final topicNames = grouped.keys.toList();
+    if (topicNames.isEmpty) {
+      return Column(
+        children: [
+          const SizedBox(height: 8),
+          _checkpointFilterBar(),
+          const Expanded(
+            child: Center(child: Text('Tiada soalan untuk checkpoint ini.')),
+          ),
+        ],
+      );
+    }
     return RefreshIndicator(
       onRefresh: _runRefresh,
       child: ListView.builder(
         padding: const EdgeInsets.fromLTRB(12, 12, 12, 90),
-        itemCount: topicNames.length + 1,
+        itemCount: topicNames.length + 2,
         itemBuilder: (_, index) {
           if (index == 0) {
             return Padding(
@@ -468,7 +568,13 @@ class _LecturerScreenState extends State<LecturerScreen> {
               ),
             );
           }
-          final topicName = topicNames[index - 1];
+          if (index == 1) {
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 10),
+              child: _checkpointFilterBar(),
+            );
+          }
+          final topicName = topicNames[index - 2];
           final topicQuestions = grouped[topicName]!;
           final topicActive = topicQuestions.where((q) => q.isActive).length;
           return Card(
@@ -505,6 +611,16 @@ class _LecturerScreenState extends State<LecturerScreen> {
         },
       ),
     );
+  }
+
+  /// "Square 39 — Kota A'Famosa", or just the number if it is not on the board.
+  static String _checkpointLabel(int square) {
+    for (final checkpoint in boardCheckpoints) {
+      if (checkpoint.square == square) {
+        return 'Sq $square · ${checkpoint.name}';
+      }
+    }
+    return 'Sq $square';
   }
 
   Widget _questionCard(Question question) {
@@ -577,6 +693,81 @@ class _LecturerScreenState extends State<LecturerScreen> {
                     ),
                   ),
                 ),
+              // Which square a question is pinned to was invisible here, so
+              // there was no way to tell a pinned question from a loose one
+              // without opening it.
+              if (question.checkpoint != null)
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.place_outlined,
+                        size: 12,
+                        color: Colors.blue.shade800,
+                      ),
+                      const SizedBox(width: 3),
+                      Text(
+                        _checkpointLabel(question.checkpoint!),
+                        style: TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.blue.shade800,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              // Whether the learner picks A/B/C/D or types the answer is not
+              // otherwise visible from the list, and it changes how the
+              // question has to be written.
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 8,
+                  vertical: 2,
+                ),
+                decoration: BoxDecoration(
+                  color: question.isMultipleChoice
+                      ? Colors.indigo.withValues(alpha: 0.12)
+                      : Colors.teal.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      question.isMultipleChoice
+                          ? Icons.list_alt
+                          : Icons.keyboard_alt_outlined,
+                      size: 12,
+                      color: question.isMultipleChoice
+                          ? Colors.indigo.shade700
+                          : Colors.teal.shade700,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      question.isMultipleChoice
+                          ? '${question.options.length} pilihan'
+                          : 'Jawapan taip',
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: question.isMultipleChoice
+                            ? Colors.indigo.shade700
+                            : Colors.teal.shade700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
               Text(
                 question.acceptedAnswers.join(' | '),
                 style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
@@ -671,6 +862,130 @@ class _LecturerScreenState extends State<LecturerScreen> {
     );
   }
 
+  /// The full 28-item breakdown for one response, grouped as the form is.
+  void _showSurveyDetail(SurveyResponse response) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
+      ),
+      builder: (sheetContext) => DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.85,
+        builder: (_, controller) => ListView(
+          controller: controller,
+          padding: const EdgeInsets.fromLTRB(18, 18, 18, 32),
+          children: [
+            Text(
+              [
+                response.status,
+                response.ageGroup,
+                if (response.gender.isNotEmpty) response.gender,
+              ].join(' · '),
+              style: const TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              '${response.starRating}★  ·  purata '
+              '${response.averageScore!.toStringAsFixed(2)}/4  ·  '
+              '${response.submittedAt}',
+              style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
+            ),
+            const Divider(height: 24),
+            for (final section in surveySections) ...[
+              Text(
+                section.title,
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w900,
+                  color: _red,
+                ),
+              ),
+              const SizedBox(height: 6),
+              for (final construct in section.constructs) ...[
+                Padding(
+                  padding: const EdgeInsets.only(top: 8, bottom: 2),
+                  child: Text(
+                    construct.name,
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+                for (final item in construct.items)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 3),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          width: 26,
+                          height: 26,
+                          alignment: Alignment.center,
+                          decoration: BoxDecoration(
+                            color: _scoreColour(response.ratings[item.code]),
+                            borderRadius: BorderRadius.circular(6),
+                          ),
+                          child: Text(
+                            '${response.ratings[item.code] ?? '-'}',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            item.text,
+                            style: const TextStyle(fontSize: 12.5, height: 1.35),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+              const SizedBox(height: 14),
+            ],
+            if (response.comment != null) ...[
+              const Text(
+                'Komen',
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w900,
+                  color: _red,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                response.comment!,
+                style: const TextStyle(fontSize: 13, height: 1.4),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  static Color _scoreColour(int? score) {
+    switch (score) {
+      case 1:
+        return Colors.red.shade400;
+      case 2:
+        return Colors.orange.shade400;
+      case 3:
+        return Colors.lightGreen.shade600;
+      case 4:
+        return Colors.green.shade600;
+      default:
+        return Colors.grey;
+    }
+  }
+
   Widget _buildSurvey() {
     if (_surveyResponses.isEmpty) {
       return const Center(child: Text('No survey responses yet.'));
@@ -727,16 +1042,32 @@ class _LecturerScreenState extends State<LecturerScreen> {
                 ),
               ),
               title: Text(
-                '${response.status} · ${response.ageGroup}',
+                [
+                  response.status,
+                  response.ageGroup,
+                  if (response.gender.isNotEmpty) response.gender,
+                ].join(' · '),
                 style: const TextStyle(fontWeight: FontWeight.w700),
               ),
               subtitle: Text(
-                'Kemudahan: ${response.easiness} | AR: ${response.arExperience}\n'
-                'Kesesuaian soalan: ${response.questionFit}'
-                '${response.comment == null ? '' : '\n"${response.comment}"'}\n'
-                '${response.submittedAt}',
+                [
+                  // Older responses predate the TAM form and carry no items.
+                  if (response.isDetailed)
+                    '${response.ratings.length} item dijawab · '
+                        'purata ${response.averageScore!.toStringAsFixed(2)}/4'
+                  else
+                    'Borang lama — tiada skor item',
+                  if (response.comment != null) '"${response.comment}"',
+                  response.submittedAt,
+                ].join('\n'),
               ),
               isThreeLine: true,
+              onTap: response.isDetailed
+                  ? () => _showSurveyDetail(response)
+                  : null,
+              trailing: response.isDetailed
+                  ? const Icon(Icons.chevron_right)
+                  : null,
             ),
           );
         },
@@ -1132,6 +1463,8 @@ class _QuestionEditor extends StatefulWidget {
     required List<String> acceptedAnswers,
     required bool isActive,
     required int? checkpoint,
+    required String? level,
+    required List<String> options,
     AdminQuestionImage? image,
   })
   onSave;
@@ -1151,6 +1484,45 @@ class _QuestionEditorState extends State<_QuestionEditor> {
   late final TextEditingController _answersController;
   late int _topicId;
   int? _checkpoint;
+  String? _place;
+  String? _level;
+  late final TextEditingController _optionsController;
+
+  /// Every bucket the server accepts. Secondary uses ASAS-CABARAN and primary
+  /// uses the card colours, but the editor does not police which topic gets
+  /// which — the lecturer knows better than a hardcoded rule.
+  static const _levels = <String>[
+    'ASAS', 'SEDERHANA', 'APLIKASI', 'ANALISIS', 'CABARAN',
+    'HIJAU', 'BIRU', 'UNGU', 'EMAS',
+  ];
+
+  /// Squares for this question's own landmark first.
+  ///
+  /// A landmark is printed on the board twice, so a Kota A'Famosa question
+  /// belongs on one of Kota A'Famosa's two squares — 39 or 67 — and scrolling
+  /// past the other twelve to find them is needless work.
+  List<BoardCheckpoint> get _orderedCheckpoints {
+    final place = _place;
+    if (place == null || place.isEmpty) return boardCheckpoints;
+    final matching = boardCheckpoints.where((c) => c.place == place).toList();
+    if (matching.isEmpty) return boardCheckpoints;
+    return [
+      ...matching,
+      ...boardCheckpoints.where((c) => c.place != place),
+    ];
+  }
+
+  String get _checkpointHelperText {
+    final place = _place;
+    if (place != null && place.isNotEmpty) {
+      final matching = boardCheckpoints.where((c) => c.place == place);
+      if (matching.isNotEmpty) {
+        final squares = matching.map((c) => c.square).join(' or ');
+        return 'This card is printed on square $squares — listed first';
+      }
+    }
+    return 'Optional. The later the square, the harder the question';
+  }
   late bool _isActive;
   Uint8List? _selectedImageBytes;
   String? _selectedImageName;
@@ -1168,12 +1540,18 @@ class _QuestionEditorState extends State<_QuestionEditor> {
     );
     _topicId = question?.topicId ?? widget.topics.first.id;
     _checkpoint = question?.checkpoint;
+    _place = question?.place;
+    _level = question?.level;
+    _optionsController = TextEditingController(
+      text: (question?.options ?? const []).join('\n'),
+    );
     _isActive = question?.isActive ?? true;
   }
 
   @override
   void dispose() {
     _promptController.dispose();
+    _optionsController.dispose();
     _answersController.dispose();
     super.dispose();
   }
@@ -1241,10 +1619,6 @@ class _QuestionEditorState extends State<_QuestionEditor> {
       setState(() => _error = 'Question and at least one answer are required.');
       return;
     }
-    if (_checkpoint == null) {
-      setState(() => _error = 'Choose the checkpoint this question belongs to.');
-      return;
-    }
     setState(() {
       _saving = true;
       _error = null;
@@ -1256,6 +1630,12 @@ class _QuestionEditorState extends State<_QuestionEditor> {
         acceptedAnswers: answers,
         isActive: _isActive,
         checkpoint: _checkpoint,
+        level: _level,
+        options: _optionsController.text
+            .split('\n')
+            .map((option) => option.trim())
+            .where((option) => option.isNotEmpty)
+            .toList(),
         image: _selectedImageBytes == null
             ? null
             : AdminQuestionImage(
@@ -1321,28 +1701,60 @@ class _QuestionEditorState extends State<_QuestionEditor> {
                     : (value) => setState(() => _topicId = value!),
               ),
               const SizedBox(height: 16),
-              DropdownButtonFormField<int>(
+              DropdownButtonFormField<int?>(
                 initialValue: _checkpoint,
                 isExpanded: true,
                 decoration: _fieldDecoration(
                   'Checkpoint',
-                  helperText: 'The later the square, the harder the question',
+                  helperText: _checkpointHelperText,
                 ),
-                items: boardCheckpoints
-                    .map(
-                      (checkpoint) => DropdownMenuItem(
-                        value: checkpoint.square,
-                        child: Text(
-                          checkpoint.label,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                items: [
+                  // Only the primary bank pins questions to squares. Secondary
+                  // sorts by level and Higher Education is drawn whole, so
+                  // leaving this empty has to stay possible.
+                  const DropdownMenuItem<int?>(
+                    value: null,
+                    child: Text('Tiada — soalan untuk seluruh topik'),
+                  ),
+                  ..._orderedCheckpoints.map(
+                    (checkpoint) => DropdownMenuItem<int?>(
+                      value: checkpoint.square,
+                      child: Text(
+                        checkpoint.label,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                    )
-                    .toList(),
+                    ),
+                  ),
+                ],
                 onChanged: _saving
                     ? null
                     : (value) => setState(() => _checkpoint = value),
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<String?>(
+                initialValue: _level,
+                isExpanded: true,
+                decoration: _fieldDecoration(
+                  'Level',
+                  helperText:
+                      'Secondary draws by level; other topics can leave this empty',
+                ),
+                items: [
+                  const DropdownMenuItem<String?>(
+                    value: null,
+                    child: Text('Tiada'),
+                  ),
+                  ..._levels.map(
+                    (level) => DropdownMenuItem<String?>(
+                      value: level,
+                      child: Text(level),
+                    ),
+                  ),
+                ],
+                onChanged: _saving
+                    ? null
+                    : (value) => setState(() => _level = value),
               ),
               const SizedBox(height: 16),
               TextField(
@@ -1372,6 +1784,25 @@ class _QuestionEditorState extends State<_QuestionEditor> {
                 alignment: Alignment.centerLeft,
                 child: Text(
                   'Example: 0.5, 0.50, and 1/2 can be entered on separate lines.',
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: _optionsController,
+                enabled: !_saving,
+                maxLines: 4,
+                decoration: _fieldDecoration(
+                  'Multiple-choice options, one per line',
+                  hintText: 'Belanda\nPortugis\nBritish\nJepun',
+                ),
+              ),
+              const SizedBox(height: 6),
+              const Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Leave empty for a typed answer. Two or more lines make it '
+                  'an A/B/C/D question, and the accepted answer above must '
+                  'match one of them.',
                 ),
               ),
               SwitchListTile(

@@ -10,6 +10,7 @@ import 'screens/tutorial_screen.dart';
 import 'screens/nota_screen.dart';
 import 'screens/loading_screen.dart';
 import 'screens/lecturer_screen.dart';
+import 'screens/survey_screen.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();

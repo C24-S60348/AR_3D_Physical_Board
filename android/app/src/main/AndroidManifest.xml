@@ -6,12 +6,15 @@
     <!-- Internet for loading remote GLB models -->
     <uses-permission android:name="android.permission.INTERNET"/>
 
-    <!-- i-GB requires ARCore. Google Play then hides the app from any device
-         that does not declare the android.hardware.camera.ar system feature —
-         including the "Your device isn't compatible with this version" notice
-         shown on the store listing itself, before the user ever taps Install.
-         That upfront signal is preferred over letting an unsupported phone
-         install the app and find out at runtime. -->
+    <!-- i-GB requires ARCore. Scanning the printed cards is the point of the
+         app, so Google Play should say "Your device isn't compatible with this
+         version" on the listing rather than let someone install it and find the
+         scanner dead. That is why an Oppo A3 Pro and a Realme tablet cannot
+         install: ARCore does not support them.
+
+         Play rejects a bundle whose com.google.ar.core meta-data disagrees with
+         this flag, so the two below must stay in step. checkArSupport() still
+         guards the scanner at runtime as a safety net. -->
     <uses-feature android:name="android.hardware.camera.ar" android:required="true"/>
     <uses-feature android:name="android.hardware.camera" android:required="true"/>
 
@@ -20,8 +23,9 @@
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
 
-        <!-- "required" matches the uses-feature above so Play Store's device
-             filter and the ARCore installability check agree. -->
+        <!-- "required" matches the uses-feature above, so Play's device filter
+             and the ARCore installability check agree. Play then also installs
+             Google Play Services for AR alongside the app. -->
         <meta-data
             android:name="com.google.ar.core"
             android:value="required"
