@@ -544,6 +544,31 @@ class Ar3dApiTestCase(unittest.TestCase):
         self.assertIn(b"Aina", page.data)
         self.assertIn(b"Write one half as a number.", page.data)
 
+    def test_answer_submission_matches_number_against_unit_suffixed_accepted_answer(
+        self,
+    ):
+        question = self.client.post(
+            "/api/ar3d/admin/questions",
+            headers=self.headers,
+            json={
+                "topic_id": 1,
+                "prompt": "1 hari = ? jam",
+                "accepted_answers": ["24 jam"],
+                "is_active": True,
+            },
+        ).get_json()["question"]
+
+        response = self.client.post(
+            "/api/ar3d/answers",
+            json={
+                "player_name": "Zariff",
+                "question_id": question["id"],
+                "answer": "24",
+            },
+        )
+        self.assertEqual(response.status_code, 201)
+        self.assertTrue(response.get_json()["is_correct"])
+
     def test_survey_submission_and_admin_listing(self):
         rejected = self.client.post("/api/ar3d/survey", json={"status": "Pelajar"})
         self.assertEqual(rejected.status_code, 400)
