@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import '../models/game_model.dart';
 import '../data/questions_data.dart';
+import '../services/ar3d_api.dart';
 import 'question_screen.dart';
 
 class GameBoardScreen extends StatefulWidget {
@@ -122,8 +123,13 @@ class _GameBoardScreenState extends State<GameBoardScreen>
 
   Future<void> _showQuestion(GameSquare square) async {
     final topicToUse = square.topic ?? _topic;
-    final questions = getQuestionsForTopic(topicToUse);
-    if (questions.isEmpty) return;
+    List<Question> questions;
+    try {
+      questions = await Ar3dApi.getQuestions(topicToUse);
+    } catch (_) {
+      return;
+    }
+    if (questions.isEmpty || !mounted) return;
 
     final q = questions[_random.nextInt(questions.length)];
 

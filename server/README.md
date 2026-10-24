@@ -57,8 +57,9 @@ flutter run \
   --dart-define=AR3D_API_BASE_URL=http://YOUR_COMPUTER_IP:5000
 ```
 
-Use HTTPS for deployed builds. If no URL is configured or the server cannot be
-reached, the scanner falls back to the questions bundled inside the app.
+Use HTTPS for deployed builds. Questions are always read from the server; the
+app bundles no offline copy, so a scan shows an error when the server cannot
+be reached.
 Android debug builds allow local HTTP traffic; release builds do not enable
 that exception.
 
