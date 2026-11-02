@@ -61,6 +61,18 @@ internal class AndroidARView(
     private var aimCandidateSinceMs: Long = 0L
     private val aimDwellMs = 700L
 
+    // A card only counts as aimed at when its centre lies inside the scanner's
+    // on-screen viewfinder: a 220 dp square in the middle of the screen (see
+    // _ViewfinderOverlay in scanner_screen.dart), with a little slack.
+    private val viewfinderHalfSizeDp = 110f
+    private val viewfinderSlack = 1.2f
+
+    // The card the player just rejected with "Bukan, Imbas Semula". It is
+    // skipped when picking what to report: Flutter would ignore it, and since
+    // only one card is reported per session, reporting it would leave the
+    // scanner unable to detect anything else.
+    @Volatile private var ignoredImageName: String? = null
+
     // Plane-tap anchor tracking (AR 3D demo)
     private val planeAnchorNodes = mutableMapOf<String, AnchorNode>()
 
@@ -150,10 +162,13 @@ internal class AndroidARView(
 
     private fun processAugmentedImages(frame: Frame) {
         frame.getUpdatedTrackables(AugmentedImage::class.java).forEach { img ->
-            when (img.trackingState) {
-                TrackingState.TRACKING -> trackedImages[img.name] = img
-                TrackingState.PAUSED, TrackingState.STOPPED -> trackedImages.remove(img.name)
-                else -> {}
+            // LAST_KNOWN_POSE means ARCore remembers where a card was but no
+            // longer sees it in the camera image, so it cannot be aimed at.
+            if (img.trackingState == TrackingState.TRACKING &&
+                img.trackingMethod == AugmentedImage.TrackingMethod.FULL_TRACKING) {
+                trackedImages[img.name] = img
+            } else {
+                trackedImages.remove(img.name)
             }
         }
 
@@ -167,7 +182,11 @@ internal class AndroidARView(
         } catch (e: Exception) {
             Log.w(TAG, "Centring check failed: ${e.message}")
             null
-        } ?: trackedImages.keys.first()
+        }
+        if (centeredName == null) {
+            aimCandidateName = null
+            return
+        }
 
         val now = System.currentTimeMillis()
         if (aimCandidateName != centeredName) {
@@ -183,7 +202,10 @@ internal class AndroidARView(
         }
     }
 
-    /** Picks whichever tracked image's centre sits closest to the middle of the screen. */
+    /**
+     * Picks whichever tracked image's centre sits closest to the middle of the
+     * screen, considering only images whose centre is inside the viewfinder.
+     */
     private fun mostCenteredImageName(frame: Frame): String? {
         val camera = frame.camera
         if (camera.trackingState != TrackingState.TRACKING) return null
@@ -195,9 +217,15 @@ internal class AndroidARView(
         val viewProjMatrix = FloatArray(16)
         Matrix.multiplyMM(viewProjMatrix, 0, projMatrix, 0, viewMatrix, 0)
 
+        val viewWidth = arSceneView.width.toFloat()
+        val viewHeight = arSceneView.height.toFloat()
+        if (viewWidth <= 0f || viewHeight <= 0f) return null
+        val halfBox = viewfinderHalfSizeDp * activity.resources.displayMetrics.density * viewfinderSlack
+
         var bestName: String? = null
         var bestDistance = Float.MAX_VALUE
         for ((name, img) in trackedImages) {
+            if (name == ignoredImageName) continue
             val pose = img.centerPose
             val world = floatArrayOf(pose.tx(), pose.ty(), pose.tz(), 1f)
             val clip = FloatArray(4)
@@ -205,6 +233,10 @@ internal class AndroidARView(
             if (clip[3] <= 0.0001f) continue // behind the camera
             val ndcX = clip[0] / clip[3]
             val ndcY = clip[1] / clip[3]
+            val screenX = (ndcX + 1f) / 2f * viewWidth
+            val screenY = (1f - ndcY) / 2f * viewHeight
+            if (Math.abs(screenX - viewWidth / 2f) > halfBox ||
+                Math.abs(screenY - viewHeight / 2f) > halfBox) continue
             val distance = ndcX * ndcX + ndcY * ndcY
             if (distance < bestDistance) {
                 bestDistance = distance
@@ -220,6 +252,11 @@ internal class AndroidARView(
 
     private fun onSessionMethod(call: MethodCall, result: MethodChannel.Result) {
         when (call.method) {
+            "setIgnoredImage" -> {
+                ignoredImageName = call.argument<String>("name")
+                aimCandidateName = null
+                result.success(null)
+            }
             "init" -> {
                 val showPlanes      = call.argument<Boolean>("showPlanes")  ?: false
                 val handleTapsArg   = call.argument<Boolean>("handleTaps")  ?: false

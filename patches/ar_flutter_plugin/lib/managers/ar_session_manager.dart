@@ -198,6 +198,18 @@ class ARSessionManager {
     }
   }
 
+  /// Tells the platform to skip [name] when choosing a detected image to
+  /// report, or to stop skipping when [name] is null. Android reports only one
+  /// image per session, so reporting an image the app then ignores would
+  /// leave nothing else detectable. iOS does not need this and ignores it.
+  Future<void> setIgnoredImage(String? name) async {
+    try {
+      await _channel.invokeMethod<void>('setIgnoredImage', {'name': name});
+    } on MissingPluginException {
+      // Not implemented on this platform.
+    }
+  }
+
   /// Returns a future ImageProvider that contains a screenshot of the current AR Scene
   Future<ImageProvider> snapshot() async {
     final result = await _channel.invokeMethod<Uint8List>('snapshot');

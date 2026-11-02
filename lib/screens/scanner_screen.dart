@@ -253,6 +253,12 @@ class _ScannerScreenState extends State<ScannerScreen>
       showFeaturePoints: false,
       handleTaps: false,
     );
+    // A card rejected with "Bukan, Imbas Semula" must be skipped on the
+    // platform side too, or Android would report it and then nothing else.
+    final ignored = _ignoredImageName;
+    if (ignored != null) {
+      sessionManager.setIgnoredImage(ignored);
+    }
     sessionManager.onImageDetected = (String imageName) {
       if (!_isHandlingDetection &&
           !_showingFlipCard &&
@@ -1274,7 +1280,7 @@ class _QuestionOverlay extends StatelessWidget {
                         onSubmitted: onSubmit,
                         decoration: InputDecoration(
                           labelText: 'Taip jawapan anda',
-                          hintText: 'Contoh: 0.5 atau 1/2',
+                          hintText: 'Contoh: 12, 1/2, x = 4 atau x^2',
                           prefixIcon: const Icon(Icons.edit_outlined),
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(12),
@@ -1369,7 +1375,7 @@ class _QuestionOverlay extends StatelessWidget {
                     ],
                   ),
                 )
-              else
+              else if (question.isMultipleChoice)
                 const Padding(
                   padding: EdgeInsets.only(bottom: 16),
                   child: Text(
