@@ -103,6 +103,16 @@ const _placeInfo = <String, Map<String, String>>{
     'topic': 'ANALISIS',
     'checkpoint': '25',
   },
+  // The same square 25 card with its sign reading "PANTAI KLEBANG" instead
+  // of "PINTU GERBANG", for boards printed after that fix. The original stays
+  // so boards already printed keep scanning.
+  'pantaiklebang-new-v2': {
+    'name': 'Pantai Klebang',
+    'asset': 'assets/imagesscan/pantaiklebang-new-v2.png',
+    'place': 'pantai-klebang',
+    'topic': 'ANALISIS',
+    'checkpoint': '25',
+  },
   'pantaiklebang-new2': {
     'name': 'Pantai Klebang',
     'asset': 'assets/imagesscan/pantaiklebang-new2.png',
@@ -307,7 +317,11 @@ class _ScannerScreenState extends State<ScannerScreen>
   /// Lets the player name the square when the camera cannot read it. Goes
   /// through the same confirmation and question flow as a scanned card.
   Future<void> _pickSquareManually() async {
-    final entries = _placeInfo.entries.toList()
+    // One entry per square: some squares have more than one scan image.
+    final seenSquares = <String>{};
+    final entries = _placeInfo.entries
+        .where((entry) => seenSquares.add(entry.value['checkpoint']!))
+        .toList()
       ..sort(
         (a, b) => int.parse(a.value['checkpoint']!).compareTo(
           int.parse(b.value['checkpoint']!),
