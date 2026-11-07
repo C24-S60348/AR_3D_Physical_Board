@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math';
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
@@ -155,6 +156,11 @@ class _ScannerScreenState extends State<ScannerScreen>
   // until a different image is detected, so aiming at the same card the
   // camera is still pointed at doesn't immediately re-trigger it.
   String? _ignoredImageName;
+  // Questions already shown this session, so a square scanned again draws a
+  // different question while unseen ones remain.
+  final Set<int> _askedQuestionIds = {};
+  Timer? _scanTipsTimer;
+  bool _showScanTips = false;
   late AnimationController _flipController;
   late Animation<double> _flipAnim;
 
@@ -229,6 +235,7 @@ class _ScannerScreenState extends State<ScannerScreen>
 
   @override
   void dispose() {
+    _scanTipsTimer?.cancel();
     _sessionManager?.dispose();
     _answerController.dispose();
     _flipController.dispose();
@@ -259,6 +266,7 @@ class _ScannerScreenState extends State<ScannerScreen>
     if (ignored != null) {
       sessionManager.setIgnoredImage(ignored);
     }
+    _restartScanTipsTimer();
     sessionManager.onImageDetected = (String imageName) {
       if (!_isHandlingDetection &&
           !_showingFlipCard &&
@@ -273,15 +281,97 @@ class _ScannerScreenState extends State<ScannerScreen>
   static String _normalizeImageName(String raw) =>
       raw.toLowerCase().replaceAll(RegExp(r'\.(png|jpg|jpeg)$'), '');
 
-  // A raw detection just means the camera glimpsed the card; give the user a
-  // moment to actually aim at it before locking on and freezing the camera.
-  static const _aimDelay = Duration(milliseconds: 700);
+  // Android and iOS only report a card once it has stayed inside the
+  // viewfinder for a full second, so no further wait is needed here.
+  static const _aimDelay = Duration.zero;
+
+  // How long the camera may look without finding a card before the scanner
+  // shows tips and offers to pick the square by hand.
+  static const _scanTipsAfter = Duration(seconds: 8);
+
+  void _restartScanTipsTimer() {
+    _scanTipsTimer?.cancel();
+    _showScanTips = false;
+    _scanTipsTimer = Timer(_scanTipsAfter, () {
+      if (mounted && _cameraActive && !_showingFlipCard && !_showingQuestion) {
+        setState(() => _showScanTips = true);
+      }
+    });
+  }
+
+  void _stopScanTips() {
+    _scanTipsTimer?.cancel();
+    _showScanTips = false;
+  }
+
+  /// Lets the player name the square when the camera cannot read it. Goes
+  /// through the same confirmation and question flow as a scanned card.
+  Future<void> _pickSquareManually() async {
+    final entries = _placeInfo.entries.toList()
+      ..sort(
+        (a, b) => int.parse(a.value['checkpoint']!).compareTo(
+          int.parse(b.value['checkpoint']!),
+        ),
+      );
+    final imageName = await showModalBottomSheet<String>(
+      context: context,
+      isScrollControlled: true,
+      builder: (sheetContext) => SafeArea(
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(sheetContext).size.height * 0.7,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Padding(
+                padding: EdgeInsets.fromLTRB(20, 18, 20, 8),
+                child: Text(
+                  'Pilih petak anda',
+                  style: TextStyle(fontSize: 17, fontWeight: FontWeight.w800),
+                ),
+              ),
+              Flexible(
+                child: ListView(
+                  shrinkWrap: true,
+                  children: [
+                    for (final entry in entries)
+                      ListTile(
+                        leading: CircleAvatar(
+                          backgroundColor: _red,
+                          foregroundColor: Colors.white,
+                          child: Text(entry.value['checkpoint']!),
+                        ),
+                        title: Text(entry.value['name']!),
+                        onTap: () => Navigator.pop(sheetContext, entry.key),
+                      ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (imageName == null ||
+        !mounted ||
+        _isHandlingDetection ||
+        _showingFlipCard ||
+        _showingQuestion) {
+      return;
+    }
+    _ignoredImageName = null;
+    _stopScanTips();
+    _isHandlingDetection = true;
+    _triggerFlipCard(imageName);
+  }
 
   void _scheduleFlipCard(String imageName) {
     // A different card is being aimed at, so the last dismissed one no
     // longer needs to be ignored.
     _ignoredImageName = null;
     _isHandlingDetection = true;
+    _stopScanTips();
     final cameraGeneration = _cameraGeneration;
     Future.delayed(_aimDelay, () {
       if (!mounted ||
@@ -388,7 +478,11 @@ class _ScannerScreenState extends State<ScannerScreen>
       }
       return;
     }
-    final q = questions[Random().nextInt(questions.length)];
+    final unseen = questions
+        .where((question) => !_askedQuestionIds.contains(question.id))
+        .toList();
+    final pool = unseen.isNotEmpty ? unseen : questions;
+    final q = pool[Random().nextInt(pool.length)];
 
     if (!mounted || generation != _detectionGeneration) {
       _isHandlingDetection = false;
@@ -417,6 +511,8 @@ class _ScannerScreenState extends State<ScannerScreen>
   }
 
   void _goToQuestion() {
+    final id = _currentQuestion?.id;
+    if (id != null) _askedQuestionIds.add(id);
     setState(() {
       _showingFlipCard = false;
       _showingQuestion = true;
@@ -630,6 +726,30 @@ class _ScannerScreenState extends State<ScannerScreen>
                         fontSize: 12,
                       ),
                     ),
+                    if (_showScanTips) ...[
+                      const SizedBox(height: 10),
+                      Text(
+                        'Kotak belum dikesan. Cuba:\n'
+                        '• Dekatkan kamera dan pastikan gambar kotak penuh dalam bingkai\n'
+                        '• Kurangkan silau atau cahaya pantulan\n'
+                        '• Pegang telefon dengan stabil selama 1 saat',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.9),
+                          fontSize: 12,
+                          height: 1.4,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      OutlinedButton.icon(
+                        onPressed: _pickSquareManually,
+                        icon: const Icon(Icons.touch_app, size: 18),
+                        label: const Text('Pilih petak secara manual'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.white,
+                          side: const BorderSide(color: Colors.white54),
+                        ),
+                      ),
+                    ],
                     if (_questionsAnswered > 0) ...[
                       const SizedBox(height: 8),
                       Text(
@@ -1220,7 +1340,7 @@ class _QuestionOverlay extends StatelessWidget {
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Text(
-                        question.topic,
+                        topicDisplayName(question.topic),
                         style: const TextStyle(
                           color: Colors.white70,
                           fontSize: 10,

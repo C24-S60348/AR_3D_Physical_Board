@@ -120,6 +120,18 @@ double? _parseNumber(String value) {
   return double.tryParse(compact);
 }
 
+/// Bahasa Melayu labels for the server's topic names. The server, the admin
+/// API and every installed app version match on the English names, so only
+/// what is shown on screen changes.
+const Map<String, String> topicDisplayNames = {
+  'Maths for Primary Students': 'Matematik Sekolah Rendah',
+  'Maths for Secondary Students': 'Matematik Sekolah Menengah',
+  'Maths for Higher Education': 'Matematik Pengajian Tinggi',
+  'Tourism Melaka': 'Pelancongan Melaka',
+};
+
+String topicDisplayName(String topic) => topicDisplayNames[topic] ?? topic;
+
 /// Topic names as published by the server; the questions themselves are only
 /// ever read from the server.
 const List<String> allTopics = [

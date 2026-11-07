@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import '../app_version.dart';
+
 class AboutScreen extends StatelessWidget {
   const AboutScreen({super.key});
 
@@ -107,7 +109,9 @@ class AboutScreen extends StatelessWidget {
                         const SizedBox(height: 28),
                         Center(
                           child: Text(
-                            'i.-GB © 2026 • AF1 Productions',
+                            'i.-GB © 2026 • AF1 Productions\n'
+                            'Versi $appVersionLabel',
+                            textAlign: TextAlign.center,
                             style: TextStyle(
                               fontSize: 12,
                               color: Colors.grey.shade400,

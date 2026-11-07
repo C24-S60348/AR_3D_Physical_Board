@@ -25,8 +25,26 @@ class IosARView: NSObject, FlutterPlatformView, ARSCNViewDelegate, UIGestureReco
     private var configuration: ARWorldTrackingConfiguration!
     private var tappedPlaneAnchorAlignment = ARPlaneAnchor.Alignment.horizontal // default alignment
 
-    // Image-based AR tracking (board card scanning)
-    private var detectedImages = Set<String>()
+    // Image-based AR tracking (board card scanning), kept in step with the
+    // Android side. Cards ARKit can see right now, keyed by name; touched on
+    // the main thread only.
+    private var trackedImageAnchors = [String: ARImageAnchor]()
+    // The card this session has already reported to Flutter. Only one is ever
+    // reported per session — Flutter recreates this view to scan again.
+    private var reportedImageName: String?
+    // The best-centred card inside the viewfinder right now, and since when.
+    // It is reported once it has held that spot for aimDwellSeconds.
+    private var aimCandidateName: String?
+    private var aimCandidateSince: Date?
+    private let aimDwellSeconds: TimeInterval = 1.0
+    // A card only counts as aimed at when its centre lies inside the scanner's
+    // 220 pt viewfinder in the middle of the screen (see _ViewfinderOverlay in
+    // scanner_screen.dart), with a little slack.
+    private let viewfinderHalfSize: CGFloat = 110
+    private let viewfinderSlack: CGFloat = 1.2
+    // The card the player rejected with "Bukan, Imbas Semula", skipped when
+    // picking what to report.
+    private var ignoredImageName: String?
     
     private var panStartLocation: CGPoint?
     private var panCurrentLocation: CGPoint?
@@ -109,6 +127,11 @@ class IosARView: NSObject, FlutterPlatformView, ARSCNViewDelegate, UIGestureReco
                 }
             case "dispose":
                 onDispose(result)
+                result(nil)
+                break
+            case "setIgnoredImage":
+                ignoredImageName = arguments?["name"] as? String
+                aimCandidateName = nil
                 result(nil)
                 break
             default:
@@ -240,7 +263,9 @@ class IosARView: NSObject, FlutterPlatformView, ARSCNViewDelegate, UIGestureReco
         let referenceImages = loadReferenceImages()
         if !referenceImages.isEmpty {
             self.configuration.detectionImages = referenceImages
-            self.configuration.maximumNumberOfTrackedImages = 1
+            // More than one, so a card in the viewfinder can still be picked
+            // while ARKit is also tracking a neighbouring card on the board.
+            self.configuration.maximumNumberOfTrackedImages = 4
         }
 
         if let planeDetectionConfig = arguments["planeDetectionConfig"] as? Int {
@@ -382,7 +407,10 @@ class IosARView: NSObject, FlutterPlatformView, ARSCNViewDelegate, UIGestureReco
     func renderer(_ renderer: SCNSceneRenderer, didRemove node: SCNNode, for anchor: ARAnchor) {
         trackedPlanes.removeValue(forKey: anchor.identifier)
         if let imageAnchor = anchor as? ARImageAnchor, let name = imageAnchor.referenceImage.name {
-            detectedImages.remove(name)
+            DispatchQueue.main.async {
+                self.trackedImageAnchors.removeValue(forKey: name)
+                self.evaluateImageAim()
+            }
         }
     }
 
@@ -390,17 +418,68 @@ class IosARView: NSObject, FlutterPlatformView, ARSCNViewDelegate, UIGestureReco
     // Image-based AR tracking (board card scanning)
     // ──────────────────────────────────────────────────────────────
 
+    // Called on SceneKit's render thread; the bookkeeping moves to the main
+    // thread, where the view's bounds can be read.
     private func handleImageAnchorUpdate(_ imageAnchor: ARImageAnchor) {
         guard let name = imageAnchor.referenceImage.name else { return }
-        if imageAnchor.isTracked {
-            if detectedImages.insert(name).inserted {
-                DispatchQueue.main.async {
-                    self.sessionManagerChannel.invokeMethod("onImageDetected", arguments: ["name": name])
-                }
+        DispatchQueue.main.async {
+            // isTracked is false once the card leaves the camera image, even
+            // though ARKit keeps the anchor.
+            if imageAnchor.isTracked {
+                self.trackedImageAnchors[name] = imageAnchor
+            } else {
+                self.trackedImageAnchors.removeValue(forKey: name)
             }
-        } else {
-            detectedImages.remove(name)
+            self.evaluateImageAim()
         }
+    }
+
+    private func evaluateImageAim() {
+        guard reportedImageName == nil else { return }
+        guard let centredName = mostCenteredImageName() else {
+            aimCandidateName = nil
+            return
+        }
+        let now = Date()
+        if aimCandidateName != centredName {
+            aimCandidateName = centredName
+            aimCandidateSince = now
+            // Look again once the dwell is up, in case the card is held so
+            // still that ARKit sends no update in the meantime.
+            DispatchQueue.main.asyncAfter(deadline: .now() + aimDwellSeconds) { [weak self] in
+                self?.evaluateImageAim()
+            }
+            return
+        }
+        guard let since = aimCandidateSince,
+              now.timeIntervalSince(since) >= aimDwellSeconds else { return }
+        reportedImageName = centredName
+        sessionManagerChannel.invokeMethod("onImageDetected", arguments: ["name": centredName])
+    }
+
+    /// The tracked card whose centre is closest to the middle of the screen,
+    /// considering only cards whose centre lies inside the viewfinder.
+    private func mostCenteredImageName() -> String? {
+        let bounds = sceneView.bounds
+        guard bounds.width > 0, bounds.height > 0 else { return nil }
+        let halfBox = viewfinderHalfSize * viewfinderSlack
+        var bestName: String?
+        var bestDistance = CGFloat.greatestFiniteMagnitude
+        for (name, anchor) in trackedImageAnchors where name != ignoredImageName {
+            let position = anchor.transform.columns.3
+            let projected = sceneView.projectPoint(SCNVector3(position.x, position.y, position.z))
+            // A depth outside 0...1 means the point is behind the camera.
+            guard projected.z > 0, projected.z < 1 else { continue }
+            let dx = CGFloat(projected.x) - bounds.midX
+            let dy = CGFloat(projected.y) - bounds.midY
+            guard abs(dx) <= halfBox, abs(dy) <= halfBox else { continue }
+            let distance = dx * dx + dy * dy
+            if distance < bestDistance {
+                bestDistance = distance
+                bestName = name
+            }
+        }
+        return bestName
     }
 
     // Loads every image in assets/imagesscan/ (bundled Flutter assets) as an

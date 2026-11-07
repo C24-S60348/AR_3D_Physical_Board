@@ -376,7 +376,7 @@ class _ARDemoScreenState extends State<ARDemoScreen> {
             children: [
               _CapItem('✅ Plane Detection', 'Kesan permukaan mendatar & menegak'),
               _CapItem('✅ 3D Object Placement', 'Letak model GLB/GLTF di ruang AR'),
-              _CapItem('✅ Hit Testing', 'Tap permukaan untuk letak objek'),
+              _CapItem('✅ Hit Testing', 'Ketik permukaan untuk letak objek'),
               _CapItem('✅ Real-time Tracking', 'Jejak objek dalam ruang 3D'),
               _CapItem('✅ Multiple Objects', 'Letak berbilang objek serentak'),
               _CapItem('✅ Object Removal', 'Padam objek secara individu/semua'),

@@ -59,7 +59,7 @@ internal class AndroidARView(
     // aim instead of triggering on whatever the camera first glimpses.
     private var aimCandidateName: String? = null
     private var aimCandidateSinceMs: Long = 0L
-    private val aimDwellMs = 700L
+    private val aimDwellMs = 1000L
 
     // A card only counts as aimed at when its centre lies inside the scanner's
     // on-screen viewfinder: a 220 dp square in the middle of the screen (see

@@ -26,7 +26,9 @@ Play Console. Never reuse an old version code.
 
 1. Check the latest version code in Google Play Console.
 2. Increase it by one.
-3. Update `pubspec.yaml` using the rule above.
+3. Update `pubspec.yaml` using the rule above, and set `appVersion` in
+   `lib/app_version.dart` to the same value. It is shown on the About screen,
+   and `test/app_version_test.dart` fails if the two differ.
 4. Build the release bundle:
 
 ```bash
@@ -39,4 +41,4 @@ The generated bundle is:
 build/app/outputs/bundle/release/app-release.aab
 ```
 
-Current project version: `1.0.10+11`.
+Current project version: `1.0.10+16`.

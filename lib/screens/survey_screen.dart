@@ -98,7 +98,7 @@ class _SurveyScreenState extends State<SurveyScreen> {
       appBar: AppBar(
         backgroundColor: _red,
         foregroundColor: Colors.white,
-        title: const Text('Soal Selidik i-GB'),
+        title: const Text('Soal Selidik i.-GB'),
       ),
       body: _submitted ? _buildThanks() : _buildForm(),
       bottomNavigationBar: _submitted ? null : _buildSubmitBar(),
@@ -152,7 +152,7 @@ class _SurveyScreenState extends State<SurveyScreen> {
         _card(
           child: const Text(
             'Soal selidik ini dijalankan untuk mengenal pasti rekabentuk papan '
-            'permainan dan aplikasi Interactive Game Board (i-GB). Dapatan '
+            'permainan dan aplikasi Interactive Game Board (i.-GB). Dapatan '
             'kajian ini akan digunakan untuk meningkatkan proses pembelajaran '
             '& pengajaran. Terima kasih atas kesediaan anda.',
             style: TextStyle(fontSize: 13, height: 1.5),
@@ -229,7 +229,7 @@ class _SurveyScreenState extends State<SurveyScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                'Berapa bintang anda beri kepada i-GB?',
+                'Berapa bintang anda beri kepada i.-GB?',
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 8),
@@ -261,7 +261,7 @@ class _SurveyScreenState extends State<SurveyScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                'Komen / ulasan mengenai i-GB',
+                'Komen / ulasan mengenai i.-GB',
                 style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
               ),
               const SizedBox(height: 8),

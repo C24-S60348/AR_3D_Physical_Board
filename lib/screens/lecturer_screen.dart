@@ -69,14 +69,14 @@ class _LecturerScreenState extends State<LecturerScreen> {
       notes = await Ar3dApi.getAdminNotes(password);
     } catch (error) {
       notesError =
-          'Questions and responses loaded, but notes are unavailable. '
+          'Soalan dan jawapan dimuatkan, tetapi nota tidak dapat dimuatkan. '
           '${_message(error)}';
     }
     List<SurveyResponse> surveyResponses = const [];
     try {
       surveyResponses = await Ar3dApi.getAdminSurveyResponses(password);
     } catch (error) {
-      notesError ??= 'Survey responses are unavailable. ${_message(error)}';
+      notesError ??= 'Respons soal selidik tidak dapat dimuatkan. ${_message(error)}';
     }
     if (!mounted) return;
     setState(() {
@@ -191,14 +191,14 @@ class _LecturerScreenState extends State<LecturerScreen> {
       length: 4,
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('Lecturer Admin'),
+          title: const Text('Admin Pensyarah'),
           backgroundColor: _red,
           foregroundColor: Colors.white,
           actions: [
             IconButton(
               onPressed: _busy ? null : _runRefresh,
               icon: const Icon(Icons.refresh),
-              tooltip: 'Refresh',
+              tooltip: 'Muat semula',
             ),
             IconButton(
               onPressed: () => setState(() {
@@ -210,7 +210,7 @@ class _LecturerScreenState extends State<LecturerScreen> {
                 _surveyResponses = const [];
               }),
               icon: const Icon(Icons.logout),
-              tooltip: 'Log out',
+              tooltip: 'Log keluar',
             ),
           ],
           bottom: const TabBar(
@@ -219,10 +219,10 @@ class _LecturerScreenState extends State<LecturerScreen> {
             unselectedLabelColor: Colors.white60,
             indicatorColor: Colors.amber,
             tabs: [
-              Tab(icon: Icon(Icons.quiz_outlined), text: 'Questions'),
-              Tab(icon: Icon(Icons.notes_outlined), text: 'Notes'),
-              Tab(icon: Icon(Icons.assessment_outlined), text: 'Responses'),
-              Tab(icon: Icon(Icons.poll_outlined), text: 'Survey'),
+              Tab(icon: Icon(Icons.quiz_outlined), text: 'Soalan'),
+              Tab(icon: Icon(Icons.notes_outlined), text: 'Nota'),
+              Tab(icon: Icon(Icons.assessment_outlined), text: 'Jawapan'),
+              Tab(icon: Icon(Icons.poll_outlined), text: 'Soal Selidik'),
             ],
           ),
         ),
@@ -243,7 +243,7 @@ class _LecturerScreenState extends State<LecturerScreen> {
               backgroundColor: _red,
               foregroundColor: Colors.white,
               icon: const Icon(Icons.add),
-              label: const Text('Add'),
+              label: const Text('Tambah'),
             );
           },
         ),
@@ -256,7 +256,7 @@ class _LecturerScreenState extends State<LecturerScreen> {
                 actions: [
                   TextButton(
                     onPressed: () => setState(() => _error = null),
-                    child: const Text('Close'),
+                    child: const Text('Tutup'),
                   ),
                 ],
               ),
@@ -279,7 +279,7 @@ class _LecturerScreenState extends State<LecturerScreen> {
   Widget _buildLogin() {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Lecturer Login'),
+        title: const Text('Log Masuk Pensyarah'),
         backgroundColor: _red,
         foregroundColor: Colors.white,
       ),
@@ -326,7 +326,7 @@ class _LecturerScreenState extends State<LecturerScreen> {
                     ),
                     const SizedBox(height: 14),
                     const Text(
-                      'Lecturer Admin',
+                      'Admin Pensyarah',
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.w800,
@@ -335,7 +335,7 @@ class _LecturerScreenState extends State<LecturerScreen> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      'Manage questions, notes, and learner responses',
+                      'Urus soalan, nota dan jawapan pelajar',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         fontSize: 13.5,
@@ -349,7 +349,7 @@ class _LecturerScreenState extends State<LecturerScreen> {
                       textInputAction: TextInputAction.done,
                       onSubmitted: (_) => _login(),
                       decoration: const InputDecoration(
-                        labelText: 'Lecturer password',
+                        labelText: 'Kata laluan pensyarah',
                         prefixIcon: Icon(Icons.lock_outline),
                         border: OutlineInputBorder(),
                       ),
@@ -373,7 +373,7 @@ class _LecturerScreenState extends State<LecturerScreen> {
                               )
                             : const Icon(Icons.login, size: 20),
                         label: Text(
-                          _busy ? 'Connecting...' : 'Log in',
+                          _busy ? 'Menyambung...' : 'Log masuk',
                           style: const TextStyle(fontWeight: FontWeight.w700),
                         ),
                         style: ElevatedButton.styleFrom(
@@ -470,10 +470,10 @@ class _LecturerScreenState extends State<LecturerScreen> {
         padding: const EdgeInsets.symmetric(horizontal: 4),
         children: [
           _filterChip('Semua', null, _questions.length),
-          _filterChip('Tiada checkpoint', _noCheckpoint, unpinned),
+          _filterChip('Tiada petak', _noCheckpoint, unpinned),
           for (final checkpoint in boardCheckpoints)
             _filterChip(
-              'Sq ${checkpoint.square} · ${checkpoint.name}',
+              'Petak ${checkpoint.square} · ${checkpoint.name}',
               checkpoint.square,
               counts[checkpoint.square] ?? 0,
             ),
@@ -519,7 +519,7 @@ class _LecturerScreenState extends State<LecturerScreen> {
 
   Widget _buildQuestions() {
     if (_questions.isEmpty) {
-      return const Center(child: Text('No questions yet.'));
+      return const Center(child: Text('Belum ada soalan.'));
     }
     final active = _questions.where((q) => q.isActive).length;
     final grouped = _questionsByTopic;
@@ -530,7 +530,7 @@ class _LecturerScreenState extends State<LecturerScreen> {
           const SizedBox(height: 8),
           _checkpointFilterBar(),
           const Expanded(
-            child: Center(child: Text('Tiada soalan untuk checkpoint ini.')),
+            child: Center(child: Text('Tiada soalan untuk petak ini.')),
           ),
         ],
       );
@@ -550,18 +550,18 @@ class _LecturerScreenState extends State<LecturerScreen> {
                 children: [
                   _statChip(
                     icon: Icons.quiz_outlined,
-                    label: '${_questions.length} questions',
+                    label: '${_questions.length} soalan',
                     color: _red,
                   ),
                   _statChip(
                     icon: Icons.check_circle_outline,
-                    label: '$active active',
+                    label: '$active aktif',
                     color: Colors.green.shade700,
                   ),
                   if (_questions.length - active > 0)
                     _statChip(
                       icon: Icons.archive_outlined,
-                      label: '${_questions.length - active} archived',
+                      label: '${_questions.length - active} diarkib',
                       color: Colors.grey.shade600,
                     ),
                 ],
@@ -587,11 +587,11 @@ class _LecturerScreenState extends State<LecturerScreen> {
             child: ExpansionTile(
               initiallyExpanded: topicNames.length == 1,
               title: Text(
-                topicName,
+                topicDisplayName(topicName),
                 style: const TextStyle(fontWeight: FontWeight.w700),
               ),
               subtitle: Text(
-                '${topicQuestions.length} question(s) · $topicActive active',
+                '${topicQuestions.length} soalan · $topicActive aktif',
               ),
               leading: CircleAvatar(
                 backgroundColor: _red.withValues(alpha: 0.1),
@@ -617,10 +617,10 @@ class _LecturerScreenState extends State<LecturerScreen> {
   static String _checkpointLabel(int square) {
     for (final checkpoint in boardCheckpoints) {
       if (checkpoint.square == square) {
-        return 'Sq $square · ${checkpoint.name}';
+        return 'Petak $square · ${checkpoint.name}';
       }
     }
-    return 'Sq $square';
+    return 'Petak $square';
   }
 
   Widget _questionCard(Question question) {
@@ -666,7 +666,7 @@ class _LecturerScreenState extends State<LecturerScreen> {
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(
-                  question.topic,
+                  topicDisplayName(question.topic),
                   style: const TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
@@ -780,7 +780,7 @@ class _LecturerScreenState extends State<LecturerScreen> {
             ? IconButton(
                 onPressed: () => _archive(question),
                 icon: const Icon(Icons.archive_outlined),
-                tooltip: 'Archive',
+                tooltip: 'Arkib',
               )
             : null,
       ),
@@ -789,7 +789,7 @@ class _LecturerScreenState extends State<LecturerScreen> {
 
   Widget _buildResponses() {
     if (_responses.isEmpty) {
-      return const Center(child: Text('No learner responses yet.'));
+      return const Center(child: Text('Belum ada jawapan pelajar.'));
     }
     final correct = _responses.where((r) => r.isCorrect).length;
     final players = _responses.map((r) => r.playerName).toSet().length;
@@ -809,19 +809,19 @@ class _LecturerScreenState extends State<LecturerScreen> {
                 children: [
                   _statChip(
                     icon: Icons.assessment_outlined,
-                    label: '${_responses.length} answers',
+                    label: '${_responses.length} jawapan',
                     color: _red,
                   ),
                   _statChip(
                     icon: Icons.percent,
-                    label: '$rate% correct',
+                    label: '$rate% betul',
                     color: rate >= 50
                         ? Colors.green.shade700
                         : Colors.orange.shade800,
                   ),
                   _statChip(
                     icon: Icons.people_outline,
-                    label: '$players player(s)',
+                    label: '$players pemain',
                     color: Colors.blueGrey.shade700,
                   ),
                 ],
@@ -850,9 +850,9 @@ class _LecturerScreenState extends State<LecturerScreen> {
               ),
               subtitle: Text(
                 '${response.questionText}\n'
-                'Answer: ${response.submittedAnswer}'
-                '${response.isCorrect ? '' : '  (correct: ${response.correctAnswer})'}\n'
-                '${response.topicName} | ${response.answeredAt}',
+                'Jawapan: ${response.submittedAnswer}'
+                '${response.isCorrect ? '' : '  (betul: ${response.correctAnswer})'}\n'
+                '${topicDisplayName(response.topicName)} | ${response.answeredAt}',
               ),
               isThreeLine: true,
             ),
@@ -988,7 +988,7 @@ class _LecturerScreenState extends State<LecturerScreen> {
 
   Widget _buildSurvey() {
     if (_surveyResponses.isEmpty) {
-      return const Center(child: Text('No survey responses yet.'));
+      return const Center(child: Text('Belum ada respons soal selidik.'));
     }
     final totalStars = _surveyResponses.fold<int>(
       0,
@@ -1010,12 +1010,12 @@ class _LecturerScreenState extends State<LecturerScreen> {
                 children: [
                   _statChip(
                     icon: Icons.poll_outlined,
-                    label: '${_surveyResponses.length} response(s)',
+                    label: '${_surveyResponses.length} respons',
                     color: _red,
                   ),
                   _statChip(
                     icon: Icons.star_rounded,
-                    label: '${average.toStringAsFixed(1)} avg rating',
+                    label: 'Purata ${average.toStringAsFixed(1)} bintang',
                     color: Colors.amber.shade800,
                   ),
                 ],
@@ -1077,7 +1077,7 @@ class _LecturerScreenState extends State<LecturerScreen> {
 
   Widget _buildNotes() {
     if (_notes.isEmpty) {
-      return const Center(child: Text('No notes yet.'));
+      return const Center(child: Text('Belum ada nota.'));
     }
     return RefreshIndicator(
       onRefresh: _runRefresh,
@@ -1116,7 +1116,7 @@ class _LecturerScreenState extends State<LecturerScreen> {
                   ? IconButton(
                       onPressed: () => _archiveNote(note),
                       icon: const Icon(Icons.archive_outlined),
-                      tooltip: 'Archive',
+                      tooltip: 'Arkib',
                     )
                   : const Icon(Icons.archive_outlined, color: Colors.grey),
             ),
@@ -1203,8 +1203,8 @@ class _NoteEditorState extends State<_NoteEditor> {
         if (!mounted) return;
         setState(() {
           _error =
-              'The selected image is still too large to upload. '
-              'Please choose a smaller image.';
+              'Gambar yang dipilih masih terlalu besar untuk dimuat naik. '
+              'Sila pilih gambar yang lebih kecil.';
         });
         return;
       }
@@ -1217,18 +1217,18 @@ class _NoteEditorState extends State<_NoteEditor> {
       if (!mounted) return;
       setState(() {
         _error =
-            'Image picker is not registered. Fully stop and rebuild the app.';
+            'Pemilih gambar tidak berdaftar. Tutup sepenuhnya dan bina semula aplikasi.';
       });
     } on PlatformException catch (error) {
       if (!mounted) return;
       setState(() {
         _error =
-            'Could not open the photo library: ${error.message ?? error.code}';
+            'Tidak dapat membuka galeri foto: ${error.message ?? error.code}';
       });
     } catch (error) {
       if (!mounted) return;
       setState(() {
-        _error = 'Could not choose an image: $error';
+        _error = 'Tidak dapat memilih gambar: $error';
       });
     } finally {
       if (mounted) {
@@ -1252,12 +1252,12 @@ class _NoteEditorState extends State<_NoteEditor> {
         _selectedImageBytes != null || widget.note?.imageUrl != null;
     if (title.isEmpty || (points.isEmpty && url.isEmpty && !hasImage)) {
       setState(() {
-        _error = 'Add a title, then at least one point, an image, or a link.';
+        _error = 'Tambah tajuk, kemudian sekurang-kurangnya satu isi, gambar atau pautan.';
       });
       return;
     }
     if (order == null) {
-      setState(() => _error = 'Display order must be a number.');
+      setState(() => _error = 'Susunan paparan mesti nombor.');
       return;
     }
     setState(() {
@@ -1307,7 +1307,7 @@ class _NoteEditorState extends State<_NoteEditor> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Note image (optional)',
+            'Gambar nota (pilihan)',
             style: TextStyle(fontWeight: FontWeight.w600),
           ),
           if (selectedBytes != null) ...[
@@ -1322,7 +1322,7 @@ class _NoteEditorState extends State<_NoteEditor> {
               ),
             ),
             const SizedBox(height: 6),
-            Text(_selectedImageName ?? 'Selected image'),
+            Text(_selectedImageName ?? 'Gambar dipilih'),
           ] else if (currentImageUrl != null) ...[
             const SizedBox(height: 10),
             ClipRRect(
@@ -1333,11 +1333,11 @@ class _NoteEditorState extends State<_NoteEditor> {
                 width: double.infinity,
                 fit: BoxFit.contain,
                 errorBuilder: (_, _, _) =>
-                    const Text('Current image could not be loaded.'),
+                    const Text('Gambar semasa tidak dapat dimuatkan.'),
               ),
             ),
             const SizedBox(height: 6),
-            const Text('Current image'),
+            const Text('Gambar semasa'),
           ],
           const SizedBox(height: 10),
           OutlinedButton.icon(
@@ -1350,14 +1350,14 @@ class _NoteEditorState extends State<_NoteEditor> {
                 : const Icon(Icons.image_outlined),
             label: Text(
               _selectingImage
-                  ? 'Opening gallery...'
+                  ? 'Membuka galeri...'
                   : selectedBytes == null && currentImageUrl == null
-                  ? 'Choose image'
-                  : 'Change image',
+                  ? 'Pilih gambar'
+                  : 'Tukar gambar',
             ),
           ),
           const Text(
-            'PNG, JPG, GIF, or WEBP. Images are compressed for upload.',
+            'PNG, JPG, GIF atau WEBP. Gambar dimampatkan sebelum dimuat naik.',
           ),
         ],
       ),
@@ -1369,7 +1369,7 @@ class _NoteEditorState extends State<_NoteEditor> {
     const border = OutlineInputBorder();
     return AlertDialog(
       insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-      title: Text(widget.note == null ? 'New Note' : 'Edit Note'),
+      title: Text(widget.note == null ? 'Nota Baharu' : 'Ubah Nota'),
       content: SizedBox(
         width: 600,
         child: SingleChildScrollView(
@@ -1389,7 +1389,7 @@ class _NoteEditorState extends State<_NoteEditor> {
                 controller: _titleController,
                 enabled: !_saving,
                 decoration: const InputDecoration(
-                  labelText: 'Title',
+                  labelText: 'Tajuk',
                   border: border,
                 ),
               ),
@@ -1400,7 +1400,7 @@ class _NoteEditorState extends State<_NoteEditor> {
                 minLines: 4,
                 maxLines: 10,
                 decoration: const InputDecoration(
-                  labelText: 'Note points, one per line',
+                  labelText: 'Isi nota, satu baris bagi setiap isi',
                   border: border,
                 ),
               ),
@@ -1412,7 +1412,7 @@ class _NoteEditorState extends State<_NoteEditor> {
                 enabled: !_saving,
                 keyboardType: TextInputType.url,
                 decoration: const InputDecoration(
-                  labelText: 'Google Drive or website link (optional)',
+                  labelText: 'Pautan Google Drive atau laman web (pilihan)',
                   border: border,
                 ),
               ),
@@ -1422,13 +1422,13 @@ class _NoteEditorState extends State<_NoteEditor> {
                 enabled: !_saving,
                 keyboardType: TextInputType.number,
                 decoration: const InputDecoration(
-                  labelText: 'Display order',
+                  labelText: 'Susunan paparan',
                   border: border,
                 ),
               ),
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
-                title: const Text('Active'),
+                title: const Text('Aktif'),
                 value: _isActive,
                 onChanged: _saving
                     ? null
@@ -1443,11 +1443,11 @@ class _NoteEditorState extends State<_NoteEditor> {
       actions: [
         TextButton(
           onPressed: _saving ? null : () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: const Text('Batal'),
         ),
         ElevatedButton(
           onPressed: _saving ? null : _save,
-          child: Text(_saving ? 'Saving...' : 'Save'),
+          child: Text(_saving ? 'Menyimpan...' : 'Simpan'),
         ),
       ],
     );
@@ -1518,10 +1518,10 @@ class _QuestionEditorState extends State<_QuestionEditor> {
       final matching = boardCheckpoints.where((c) => c.place == place);
       if (matching.isNotEmpty) {
         final squares = matching.map((c) => c.square).join(' or ');
-        return 'This card is printed on square $squares — listed first';
+        return 'Kad ini dicetak pada petak $squares — disenaraikan dahulu';
       }
     }
-    return 'Optional. The later the square, the harder the question';
+    return 'Pilihan. Lebih jauh petak, lebih sukar soalannya';
   }
   late bool _isActive;
   Uint8List? _selectedImageBytes;
@@ -1574,8 +1574,8 @@ class _QuestionEditorState extends State<_QuestionEditor> {
         if (!mounted) return;
         setState(() {
           _error =
-              'The selected image is still too large to upload. '
-              'Please choose a smaller image.';
+              'Gambar yang dipilih masih terlalu besar untuk dimuat naik. '
+              'Sila pilih gambar yang lebih kecil.';
         });
         return;
       }
@@ -1588,18 +1588,18 @@ class _QuestionEditorState extends State<_QuestionEditor> {
       if (!mounted) return;
       setState(() {
         _error =
-            'Image picker is not registered. Fully stop and rebuild the app.';
+            'Pemilih gambar tidak berdaftar. Tutup sepenuhnya dan bina semula aplikasi.';
       });
     } on PlatformException catch (error) {
       if (!mounted) return;
       setState(() {
         _error =
-            'Could not open the photo library: ${error.message ?? error.code}';
+            'Tidak dapat membuka galeri foto: ${error.message ?? error.code}';
       });
     } catch (error) {
       if (!mounted) return;
       setState(() {
-        _error = 'Could not choose an image: $error';
+        _error = 'Tidak dapat memilih gambar: $error';
       });
     } finally {
       if (mounted) {
@@ -1616,7 +1616,7 @@ class _QuestionEditorState extends State<_QuestionEditor> {
         .where((answer) => answer.isNotEmpty)
         .toList();
     if (prompt.isEmpty || answers.isEmpty) {
-      setState(() => _error = 'Question and at least one answer are required.');
+      setState(() => _error = 'Soalan dan sekurang-kurangnya satu jawapan diperlukan.');
       return;
     }
     setState(() {
@@ -1658,7 +1658,7 @@ class _QuestionEditorState extends State<_QuestionEditor> {
   Widget build(BuildContext context) {
     return AlertDialog(
       insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-      title: Text(widget.question == null ? 'New Question' : 'Edit Question'),
+      title: Text(widget.question == null ? 'Soalan Baharu' : 'Ubah Soalan'),
       content: SizedBox(
         width: 600,
         child: SingleChildScrollView(
@@ -1669,7 +1669,7 @@ class _QuestionEditorState extends State<_QuestionEditor> {
                 initialValue: _topicId,
                 isExpanded: true,
                 decoration: _fieldDecoration(
-                  'Topic',
+                  'Topik',
                   helperText: _selectedTopicName,
                 ),
                 selectedItemBuilder: (context) => widget.topics
@@ -1677,7 +1677,7 @@ class _QuestionEditorState extends State<_QuestionEditor> {
                       (topic) => Align(
                         alignment: Alignment.centerLeft,
                         child: Text(
-                          topic.name,
+                          topicDisplayName(topic.name),
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -1689,7 +1689,7 @@ class _QuestionEditorState extends State<_QuestionEditor> {
                       (topic) => DropdownMenuItem(
                         value: topic.id,
                         child: Text(
-                          topic.name,
+                          topicDisplayName(topic.name),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -1705,7 +1705,7 @@ class _QuestionEditorState extends State<_QuestionEditor> {
                 initialValue: _checkpoint,
                 isExpanded: true,
                 decoration: _fieldDecoration(
-                  'Checkpoint',
+                  'Petak',
                   helperText: _checkpointHelperText,
                 ),
                 items: [
@@ -1736,9 +1736,9 @@ class _QuestionEditorState extends State<_QuestionEditor> {
                 initialValue: _level,
                 isExpanded: true,
                 decoration: _fieldDecoration(
-                  'Level',
+                  'Tahap',
                   helperText:
-                      'Secondary draws by level; other topics can leave this empty',
+                      'Sekolah Menengah dipilih mengikut tahap; topik lain boleh dibiarkan kosong',
                 ),
                 items: [
                   const DropdownMenuItem<String?>(
@@ -1762,8 +1762,8 @@ class _QuestionEditorState extends State<_QuestionEditor> {
                 enabled: !_saving,
                 maxLines: 3,
                 decoration: _fieldDecoration(
-                  'Question',
-                  hintText: 'Type the question here',
+                  'Soalan',
+                  hintText: 'Taip soalan di sini',
                 ),
               ),
               const SizedBox(height: 16),
@@ -1775,7 +1775,7 @@ class _QuestionEditorState extends State<_QuestionEditor> {
                 minLines: 3,
                 maxLines: 7,
                 decoration: _fieldDecoration(
-                  'Accepted answers, one per line',
+                  'Jawapan diterima, satu baris bagi setiap jawapan',
                   hintText: '0.5\n0.50\n1/2',
                 ),
               ),
@@ -1783,7 +1783,7 @@ class _QuestionEditorState extends State<_QuestionEditor> {
               const Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  'Example: 0.5, 0.50, and 1/2 can be entered on separate lines.',
+                  'Contoh: 0.5, 0.50 dan 1/2 boleh dimasukkan pada baris berasingan.',
                 ),
               ),
               const SizedBox(height: 16),
@@ -1792,7 +1792,7 @@ class _QuestionEditorState extends State<_QuestionEditor> {
                 enabled: !_saving,
                 maxLines: 4,
                 decoration: _fieldDecoration(
-                  'Multiple-choice options, one per line',
+                  'Pilihan jawapan A/B/C/D, satu baris bagi setiap pilihan',
                   hintText: 'Belanda\nPortugis\nBritish\nJepun',
                 ),
               ),
@@ -1800,14 +1800,14 @@ class _QuestionEditorState extends State<_QuestionEditor> {
               const Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
-                  'Leave empty for a typed answer. Two or more lines make it '
-                  'an A/B/C/D question, and the accepted answer above must '
-                  'match one of them.',
+                  'Biarkan kosong untuk jawapan bertaip. Dua baris atau lebih menjadikannya '
+                  'soalan A/B/C/D, dan jawapan diterima di atas mesti '
+                  'sama dengan salah satu pilihan.',
                 ),
               ),
               SwitchListTile(
                 contentPadding: EdgeInsets.zero,
-                title: const Text('Active'),
+                title: const Text('Aktif'),
                 value: _isActive,
                 onChanged: _saving
                     ? null
@@ -1822,11 +1822,11 @@ class _QuestionEditorState extends State<_QuestionEditor> {
       actions: [
         TextButton(
           onPressed: _saving ? null : () => Navigator.pop(context),
-          child: const Text('Cancel'),
+          child: const Text('Batal'),
         ),
         ElevatedButton(
           onPressed: _saving ? null : _save,
-          child: Text(_saving ? 'Saving...' : 'Save'),
+          child: Text(_saving ? 'Menyimpan...' : 'Simpan'),
         ),
       ],
     );
@@ -1847,7 +1847,7 @@ class _QuestionEditorState extends State<_QuestionEditor> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           const Text(
-            'Question image (optional)',
+            'Gambar soalan (pilihan)',
             style: TextStyle(fontWeight: FontWeight.w600),
           ),
           if (selectedBytes != null) ...[
@@ -1862,7 +1862,7 @@ class _QuestionEditorState extends State<_QuestionEditor> {
               ),
             ),
             const SizedBox(height: 6),
-            Text(_selectedImageName ?? 'Selected image'),
+            Text(_selectedImageName ?? 'Gambar dipilih'),
           ] else if (currentImageUrl != null) ...[
             const SizedBox(height: 10),
             ClipRRect(
@@ -1873,11 +1873,11 @@ class _QuestionEditorState extends State<_QuestionEditor> {
                 width: double.infinity,
                 fit: BoxFit.contain,
                 errorBuilder: (_, _, _) =>
-                    const Text('Current image could not be loaded.'),
+                    const Text('Gambar semasa tidak dapat dimuatkan.'),
               ),
             ),
             const SizedBox(height: 6),
-            const Text('Current image'),
+            const Text('Gambar semasa'),
           ],
           const SizedBox(height: 10),
           OutlinedButton.icon(
@@ -1890,14 +1890,14 @@ class _QuestionEditorState extends State<_QuestionEditor> {
                 : const Icon(Icons.image_outlined),
             label: Text(
               _selectingImage
-                  ? 'Opening gallery...'
+                  ? 'Membuka galeri...'
                   : selectedBytes == null && currentImageUrl == null
-                  ? 'Choose image'
-                  : 'Change image',
+                  ? 'Pilih gambar'
+                  : 'Tukar gambar',
             ),
           ),
           const Text(
-            'PNG, JPG, GIF, or WEBP. Images are compressed for upload.',
+            'PNG, JPG, GIF atau WEBP. Gambar dimampatkan sebelum dimuat naik.',
           ),
         ],
       ),
@@ -1907,7 +1907,7 @@ class _QuestionEditorState extends State<_QuestionEditor> {
   String get _selectedTopicName {
     for (final topic in widget.topics) {
       if (topic.id == _topicId) {
-        return 'Selected topic: ${topic.name}';
+        return 'Topik dipilih: ${topicDisplayName(topic.name)}';
       }
     }
     return '';

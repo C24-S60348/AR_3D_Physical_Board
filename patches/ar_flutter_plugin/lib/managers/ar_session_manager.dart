@@ -199,9 +199,9 @@ class ARSessionManager {
   }
 
   /// Tells the platform to skip [name] when choosing a detected image to
-  /// report, or to stop skipping when [name] is null. Android reports only one
-  /// image per session, so reporting an image the app then ignores would
-  /// leave nothing else detectable. iOS does not need this and ignores it.
+  /// report, or to stop skipping when [name] is null. Only one image is
+  /// reported per session, so reporting an image the app then ignores would
+  /// leave nothing else detectable.
   Future<void> setIgnoredImage(String? name) async {
     try {
       await _channel.invokeMethod<void>('setIgnoredImage', {'name': name});

@@ -169,7 +169,7 @@ class _GameBoardScreenState extends State<GameBoardScreen>
               style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 8),
-            Text('Topik: $_topic', style: const TextStyle(color: Colors.grey)),
+            Text('Topik: ${topicDisplayName(_topic)}', style: const TextStyle(color: Colors.grey)),
             const Divider(height: 24),
             _ResultRow(
               'Jawapan Betul',
@@ -320,7 +320,7 @@ class _GameBoardScreenState extends State<GameBoardScreen>
                   style: const TextStyle(color: Colors.white70, fontSize: 12),
                 ),
                 Text(
-                  'Topik: $_topic',
+                  'Topik: ${topicDisplayName(_topic)}',
                   style: const TextStyle(color: Colors.amber, fontSize: 11),
                   overflow: TextOverflow.ellipsis,
                 ),

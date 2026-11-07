@@ -506,7 +506,7 @@ class _NotaCardState extends State<_NotaCard> {
     try {
       final hasAccess = await Gal.hasAccess() || await Gal.requestAccess();
       if (!hasAccess) {
-        throw StateError('Photo library access was not granted.');
+        throw StateError('Akses ke galeri foto tidak dibenarkan.');
       }
       final client = HttpClient();
       Uint8List bytes;
@@ -691,14 +691,14 @@ class _NotaCardState extends State<_NotaCard> {
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
-                                content: Text('Could not open the note link.'),
+                                content: Text('Pautan nota tidak dapat dibuka.'),
                               ),
                             );
                           }
                         }
                       },
                       icon: const Icon(Icons.open_in_new),
-                      label: const Text('Open note'),
+                      label: const Text('Buka nota'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: _red,
                         foregroundColor: Colors.white,
