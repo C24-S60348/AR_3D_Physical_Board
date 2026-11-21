@@ -34,7 +34,7 @@ class _TutorialScreenState extends State<TutorialScreen> {
     _TutorialStep(
       title: 'Jawab Soalan',
       description:
-          'Ketik kad untuk balikkan ke soalan. Baca soalan dengan teliti dan pilih jawapan yang betul.',
+          'Ketik kad untuk balikkan ke soalan. Baca soalan dengan teliti, kemudian pilih jawapan yang betul atau taip jawapan anda.',
       icon: Icons.quiz_rounded,
       tag: '03',
     ),

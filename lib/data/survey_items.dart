@@ -1,9 +1,9 @@
-/// The i-GB Soal Selidik, following "BORANG SOAL SELIDIK IGB".
+/// The i.-GB Soal Selidik, following "BORANG SOAL SELIDIK IGB".
 ///
 /// Four TAM constructs are asked twice: once about the printed board and once
 /// about the app. Every item is scored 1-4 on the form's Gred Skor.
 ///
-/// The paper form also asks for "Pengalaman mengajar". i-GB leaves it out —
+/// The paper form also asks for "Pengalaman mengajar". i.-GB leaves it out —
 /// most respondents are students, for whom the question means nothing.
 ///
 /// Item codes must stay in step with SURVEY_ITEM_CODES in server/ar3d/db.py.
@@ -47,7 +47,7 @@ const surveyStatuses = <String>['Pensyarah', 'Pentadbir', 'Pelajar'];
 const surveySections = <SurveySection>[
   SurveySection('B. REKABENTUK PAPAN PERMAINAN', [
     SurveyConstruct('Perceived Ease of Use (PEOU)', [
-      SurveyItem('B-PEOU-1', 'Saya mudah memahami cara menggunakan papan i-GB.'),
+      SurveyItem('B-PEOU-1', 'Saya mudah memahami cara menggunakan papan i.-GB.'),
       SurveyItem('B-PEOU-2', 'Interaksi dengan papan permainan adalah jelas dan mudah diikuti.'),
       SurveyItem('B-PEOU-3', 'Saya tidak menghadapi kesukaran menggunakan papan permainan.'),
       SurveyItem('B-PEOU-4', 'Saya dapat menggunakan papan permainan tanpa bantuan yang banyak.'),
@@ -59,7 +59,7 @@ const surveySections = <SurveySection>[
       SurveyItem('B-PU-4', 'Papan permainan membantu meningkatkan motivasi saya untuk belajar.'),
     ]),
     SurveyConstruct('Attitude Toward Using (ATU)', [
-      SurveyItem('B-ATU-1', 'Saya seronok menggunakan papan permainan i-GB.'),
+      SurveyItem('B-ATU-1', 'Saya seronok menggunakan papan permainan i.-GB.'),
       SurveyItem('B-ATU-2', 'Saya berpendapat penggunaan papan permainan merupakan idea yang baik.'),
       SurveyItem('B-ATU-3', 'Saya berasa positif terhadap penggunaan papan permainan dalam pembelajaran.'),
     ]),
@@ -69,12 +69,12 @@ const surveySections = <SurveySection>[
       SurveyItem('B-BI-3', 'Saya bersedia menggunakan papan permainan ini dalam kelas lain.'),
     ]),
   ]),
-  SurveySection('C. PENILAIAN APLIKASI i-GB', [
+  SurveySection('C. PENILAIAN APLIKASI i.-GB', [
     SurveyConstruct('Perceived Ease of Use (PEOU)', [
-      SurveyItem('C-PEOU-1', 'Aplikasi i-GB mudah digunakan.'),
+      SurveyItem('C-PEOU-1', 'Aplikasi i.-GB mudah digunakan.'),
       SurveyItem('C-PEOU-2', 'Proses mengimbas kod adalah mudah.'),
       SurveyItem('C-PEOU-3', 'Navigasi dalam aplikasi adalah jelas dan mudah difahami.'),
-      SurveyItem('C-PEOU-4', 'Saya cepat mahir menggunakan aplikasi i-GB.'),
+      SurveyItem('C-PEOU-4', 'Saya cepat mahir menggunakan aplikasi i.-GB.'),
     ]),
     SurveyConstruct('Perceived Usefulness (PU)', [
       SurveyItem('C-PU-1', 'Aplikasi membantu saya memperoleh maklumat dengan cepat.'),
@@ -83,7 +83,7 @@ const surveySections = <SurveySection>[
       SurveyItem('C-PU-4', 'Aplikasi meningkatkan keberkesanan pembelajaran saya.'),
     ]),
     SurveyConstruct('Attitude Toward Using (ATU)', [
-      SurveyItem('C-ATU-1', 'Saya suka menggunakan aplikasi i-GB.'),
+      SurveyItem('C-ATU-1', 'Saya suka menggunakan aplikasi i.-GB.'),
       SurveyItem('C-ATU-2', 'Saya berpuas hati dengan pengalaman menggunakan aplikasi ini.'),
       SurveyItem('C-ATU-3', 'Saya berpendapat aplikasi ini sesuai digunakan dalam proses pembelajaran.'),
     ]),

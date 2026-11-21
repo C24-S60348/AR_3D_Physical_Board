@@ -438,7 +438,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                         onPressed: _rollDice,
                         icon: const Icon(Icons.casino, size: 20),
                         label: const Text(
-                          'Dice',
+                          'Dadu',
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
@@ -466,7 +466,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                           size: 20,
                         ),
                         label: const Text(
-                          'Lecturer Admin',
+                          'Admin Pensyarah',
                           style: TextStyle(
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
@@ -583,7 +583,7 @@ class _TopicCard extends StatelessWidget {
                   children: [
                     const Text('📚', style: TextStyle(fontSize: 44)),
                     Text(
-                      topic,
+                      topicDisplayName(topic),
                       textAlign: TextAlign.center,
                       style: const TextStyle(
                         fontWeight: FontWeight.w700,

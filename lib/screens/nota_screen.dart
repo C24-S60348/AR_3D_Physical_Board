@@ -266,7 +266,8 @@ class _PlaceCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Image with gradient scrim, numbered badge, and name overlay
+          // Image with numbered badge. The name sits below the art rather than
+          // over it, because some of the art already carries its own label.
           Stack(
             children: [
               GestureDetector(
@@ -292,21 +293,6 @@ class _PlaceCard extends StatelessWidget {
                           size: 48,
                         ),
                       ),
-                    ),
-                  ),
-                ),
-              ),
-              Positioned.fill(
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topCenter,
-                      end: Alignment.bottomCenter,
-                      stops: const [0.45, 1.0],
-                      colors: [
-                        Colors.transparent,
-                        Colors.black.withValues(alpha: 0.72),
-                      ],
                     ),
                   ),
                 ),
@@ -340,35 +326,30 @@ class _PlaceCard extends StatelessWidget {
                   ),
                 ),
               ),
-              Positioned(
-                left: 16,
-                right: 16,
-                bottom: 12,
-                child: Row(
-                  children: [
-                    const Icon(Icons.place, color: _gold, size: 18),
-                    const SizedBox(width: 6),
-                    Expanded(
-                      child: Text(
-                        place.name,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w800,
-                          fontSize: 17,
-                          shadows: [
-                            Shadow(color: Colors.black54, blurRadius: 6),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
             ],
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+            child: Row(
+              children: [
+                const Icon(Icons.place, color: _gold, size: 18),
+                const SizedBox(width: 6),
+                Expanded(
+                  child: Text(
+                    place.name,
+                    style: const TextStyle(
+                      color: _red,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 17,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
           // Description with gold accent bar
           Padding(
-            padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+            padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -525,7 +506,7 @@ class _NotaCardState extends State<_NotaCard> {
     try {
       final hasAccess = await Gal.hasAccess() || await Gal.requestAccess();
       if (!hasAccess) {
-        throw StateError('Photo library access was not granted.');
+        throw StateError('Akses ke galeri foto tidak dibenarkan.');
       }
       final client = HttpClient();
       Uint8List bytes;
@@ -710,14 +691,14 @@ class _NotaCardState extends State<_NotaCard> {
                           if (context.mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
-                                content: Text('Could not open the note link.'),
+                                content: Text('Pautan nota tidak dapat dibuka.'),
                               ),
                             );
                           }
                         }
                       },
                       icon: const Icon(Icons.open_in_new),
-                      label: const Text('Open note'),
+                      label: const Text('Buka nota'),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: _red,
                         foregroundColor: Colors.white,

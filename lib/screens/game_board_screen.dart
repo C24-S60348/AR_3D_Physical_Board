@@ -2,6 +2,7 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import '../models/game_model.dart';
 import '../data/questions_data.dart';
+import '../services/ar3d_api.dart';
 import 'question_screen.dart';
 
 class GameBoardScreen extends StatefulWidget {
@@ -122,8 +123,13 @@ class _GameBoardScreenState extends State<GameBoardScreen>
 
   Future<void> _showQuestion(GameSquare square) async {
     final topicToUse = square.topic ?? _topic;
-    final questions = getQuestionsForTopic(topicToUse);
-    if (questions.isEmpty) return;
+    List<Question> questions;
+    try {
+      questions = await Ar3dApi.getQuestions(topicToUse);
+    } catch (_) {
+      return;
+    }
+    if (questions.isEmpty || !mounted) return;
 
     final q = questions[_random.nextInt(questions.length)];
 
@@ -163,7 +169,7 @@ class _GameBoardScreenState extends State<GameBoardScreen>
               style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w800),
             ),
             const SizedBox(height: 8),
-            Text('Topik: $_topic', style: const TextStyle(color: Colors.grey)),
+            Text('Topik: ${topicDisplayName(_topic)}', style: const TextStyle(color: Colors.grey)),
             const Divider(height: 24),
             _ResultRow(
               'Jawapan Betul',
@@ -314,7 +320,7 @@ class _GameBoardScreenState extends State<GameBoardScreen>
                   style: const TextStyle(color: Colors.white70, fontSize: 12),
                 ),
                 Text(
-                  'Topik: $_topic',
+                  'Topik: ${topicDisplayName(_topic)}',
                   style: const TextStyle(color: Colors.amber, fontSize: 11),
                   overflow: TextOverflow.ellipsis,
                 ),
