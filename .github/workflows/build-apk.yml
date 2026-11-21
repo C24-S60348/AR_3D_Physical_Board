@@ -1,15 +1,7 @@
 name: Build Release APK
 
 on:
-  push:
-    branches:
-      - main
-      - master
-  pull_request:
-    branches:
-      - main
-      - master
-  workflow_dispatch:  # allows manual trigger from GitHub UI
+  workflow_dispatch:  # Only runs when manually triggered from GitHub UI/mobile app
 
 jobs:
   build:
@@ -21,18 +13,18 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v6
 
-      # 2. Setup Java 17 (required by Flutter 3.50+ and Android Gradle)
+      # 2. Setup Java 17 (required by this project)
       - name: Setup Java 17
         uses: actions/setup-java@v4
         with:
           distribution: temurin
           java-version: '17'
 
-      # 3. Setup Flutter (latest stable)
+      # 3. Setup Flutter (3.41.5 ships with Dart 3.11.5 and works natively with Gradle 8.14)
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          channel: stable
+          flutter-version: '3.41.5'
           cache: true
 
       # 4. Verify Flutter is ready
@@ -43,9 +35,9 @@ jobs:
       - name: Install Flutter dependencies
         run: flutter pub get
 
-      # 6. Build release APK (bypasses strict Gradle 9.3.1 wrapper check for Gradle 8.14 projects)
+      # 6. Build release APK
       - name: Build release APK
-        run: flutter build apk --release --no-tree-shake-icons --android-skip-build-dependency-validation
+        run: flutter build apk --release --no-tree-shake-icons
 
       # 7. Upload APK directly as an unzipped downloadable artifact (available for 30 days)
       - name: Upload APK artifact
