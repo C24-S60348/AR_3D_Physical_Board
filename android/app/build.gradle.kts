@@ -5,10 +5,14 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
-// Release keystore lives on the developer's machine. In CI (GitHub Actions) the file
-// won't exist, so we fall back to the auto-generated debug keystore instead.
-val releaseKeystoreFile = file("/Users/afwanhaziq/documents/keystore.jks")
+// Release keystore: CI supplies it via KEYSTORE_PATH / KEYSTORE_PASSWORD / KEY_ALIAS /
+// KEY_PASSWORD env vars; locally it falls back to the developer's keystore. If no keystore
+// is found, the build falls back to the debug keystore.
+val releaseKeystoreFile = file(System.getenv("KEYSTORE_PATH") ?: "/Users/afwanhaziq/documents/keystore.jks")
 val hasReleaseKeystore  = releaseKeystoreFile.exists()
+val releaseStorePassword = System.getenv("KEYSTORE_PASSWORD") ?: "123456"
+val releaseKeyAlias      = System.getenv("KEY_ALIAS") ?: "af1"
+val releaseKeyPassword   = System.getenv("KEY_PASSWORD") ?: "123456"
 
 android {
     namespace = "com.af1productions.igb"
@@ -28,9 +32,9 @@ android {
         if (hasReleaseKeystore) {
             create("release") {
                 storeFile    = releaseKeystoreFile
-                storePassword = "123456"
-                keyAlias     = "af1"
-                keyPassword  = "123456"
+                storePassword = releaseStorePassword
+                keyAlias     = releaseKeyAlias
+                keyPassword  = releaseKeyPassword
             }
         }
     }
