@@ -139,6 +139,38 @@ flutter build apk --release
 flutter build ios
 ```
 
+### Build Version Notes (important)
+
+This project is sensitive to toolchain versions. Verified working combination:
+
+| Tool | Version |
+|---|---|
+| Flutter / Dart | **3.41.9** / 3.11.x (CI pins `flutter-version: '3.41.9'`) |
+| Java | 17 (Temurin) |
+| Gradle wrapper | 9.3.1 |
+| Android Gradle Plugin / Kotlin | 8.11.1 / 2.2.20 (`android/settings.gradle.kts`) |
+| NDK | 28.2.13676358 (16KB page-size support) |
+| ARCore | `com.google.ar:core:1.52.0` |
+
+Findings:
+- `pubspec.yaml` must not pin an exact Flutter version (e.g. `flutter: 3.50.1`);
+  that made `flutter pub get` fail whenever the installed SDK differed. Use a
+  range such as `>=3.41.0`.
+- `ar_flutter_plugin` and `permission_handler_android` are local patched copies
+  in `patches/` (the upstream versions use an old compileSdk and break the
+  build). Keep them; do not switch back to the pub.dev versions.
+- Gradle 9 removed the `configurations.all` property syntax, so the plugin
+  patch uses `configurations.toList()`. Any further patched plugin build files
+  must be Gradle 9 compatible.
+- Do not bump Flutter, Gradle, AGP or Kotlin on CI without first running
+  `flutter build apk --release --no-tree-shake-icons` locally.
+- Release signing is read from env vars `KEYSTORE_PATH`, `KEYSTORE_PASSWORD`,
+  `KEY_ALIAS`, `KEY_PASSWORD`; CI supplies them from the GitHub secrets
+  `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`, `KEY_PASSWORD`. Without
+  a keystore the build falls back to debug signing.
+- The **Build Android Release** workflow can build `apk`, `apk-split-per-abi`,
+  `aab` or both.
+
 ### Flask API and Lecturer Admin
 
 The `server/` directory contains the Flask API, SQLite database, image uploads,
